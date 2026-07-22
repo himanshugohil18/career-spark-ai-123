@@ -473,3 +473,99 @@ export function securityAlertEmail(input: {
   });
   return { subject, html, text: toText(subject, intro.replace(/<[^>]+>/g, ""), cta) };
 }
+
+export function newJobMatchesEmail(input: {
+  name?: string | null;
+  count: number;
+  topMatches?: Array<{ title: string; company: string; matchPercent?: number; location?: string | null }>;
+  jobsUrl?: string;
+}): RenderedEmail {
+  const subject = "New jobs matched for you";
+  const name = input.name?.trim() || "there";
+  const intro = `Hi ${escapeHtml(name)}, we found <b style="color:${COLOR.ink}">${input.count}</b> new ${input.count === 1 ? "role" : "roles"} matching your Career Brain.`;
+  const top = (input.topMatches ?? []).slice(0, 5);
+  const list = top.length
+    ? `<div style="border:1px solid ${COLOR.border};border-radius:12px;overflow:hidden">${top
+        .map(
+          (j, i) => `<div style="padding:12px 14px;${i > 0 ? `border-top:1px solid ${COLOR.border};` : ""}background:${i % 2 ? COLOR.bg : "#fff"}">
+            <div style="font-weight:600;font-size:14.5px;color:${COLOR.ink}">${escapeHtml(j.title)}</div>
+            <div style="color:${COLOR.muted};font-size:13px;margin-top:2px">${escapeHtml(j.company)}${j.location ? ` · ${escapeHtml(j.location)}` : ""}${j.matchPercent != null ? ` · <b style="color:${COLOR.accent}">${Math.round(j.matchPercent)}% match</b>` : ""}</div>
+          </div>`,
+        )
+        .join("")}</div>`
+    : "";
+  const cta = { label: "View matched jobs", href: input.jobsUrl ?? `${APP_URL}/jobs` };
+  const html = layout({
+    preheader: `${input.count} new jobs matched to your profile.`,
+    title: "New job matches",
+    intro,
+    bodyHtml: list,
+    cta,
+  });
+  const textBody = top.map((j) => `• ${j.title} — ${j.company}${j.matchPercent != null ? ` (${Math.round(j.matchPercent)}% match)` : ""}`).join("\n");
+  return { subject, html, text: toText(subject, `${input.count} new roles.\n${textBody}`, cta) };
+}
+
+export function aiApplicationStartedEmail(input: {
+  company: string;
+  role: string;
+  when: string;
+  estimatedMinutes?: number;
+  workspaceUrl?: string;
+}): RenderedEmail {
+  const subject = `AI is applying — ${input.role} at ${input.company}`;
+  const intro = `Your AI agent just started an application on your behalf. We'll email you again once it's submitted.`;
+  const rows: Array<[string, string]> = [
+    ["Company", input.company],
+    ["Role", input.role],
+    ["Started", input.when],
+  ];
+  if (input.estimatedMinutes) rows.push(["Estimated time", `~${input.estimatedMinutes} min`]);
+  const cta = { label: "Track application", href: input.workspaceUrl ?? `${APP_URL}/applications` };
+  const html = layout({
+    preheader: `AI started applying to ${input.role} at ${input.company}.`,
+    title: "AI application started",
+    intro,
+    bodyHtml: kvTable(rows),
+    cta,
+  });
+  return { subject, html, text: toText(subject, `${input.role} · ${input.company}`, cta) };
+}
+
+export function weeklyCareerSummaryEmail(input: {
+  name?: string | null;
+  weekLabel: string;
+  applications?: number;
+  interviews?: number;
+  resumeImprovements?: number;
+  newJobs?: number;
+  insights?: string[];
+}): RenderedEmail {
+  const subject = `Your CareerOS weekly summary — ${input.weekLabel}`;
+  const name = input.name?.trim() || "there";
+  const intro = `Hi ${escapeHtml(name)}, here's your CareerOS activity for ${escapeHtml(input.weekLabel)}.`;
+  const rows: Array<[string, string]> = [];
+  if (input.applications != null) rows.push(["Applications submitted", String(input.applications)]);
+  if (input.interviews != null) rows.push(["Interviews", String(input.interviews)]);
+  if (input.resumeImprovements != null) rows.push(["Resume improvements", String(input.resumeImprovements)]);
+  if (input.newJobs != null) rows.push(["New job opportunities", String(input.newJobs)]);
+  const insights = (input.insights ?? []).slice(0, 4);
+  const insightHtml = insights.length
+    ? `<div style="margin-top:16px;border:1px solid ${COLOR.border};border-radius:12px;padding:14px 16px;background:${COLOR.bg}">
+        <div style="font-weight:600;font-size:14px;margin-bottom:6px;color:${COLOR.ink}">AI insights</div>
+        <ul style="margin:0;padding-left:18px;color:${COLOR.muted};font-size:14px;line-height:1.7">
+          ${insights.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}
+        </ul>
+      </div>`
+    : "";
+  const cta = { label: "Open dashboard", href: `${APP_URL}/dashboard` };
+  const html = layout({
+    preheader: `Your CareerOS weekly summary — ${input.weekLabel}.`,
+    title: "Your weekly summary",
+    intro,
+    bodyHtml: (rows.length ? kvTable(rows) : "") + insightHtml,
+    cta,
+    secondaryCta: { label: "Discover jobs", href: `${APP_URL}/jobs` },
+  });
+  return { subject, html, text: toText(subject, `${rows.map(([k, v]) => `${k}: ${v}`).join("\n")}`, cta) };
+}
