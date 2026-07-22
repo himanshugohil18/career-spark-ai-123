@@ -694,14 +694,6 @@ export const ensureInitialMatches = createServerFn({ method: "POST" })
       const { buildProfileFromSnapshot } = await import("./jobs/role-synonyms");
       const candidateProfile = buildProfileFromSnapshot(brain);
       await runDiscovery(supabaseAdmin, { candidateProfile });
-      const { count: after } = await supabaseAdmin
-        .from("jobs")
-        .select("id", { count: "exact", head: true })
-        .eq("is_active", true);
-      if ((after ?? 0) === 0) {
-        const { seedDevJobs } = await import("./jobs/dev-seed.server");
-        await seedDevJobs(supabaseAdmin);
-      }
     }
 
     const result = await refreshUserMatches(context.supabase, brain, { limit: 30 });
