@@ -11,6 +11,7 @@ import {
   Bot,
   BarChart3,
   Activity,
+  Mail,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +55,7 @@ function AdminLayout() {
     { to: "/admin/ai", label: "AI Usage", icon: Sparkles },
     { to: "/admin/auto-apply", label: "Auto Apply", icon: Bot },
     { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+    { to: "/admin/emails", label: "Emails", icon: Mail },
     { to: "/admin/health", label: "Health", icon: Activity },
   ] as const;
 

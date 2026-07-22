@@ -289,11 +289,13 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
     }
     setLoading("reset");
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+      // Route through our branded Brevo template. Handler always resolves
+      // ok (enumeration guard) — surface a generic confirmation either way.
+      const { requestPasswordReset } = await import("@/lib/email/notify.functions");
+      await requestPasswordReset({ data: { email } });
+      toast.success("Password reset email sent", {
+        description: "If an account exists for that address, a reset link is on its way.",
       });
-      if (error) throw error;
-      toast.success("Password reset email sent", { description: "Check your inbox for a reset link." });
     } catch (e) {
       toast.error("Could not send reset email", {
         description: e instanceof Error ? e.message : String(e),
