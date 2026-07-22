@@ -170,7 +170,7 @@ export function emailVerificationEmail(input: {
   link: string;
   expiresInMinutes?: number;
 }): RenderedEmail {
-  const subject = "Verify your CareerOS email";
+  const subject = "Verify your CareerOS account";
   const name = input.name?.trim() || "there";
   const mins = input.expiresInMinutes ?? 60;
   const intro = `Hi ${escapeHtml(name)}, tap the button below to confirm this email address. The link expires in about ${mins} minutes.`;
@@ -199,7 +199,7 @@ export function loginAlertEmail(input: {
 }): RenderedEmail {
   const provider = input.provider === "google" ? "Google" : input.provider === "password" ? "Email & password" : (input.provider ?? "Unknown");
   const when = input.when ?? new Date().toUTCString();
-  const subject = "New sign in to your CareerOS account";
+  const subject = "New sign-in detected";
   const intro = `We noticed a new sign in to your CareerOS account. If this was you, no action is needed.`;
   const rows: Array<[string, string]> = [
     ["Method", provider],
@@ -272,7 +272,7 @@ export function paymentSuccessEmail(input: {
   invoiceUrl?: string;
   billingUrl?: string;
 }): RenderedEmail {
-  const subject = `Payment received — ${input.invoiceNumber}`;
+  const subject = `Payment successful — ${input.invoiceNumber}`;
   const intro = `Thanks for upgrading to <b style="color:${COLOR.ink}">${escapeHtml(input.planName)}</b>. Your payment was received successfully.`;
   const rows: Array<[string, string]> = [
     ["Invoice", input.invoiceNumber],
@@ -348,7 +348,7 @@ export function subscriptionActivatedEmail(input: { planName: string; expiresAt?
 }
 
 export function subscriptionRenewedEmail(input: { planName: string; amountFormatted?: string | null; currency?: string | null; nextRenewalDate?: string | null; invoiceNumber?: string | null }): RenderedEmail {
-  const subject = `Your ${input.planName} plan was renewed`;
+  const subject = `Subscription renewed — ${input.planName}`;
   const intro = `Thanks for staying with CareerOS. Your <b style="color:${COLOR.ink}">${escapeHtml(input.planName)}</b> subscription was renewed successfully.`;
   const rows: Array<[string, string]> = [["Plan", input.planName]];
   if (input.amountFormatted) rows.push(["Amount", `${input.amountFormatted} ${input.currency ?? ""}`.trim()]);
@@ -393,7 +393,7 @@ export function resumeParsedEmail(input: {
   careerDnaScore?: number | null;
   completeness?: number | null;
 }): RenderedEmail {
-  const subject = "Your Career Brain is ready";
+  const subject = "Your Career Brain analysis is ready";
   const intro = `Hi ${escapeHtml(input.name?.trim() || "there")}, we've parsed your resume and generated your Career Brain. Here's a quick snapshot of what we found.`;
   const rows: Array<[string, string]> = [];
   if (input.version != null) rows.push(["Resume version", `v${input.version}`]);
@@ -426,7 +426,7 @@ export function aiApplicationSubmittedEmail(input: {
   applicationId?: string | null;
   workspaceUrl?: string;
 }): RenderedEmail {
-  const subject = `Application submitted — ${input.role} at ${input.company}`;
+  const subject = `AI successfully applied — ${input.role} at ${input.company}`;
   const intro = `Your AI agent just submitted an application on your behalf. We'll track updates and notify you on any change.`;
   const rows: Array<[string, string]> = [
     ["Company", input.company],
