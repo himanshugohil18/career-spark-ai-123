@@ -42,7 +42,7 @@ export function JobFiltersPanel({
     ((value[k] as string[] | undefined) ?? []).includes(v);
 
   return (
-    <aside className="surface-card space-y-6 p-5 text-sm">
+    <section className="surface-card space-y-6 p-5 text-sm">
       <div className="flex items-center justify-between">
         <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Filters</p>
         {Object.keys(value).length > 0 && (
