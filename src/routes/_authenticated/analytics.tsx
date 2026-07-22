@@ -45,6 +45,23 @@ function AnalyticsPage() {
             <Stat label="Workspaces" value={data!.totals.workspaces} suffix={` · avg ${data!.averageReadiness}% ready`} />
           </section>
 
+          <section className="grid gap-3 md:grid-cols-3">
+            <Stat label="Viewed" value={data!.totals.viewed} />
+            <Stat label="Notifications" value={data!.totals.notifications} />
+            <Stat label="Questions practiced" value={data!.totals.practiced} suffix={` / ${data!.totals.questions}`} />
+          </section>
+
+          <section className="surface-card p-6">
+            <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">30-day activity</p>
+            <h3 className="mt-1 font-display text-lg font-semibold">Momentum</h3>
+            <ActivityChart activity={data!.activity} />
+            <div className="mt-3 flex flex-wrap gap-4 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+              <LegendDot tone="primary" label="Applications" />
+              <LegendDot tone="accent" label="Questions practiced" />
+              <LegendDot tone="muted" label="New matches" />
+            </div>
+          </section>
+
           <section className="surface-card p-6">
             <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Match distribution</p>
             <h3 className="mt-1 font-display text-lg font-semibold">How your matches break down</h3>
@@ -56,11 +73,23 @@ function AnalyticsPage() {
             </div>
           </section>
 
+          {data!.funnel.length > 0 && (
+            <section className="surface-card p-6">
+              <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Application funnel</p>
+              <h3 className="mt-1 font-display text-lg font-semibold">Where your applications sit</h3>
+              <div className="mt-4 space-y-2.5">
+                {data!.funnel.map((f: any) => (
+                  <DistBar key={f.stage} label={f.stage} value={f.count} total={data!.totals.workspaces} tone="primary" />
+                ))}
+              </div>
+            </section>
+          )}
+
           {data!.topIndustries.length > 0 && (
             <section className="surface-card p-6">
               <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Top industries in your feed</p>
               <ul className="mt-3 grid gap-2 md:grid-cols-2">
-                {data!.topIndustries.map(([name, count]) => (
+                {data!.topIndustries.map(([name, count]: [string, number]) => (
                   <li key={name} className="flex items-center justify-between rounded-lg border border-border bg-elevated px-3 py-2 text-sm">
                     <span>{name}</span>
                     <span className="font-mono text-xs text-muted-foreground">{count} role{count === 1 ? "" : "s"}</span>
@@ -87,6 +116,32 @@ function AnalyticsPage() {
     </div>
   );
 }
+
+function ActivityChart({ activity }: { activity: Array<{ date: string; apps: number; practiced: number; matches: number }> }) {
+  const max = Math.max(1, ...activity.flatMap((d) => [d.apps, d.practiced, d.matches]));
+  return (
+    <div className="mt-4 flex h-32 items-end gap-[3px]">
+      {activity.map((d) => (
+        <div key={d.date} className="group relative flex flex-1 flex-col items-center gap-[1px]" title={`${d.date} · ${d.apps} apps · ${d.practiced} practiced · ${d.matches} matches`}>
+          <div className="w-full rounded-t-sm bg-muted-foreground/60" style={{ height: `${(d.matches / max) * 100}%` }} />
+          <div className="w-full bg-accent" style={{ height: `${(d.practiced / max) * 100}%` }} />
+          <div className="w-full rounded-b-sm bg-primary" style={{ height: `${(d.apps / max) * 100}%` }} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LegendDot({ tone, label }: { tone: "primary" | "accent" | "muted"; label: string }) {
+  const bg = tone === "primary" ? "bg-primary" : tone === "accent" ? "bg-accent" : "bg-muted-foreground/60";
+  return (
+    <span className="inline-flex items-center gap-1.5">
+      <span className={`inline-block h-2 w-2 rounded-sm ${bg}`} />
+      {label}
+    </span>
+  );
+}
+
 
 function Stat({ label, value, suffix }: { label: string; value: number | string; suffix?: string }) {
   const numeric = typeof value === "number" ? value : Number(value);
