@@ -654,6 +654,10 @@ export const kickMatchRefresh = createServerFn({ method: "POST" })
     // many seconds against public providers; users should see matches from
     // the current catalog immediately instead of waiting on network fetches.
     const match = await refreshUserMatches(context.supabase, brain, { limit: 80 });
+    if (match.newMatches.length) {
+      const { notifyNewJobMatches } = await import("./email/notify-matches.server");
+      await notifyNewJobMatches(context.supabase, context.userId, match.newMatches);
+    }
     if (match.evaluated > 0 || match.skipped > 0 || match.upserted > 0) {
       return { discovery: null, seeded: 0, ...match };
     }
@@ -672,6 +676,10 @@ export const kickMatchRefresh = createServerFn({ method: "POST" })
     const candidateProfile = buildProfileFromSnapshot(brain);
     const discovery = await runDiscovery(supabaseAdmin, { candidateProfile });
     const retry = await refreshUserMatches(context.supabase, brain, { limit: 80 });
+    if (retry.newMatches.length) {
+      const { notifyNewJobMatches } = await import("./email/notify-matches.server");
+      await notifyNewJobMatches(context.supabase, context.userId, retry.newMatches);
+    }
     return { discovery, seeded: 0, ...retry };
   });
 
