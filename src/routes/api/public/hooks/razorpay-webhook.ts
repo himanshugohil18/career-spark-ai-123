@@ -39,13 +39,54 @@ export const Route = createFileRoute("/api/public/hooks/razorpay-webhook")({
 
             if (event === "payment.captured" && p.order_id) {
               try {
-                const { sendInvoiceEmailByOrderId } = await import("@/features/billing/send-invoice-email.server");
-                const invoiceEmail = await sendInvoiceEmailByOrderId(p.order_id);
-                if (!invoiceEmail.sent) {
-                  console.error("[razorpay-webhook] invoice email not sent", invoiceEmail);
+                // Load fresh payment row (webhook UPDATE above may have set
+                // invoice_number via trigger) and dispatch Brevo email.
+                const { data: pay } = await supabaseAdmin
+                  .from("payments")
+                  .select("*")
+                  .eq("order_id", p.order_id)
+                  .maybeSingle();
+                if (pay) {
+                  const { data: profile } = await supabaseAdmin
+                    .from("profiles")
+                    .select("email, full_name")
+                    .eq("user_id", pay.user_id)
+                    .maybeSingle();
+                  let email: string | null = profile?.email ?? null;
+                  if (!email) {
+                    try {
+                      const { data: userRes } = await (supabaseAdmin as any).auth.admin.getUserById(
+                        pay.user_id,
+                      );
+                      email = userRes?.user?.email ?? null;
+                    } catch {
+                      /* ignore */
+                    }
+                  }
+                  if (email) {
+                    const { sendPaymentSuccessEmail } = await import(
+                      "@/lib/email/senders.server"
+                    );
+                    const amount = (Number(pay.amount) / 100).toLocaleString("en-IN", {
+                      minimumFractionDigits: 2,
+                    });
+                    const planName =
+                      (pay.notes && typeof pay.notes === "object" && (pay.notes as any).plan_name) ||
+                      "CareerOS Subscription";
+                    await sendPaymentSuccessEmail(email, {
+                      invoiceNumber: pay.invoice_number ?? p.order_id,
+                      planName,
+                      amountFormatted: `₹${amount}`,
+                      currency: String(pay.currency ?? "INR"),
+                      transactionId: String(pay.payment_id ?? p.id ?? ""),
+                      when: new Date(pay.invoice_issued_at ?? Date.now()).toUTCString(),
+                      dashboardUrl: "https://careerosai.site/dashboard",
+                      invoiceUrl: `https://careerosai.site/billing`,
+                    });
+                  }
                 }
               } catch (e) {
-                console.error("[razorpay-webhook] invoice email failed", (e as Error).message);
+                console.error("[razorpay-webhook] payment email failed", (e as Error).message);
               }
             }
           } else if (event === "subscription.cancelled" || event === "subscription.completed") {
