@@ -62,20 +62,36 @@ async function extractPdfText(file: File): Promise<string> {
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i);
     const tc = await page.getTextContent();
-    const rows = new Map<number, Array<{ x: number; s: string }>>();
-    for (const raw of tc.items as Array<{ str: string; transform: number[] }>) {
+    type Run = { x: number; w: number; s: string };
+    const rows = new Map<number, Run[]>();
+    for (const raw of tc.items as Array<{ str: string; width?: number; transform: number[] }>) {
       const s = raw.str;
       if (!s) continue;
       const y = Math.round((raw.transform?.[5] ?? 0) * 2) / 2;
       const x = raw.transform?.[4] ?? 0;
+      const w = raw.width ?? 0;
       const row = rows.get(y) ?? [];
-      row.push({ x, s });
+      row.push({ x, w, s });
       rows.set(y, row);
     }
     const ordered = [...rows.entries()].sort((a, b) => b[0] - a[0]);
-    const lines = ordered.map(([, items]) =>
-      items.sort((a, b) => a.x - b.x).map((i) => i.s).join(" ").replace(/[ \t]+/g, " ").trim(),
-    );
+    const lines = ordered.map(([, items]) => {
+      const sorted = items.sort((a, b) => a.x - b.x);
+      // Only insert whitespace between runs when there's a visible gap.
+      // Adjacent runs (e.g. `linkedin` + `.com` + `/in/` + `john-doe`) share
+      // an edge — inserting a space would break URL extraction downstream.
+      let line = "";
+      let prevEnd: number | null = null;
+      for (const r of sorted) {
+        if (prevEnd !== null) {
+          const gap = r.x - prevEnd;
+          if (gap > 1.5) line += " ";
+        }
+        line += r.s;
+        prevEnd = r.x + r.w;
+      }
+      return line.replace(/[ \t]{2,}/g, " ").trim();
+    });
     pages.push(lines.filter(Boolean).join("\n"));
   }
   return pages.join("\n\n").trim();

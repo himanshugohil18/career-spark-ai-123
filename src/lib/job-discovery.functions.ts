@@ -42,5 +42,17 @@ export const refreshMyMatches = createServerFn({ method: "POST" })
     if (!brain.ready) {
       throw new Error("Approve your Career Brain first, then we'll match you against jobs.");
     }
+    // Ensure the catalog has fresh jobs before scoring. Any user can trigger
+    // this — the admin gate on `discoverJobs` is separate. Discovery is
+    // driven by the caller's own Career Brain.
+    try {
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { buildProfileFromSnapshot } = await import("./jobs/role-synonyms");
+      const candidateProfile = buildProfileFromSnapshot(brain);
+      await runDiscovery(supabaseAdmin, { candidateProfile });
+    } catch {
+      // Providers may fail transiently; matching still runs against
+      // whatever real jobs already exist in the catalog.
+    }
     return refreshUserMatches(context.supabase, brain, { limit: data.limit ?? 40 });
   });

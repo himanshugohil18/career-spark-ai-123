@@ -78,6 +78,16 @@ export function repairParsedResume(
 ): ParsedResume {
   const p = parsed.personal;
   const text = (rawText ?? "").replace(/\r/g, "\n");
+  // PDF text extraction often inserts spaces between adjacent glyph runs, so a
+  // URL like `linkedin.com/in/john-doe` can arrive as `linkedin . com / in /
+  // john - doe`. Iteratively glue tokens around URL-safe punctuation so the
+  // regex below can catch it. Do NOT touch the caller's text — this is a
+  // local scan copy only.
+  let scan = text;
+  for (let i = 0; i < 4; i++) {
+    scan = scan.replace(/([A-Za-z0-9])\s+([.\/\-_])\s*([A-Za-z0-9])/g, "$1$2$3");
+    scan = scan.replace(/([A-Za-z0-9])\s*([.\/\-_])\s+([A-Za-z0-9])/g, "$1$2$3");
+  }
 
   // 1) Clean model-provided URLs (trim junk, strip PDF line-break whitespace)
   const cleaned = {
@@ -95,13 +105,14 @@ export function repairParsedResume(
   if (cleaned.linkedin && !/linkedin\.com/i.test(cleaned.linkedin)) cleaned.linkedin = null;
   if (cleaned.github && !/github\.com/i.test(cleaned.github)) cleaned.github = null;
 
-  // 3) Repair from raw text when the model missed a field
-  if (!cleaned.linkedin && text) cleaned.linkedin = firstMatch(text, LINKEDIN_RE);
-  if (!cleaned.github && text) cleaned.github = firstMatch(text, GITHUB_RE);
-  if (!cleaned.portfolio && !cleaned.website && text) {
-    cleaned.portfolio = firstPortfolioUrl(text);
+  // 3) Repair from raw text when the model missed a field. Scan the glued
+  //    variant so line-wrapped URLs get caught.
+  if (!cleaned.linkedin && scan) cleaned.linkedin = firstMatch(scan, LINKEDIN_RE);
+  if (!cleaned.github && scan) cleaned.github = firstMatch(scan, GITHUB_RE);
+  if (!cleaned.portfolio && !cleaned.website && scan) {
+    cleaned.portfolio = firstPortfolioUrl(scan);
   }
-  if (!cleaned.email && text) cleaned.email = firstEmail(text);
+  if (!cleaned.email && scan) cleaned.email = firstEmail(scan);
   if (!cleaned.phone && text) cleaned.phone = firstPhone(text);
 
   // 4) Cross-field cleanup: portfolio should not equal linkedin/github
