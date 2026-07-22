@@ -113,7 +113,7 @@ export const globalSearch = createServerFn({ method: "POST" })
       });
     }
 
-    for (const c of (companyHits.data ?? []).slice(0, 8)) {
+    for (const c of ((companyHits.data ?? []) as any[]).slice(0, 8)) {
       hits.push({
         kind: "company",
         id: c.id,
@@ -123,7 +123,7 @@ export const globalSearch = createServerFn({ method: "POST" })
       });
     }
 
-    for (const sk of skills.data ?? []) {
+    for (const sk of (skills.data ?? []) as any[]) {
       hits.push({
         kind: "skill",
         id: sk.id,
@@ -143,7 +143,7 @@ export const globalSearch = createServerFn({ method: "POST" })
       });
     }
 
-    for (const r of resumes.data ?? []) {
+    for (const r of (resumes.data ?? []) as any[]) {
       hits.push({
         kind: "resume",
         id: r.id,
@@ -152,6 +152,7 @@ export const globalSearch = createServerFn({ method: "POST" })
         href: `/resume-review/${r.id}`,
       });
     }
+
 
     return { q, hits: hits.slice(0, 40) };
   });
