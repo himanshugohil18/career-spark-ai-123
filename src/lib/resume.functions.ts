@@ -508,7 +508,16 @@ async function applyApprovedResume(
     })
     .eq("id", resumeId);
 
-  return { brainVersion: nextBrainVersion };
+  return {
+    brainVersion: nextBrainVersion,
+    counts: {
+      projects: edited.projects.length,
+      skills: edited.skills.length,
+      experiences: edited.workExperiences.length,
+      education: edited.education.length,
+    },
+    completeness: completeness.score,
+  };
 }
 
 export const approveResume = createServerFn({ method: "POST" })
@@ -526,13 +535,32 @@ export const approveResume = createServerFn({ method: "POST" })
     if (resumeErr || !resume) throw new Error("Resume not found");
     const aiOriginal = resume.parsed_json as unknown as ParsedResume | null;
 
-    const { brainVersion } = await applyApprovedResume(
+    const { brainVersion, counts, completeness } = await applyApprovedResume(
       supabase,
       userId,
       resumeId,
       edited,
       aiOriginal,
     );
+
+    // Notify the user (best-effort, non-blocking).
+    try {
+      const email = (context.claims as { email?: string }).email;
+      if (email) {
+        const { sendResumeParsedEmail } = await import("@/lib/email/senders.server");
+        void sendResumeParsedEmail(email, {
+          name: edited.personal.fullName ?? null,
+          version: brainVersion,
+          projects: counts.projects,
+          skills: counts.skills,
+          experiences: counts.experiences,
+          education: counts.education,
+          completeness,
+        });
+      }
+    } catch {
+      /* non-fatal */
+    }
 
     // NOTE: heavy discovery + AI matching runs on the next Dashboard/Jobs
     // visit via `ensureInitialMatches` — inline execution here would exceed
