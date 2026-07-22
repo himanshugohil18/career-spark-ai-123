@@ -1,26 +1,23 @@
 /**
- * Brevo transactional email client (server-only).
- * Sends via https://api.brevo.com/v3/smtp/email using BREVO_API_KEY.
+ * Resend transactional email client (server-only).
+ * Sends via https://api.resend.com/emails using RESEND_API_KEY.
  *
  * Writes every attempt (sent/failed/throttled) to `public.email_logs`
  * for admin analytics. Never throws — returns a structured result so
  * callers can decide whether to warn without crashing the user flow.
  */
 
-export type BrevoRecipient = { email: string; name?: string };
+export type EmailRecipient = { email: string; name?: string };
 
 export interface SendEmailInput {
-  to: BrevoRecipient | BrevoRecipient[];
+  to: EmailRecipient | EmailRecipient[];
   subject: string;
   html: string;
   text?: string;
-  tag?: string; // template name, used for logging
-  replyTo?: BrevoRecipient;
+  tag?: string;
+  replyTo?: EmailRecipient;
   headers?: Record<string, string>;
-  params?: Record<string, unknown>;
-  /** Optional owning user id — associates the log entry with an account. */
   userId?: string | null;
-  /** Extra metadata to persist alongside the log entry. */
   metadata?: Record<string, unknown>;
 }
 
@@ -33,17 +30,21 @@ export interface SendEmailResult {
   retries?: number;
 }
 
-const BREVO_URL = "https://api.brevo.com/v3/smtp/email";
+const RESEND_URL = "https://api.resend.com/emails";
 
 function getConfig() {
-  const apiKey = process.env.BREVO_API_KEY;
-  const fromEmail = process.env.BREVO_FROM_EMAIL || "support@careerosai.site";
-  const fromName = process.env.BREVO_FROM_NAME || "CareerOS";
-  const replyTo = process.env.BREVO_REPLY_TO || "himanshugohil828@gmail.com";
+  const apiKey = process.env.RESEND_API_KEY;
+  const fromEmail = process.env.RESEND_FROM_EMAIL || "support@careerosai.site";
+  const fromName = process.env.RESEND_FROM_NAME || "CareerOS";
+  const replyTo = process.env.RESEND_REPLY_TO || "himanshugohil828@gmail.com";
   return { apiKey, fromEmail, fromName, replyTo };
 }
 
-function firstRecipient(to: BrevoRecipient | BrevoRecipient[]): string {
+function formatAddress(r: EmailRecipient): string {
+  return r.name ? `${r.name} <${r.email}>` : r.email;
+}
+
+function firstRecipient(to: EmailRecipient | EmailRecipient[]): string {
   return Array.isArray(to) ? to[0]?.email ?? "" : to.email;
 }
 
@@ -72,16 +73,11 @@ async function persistLog(entry: {
       metadata: (entry.metadata ?? {}) as never,
     });
   } catch (e) {
-    // Never let logging failures affect send flow.
     console.warn("[email] log insert failed", (e as Error).message);
   }
 }
 
-function logSend(
-  tag: string,
-  to: BrevoRecipient | BrevoRecipient[],
-  result: SendEmailResult,
-) {
+function logSend(tag: string, to: EmailRecipient | EmailRecipient[], result: SendEmailResult) {
   const recipients = Array.isArray(to) ? to.map((r) => r.email).join(",") : to.email;
   console.info("[email]", {
     tag,
@@ -111,52 +107,54 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
       subject: input.subject,
       status: "failed",
       retryCount: 0,
-      errorMessage: "BREVO_API_KEY not configured",
+      errorMessage: "RESEND_API_KEY not configured",
       metadata: input.metadata,
     });
     return result;
   }
 
-  const to = Array.isArray(input.to) ? input.to : [input.to];
-  const payload = {
-    sender: { name: cfg.fromName, email: cfg.fromEmail },
-    to,
-    replyTo: input.replyTo ?? { email: cfg.replyTo, name: cfg.fromName },
+  const toList = (Array.isArray(input.to) ? input.to : [input.to]).map(formatAddress);
+  const from = formatAddress({ email: cfg.fromEmail, name: cfg.fromName });
+  const replyTo = input.replyTo ? formatAddress(input.replyTo) : cfg.replyTo;
+
+  const payload: Record<string, unknown> = {
+    from,
+    to: toList,
+    reply_to: replyTo,
     subject: input.subject,
-    htmlContent: input.html,
-    textContent: input.text,
-    tags: [tag],
+    html: input.html,
+    text: input.text,
     headers: input.headers,
-    params: input.params,
+    tags: [{ name: "template", value: tag.slice(0, 256) }],
   };
 
   const attempt = async (): Promise<SendEmailResult> => {
     try {
-      const res = await fetch(BREVO_URL, {
+      const res = await fetch(RESEND_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Accept: "application/json",
-          "api-key": cfg.apiKey!,
+          Authorization: `Bearer ${cfg.apiKey!}`,
         },
         body: JSON.stringify(payload),
       });
       const text = await res.text();
-      let body: { messageId?: string; message?: string } = {};
+      let body: { id?: string; message?: string; name?: string } = {};
       try {
         body = text ? JSON.parse(text) : {};
       } catch {
-        /* ignore parse */
+        /* ignore */
       }
       if (!res.ok) {
         return {
           sent: false,
           status: res.status,
-          error: body.message ?? text.slice(0, 300),
-          reason: `brevo_${res.status}`,
+          error: body.message ?? body.name ?? text.slice(0, 300),
+          reason: `resend_${res.status}`,
         };
       }
-      return { sent: true, status: res.status, messageId: body.messageId };
+      return { sent: true, status: res.status, messageId: body.id };
     } catch (e) {
       return { sent: false, error: (e as Error).message, reason: "network_error" };
     }

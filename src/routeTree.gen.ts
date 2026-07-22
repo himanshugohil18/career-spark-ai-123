@@ -50,6 +50,7 @@ import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/em
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksRefreshMatchesRouteImport } from './routes/api/public/hooks/refresh-matches'
 import { Route as ApiPublicHooksRazorpayWebhookRouteImport } from './routes/api/public/hooks/razorpay-webhook'
+import { Route as ApiPublicHooksEmailDiagnosticRouteImport } from './routes/api/public/hooks/email-diagnostic'
 import { Route as ApiPublicHooksDiscoverJobsRouteImport } from './routes/api/public/hooks/discover-jobs'
 import { Route as ApiPublicHooksAutoApplyEventsRouteImport } from './routes/api/public/hooks/auto-apply-events'
 import { Route as AuthenticatedJobsCollectionsCollectionIdRouteImport } from './routes/_authenticated/jobs.collections.$collectionId'
@@ -271,6 +272,12 @@ const ApiPublicHooksRazorpayWebhookRoute =
     path: '/api/public/hooks/razorpay-webhook',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksEmailDiagnosticRoute =
+  ApiPublicHooksEmailDiagnosticRouteImport.update({
+    id: '/api/public/hooks/email-diagnostic',
+    path: '/api/public/hooks/email-diagnostic',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksDiscoverJobsRoute =
   ApiPublicHooksDiscoverJobsRouteImport.update({
     id: '/api/public/hooks/discover-jobs',
@@ -337,6 +344,7 @@ export interface FileRoutesByFullPath {
   '/jobs/collections/$collectionId': typeof AuthenticatedJobsCollectionsCollectionIdRoute
   '/api/public/hooks/auto-apply-events': typeof ApiPublicHooksAutoApplyEventsRoute
   '/api/public/hooks/discover-jobs': typeof ApiPublicHooksDiscoverJobsRoute
+  '/api/public/hooks/email-diagnostic': typeof ApiPublicHooksEmailDiagnosticRoute
   '/api/public/hooks/razorpay-webhook': typeof ApiPublicHooksRazorpayWebhookRoute
   '/api/public/hooks/refresh-matches': typeof ApiPublicHooksRefreshMatchesRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -382,6 +390,7 @@ export interface FileRoutesByTo {
   '/jobs/collections/$collectionId': typeof AuthenticatedJobsCollectionsCollectionIdRoute
   '/api/public/hooks/auto-apply-events': typeof ApiPublicHooksAutoApplyEventsRoute
   '/api/public/hooks/discover-jobs': typeof ApiPublicHooksDiscoverJobsRoute
+  '/api/public/hooks/email-diagnostic': typeof ApiPublicHooksEmailDiagnosticRoute
   '/api/public/hooks/razorpay-webhook': typeof ApiPublicHooksRazorpayWebhookRoute
   '/api/public/hooks/refresh-matches': typeof ApiPublicHooksRefreshMatchesRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -430,6 +439,7 @@ export interface FileRoutesById {
   '/_authenticated/jobs/collections/$collectionId': typeof AuthenticatedJobsCollectionsCollectionIdRoute
   '/api/public/hooks/auto-apply-events': typeof ApiPublicHooksAutoApplyEventsRoute
   '/api/public/hooks/discover-jobs': typeof ApiPublicHooksDiscoverJobsRoute
+  '/api/public/hooks/email-diagnostic': typeof ApiPublicHooksEmailDiagnosticRoute
   '/api/public/hooks/razorpay-webhook': typeof ApiPublicHooksRazorpayWebhookRoute
   '/api/public/hooks/refresh-matches': typeof ApiPublicHooksRefreshMatchesRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
@@ -478,6 +488,7 @@ export interface FileRouteTypes {
     | '/jobs/collections/$collectionId'
     | '/api/public/hooks/auto-apply-events'
     | '/api/public/hooks/discover-jobs'
+    | '/api/public/hooks/email-diagnostic'
     | '/api/public/hooks/razorpay-webhook'
     | '/api/public/hooks/refresh-matches'
     | '/lovable/email/auth/preview'
@@ -523,6 +534,7 @@ export interface FileRouteTypes {
     | '/jobs/collections/$collectionId'
     | '/api/public/hooks/auto-apply-events'
     | '/api/public/hooks/discover-jobs'
+    | '/api/public/hooks/email-diagnostic'
     | '/api/public/hooks/razorpay-webhook'
     | '/api/public/hooks/refresh-matches'
     | '/lovable/email/auth/preview'
@@ -570,6 +582,7 @@ export interface FileRouteTypes {
     | '/_authenticated/jobs/collections/$collectionId'
     | '/api/public/hooks/auto-apply-events'
     | '/api/public/hooks/discover-jobs'
+    | '/api/public/hooks/email-diagnostic'
     | '/api/public/hooks/razorpay-webhook'
     | '/api/public/hooks/refresh-matches'
     | '/lovable/email/auth/preview'
@@ -588,6 +601,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   ApiPublicHooksAutoApplyEventsRoute: typeof ApiPublicHooksAutoApplyEventsRoute
   ApiPublicHooksDiscoverJobsRoute: typeof ApiPublicHooksDiscoverJobsRoute
+  ApiPublicHooksEmailDiagnosticRoute: typeof ApiPublicHooksEmailDiagnosticRoute
   ApiPublicHooksRazorpayWebhookRoute: typeof ApiPublicHooksRazorpayWebhookRoute
   ApiPublicHooksRefreshMatchesRoute: typeof ApiPublicHooksRefreshMatchesRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
@@ -883,6 +897,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksRazorpayWebhookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/email-diagnostic': {
+      id: '/api/public/hooks/email-diagnostic'
+      path: '/api/public/hooks/email-diagnostic'
+      fullPath: '/api/public/hooks/email-diagnostic'
+      preLoaderRoute: typeof ApiPublicHooksEmailDiagnosticRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/discover-jobs': {
       id: '/api/public/hooks/discover-jobs'
       path: '/api/public/hooks/discover-jobs'
@@ -1042,6 +1063,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   ApiPublicHooksAutoApplyEventsRoute: ApiPublicHooksAutoApplyEventsRoute,
   ApiPublicHooksDiscoverJobsRoute: ApiPublicHooksDiscoverJobsRoute,
+  ApiPublicHooksEmailDiagnosticRoute: ApiPublicHooksEmailDiagnosticRoute,
   ApiPublicHooksRazorpayWebhookRoute: ApiPublicHooksRazorpayWebhookRoute,
   ApiPublicHooksRefreshMatchesRoute: ApiPublicHooksRefreshMatchesRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
@@ -1050,13 +1072,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

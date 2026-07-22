@@ -1,8 +1,8 @@
 /**
  * High-level sender helpers. Each function renders a template and calls
- * Brevo via sendEmail. Server-only.
+ * Resend via sendEmail. Server-only.
  */
-import { sendEmail, logSkippedSend, type SendEmailResult } from "./brevo.server";
+import { sendEmail, logSkippedSend, type SendEmailResult } from "./resend.server";
 import * as T from "./templates";
 
 // In-worker rate limit for the current instance. Prevents duplicate sends
