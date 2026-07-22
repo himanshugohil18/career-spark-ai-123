@@ -148,6 +148,47 @@ export const Route = createFileRoute("/api/public/hooks/auto-apply-events")({
           await sb.from("ai_application_sessions").update(patch).eq("id", sessionId);
         }
 
+        // Notify user on successful submission (best-effort).
+        if (status === "completed" && sess.status !== "completed") {
+          try {
+            const { data: full } = await sb
+              .from("ai_application_sessions")
+              .select("id, user_id, workspace_id, company_name, role_title, target_url")
+              .eq("id", sessionId)
+              .maybeSingle();
+            if (full) {
+              const { data: profile } = await sb
+                .from("profiles")
+                .select("email, full_name")
+                .eq("user_id", full.user_id)
+                .maybeSingle();
+              let email: string | null = profile?.email ?? null;
+              if (!email) {
+                try {
+                  const { data: userRes } = await sb.auth.admin.getUserById(full.user_id);
+                  email = userRes?.user?.email ?? null;
+                } catch { /* ignore */ }
+              }
+              if (email) {
+                const { sendAIApplicationSubmittedEmail } = await import(
+                  "@/lib/email/senders.server"
+                );
+                await sendAIApplicationSubmittedEmail(email, {
+                  company: String(full.company_name ?? "the company"),
+                  role: String(full.role_title ?? "the role"),
+                  when: new Date().toUTCString(),
+                  status: "Submitted",
+                  workspaceUrl: full.workspace_id
+                    ? `https://careerosai.site/applications/${full.workspace_id}`
+                    : undefined,
+                });
+              }
+            }
+          } catch (e) {
+            console.warn("[auto-apply] submitted email failed", (e as Error).message);
+          }
+        }
+
         return json({ ok: true });
       },
     },
