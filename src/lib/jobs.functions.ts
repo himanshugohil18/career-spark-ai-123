@@ -714,6 +714,10 @@ export const ensureInitialMatches = createServerFn({ method: "POST" })
     }
 
     const result = await refreshUserMatches(context.supabase, brain, { limit: 30 });
+    if (result.newMatches.length) {
+      const { notifyNewJobMatches } = await import("./email/notify-matches.server");
+      await notifyNewJobMatches(context.supabase, context.userId, result.newMatches);
+    }
     return { ready: true, ran: true, ...result };
   });
 
