@@ -1,10 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { MessagesSquare, Building2, GraduationCap } from "lucide-react";
+import { MessagesSquare, Building2, GraduationCap, CheckCircle2, Circle } from "lucide-react";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ai/skeleton";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
-import { getInterviewHub } from "@/lib/career-intel.functions";
+import { getInterviewHub, toggleQuestionPracticed } from "@/lib/career-intel.functions";
 
 export const Route = createFileRoute("/_authenticated/interview")({
   head: () => ({ meta: [{ title: "Interview Prep · CareerOS" }] }),
@@ -22,11 +23,25 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 
 function InterviewPage() {
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["interview-hub"],
     queryFn: () => getInterviewHub(),
     staleTime: 30_000,
   });
+
+  const toggleMut = useMutation({
+    mutationFn: (v: { id: string; practiced: boolean }) =>
+      toggleQuestionPracticed({ data: v }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["interview-hub"] });
+      void queryClient.invalidateQueries({ queryKey: ["agent-activity"] });
+      void queryClient.invalidateQueries({ queryKey: ["coach-briefing"] });
+    },
+    onError: (e) => toast.error("Could not update", { description: String(e) }),
+  });
+
+
 
   const cats = data?.byCategory ?? {};
   const totalPct = data && data.totals.totalQ > 0
