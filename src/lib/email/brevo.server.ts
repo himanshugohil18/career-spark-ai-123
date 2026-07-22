@@ -69,7 +69,7 @@ async function persistLog(entry: {
       provider_message_id: entry.providerMessageId ?? null,
       retry_count: entry.retryCount,
       error_message: entry.errorMessage ?? null,
-      metadata: entry.metadata ?? {},
+      metadata: (entry.metadata ?? {}) as never,
     });
   } catch (e) {
     // Never let logging failures affect send flow.
