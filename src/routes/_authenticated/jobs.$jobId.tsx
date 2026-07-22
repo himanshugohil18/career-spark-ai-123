@@ -75,10 +75,18 @@ function JobDetail() {
         ? unsaveJob({ data: { jobId } })
         : saveJob({ data: { jobId, status: "saved" } }),
     onSuccess: () => {
-      void trackJobInteraction({ data: { jobId, kind: data?.saved ? "ignored" : "saved" } }).catch(() => {});
+      const wasSaved = !!data?.saved;
+      void trackJobInteraction({ data: { jobId, kind: wasSaved ? "ignored" : "saved" } }).catch(() => {});
+      toast.success(wasSaved ? "Removed from saved." : "Saved.");
       void queryClient.invalidateQueries({ queryKey: ["job-detail", jobId] });
+      void queryClient.invalidateQueries({ queryKey: ["saved-jobs"] });
+      void queryClient.invalidateQueries({ queryKey: ["jobs-feed"] });
+      void queryClient.invalidateQueries({ queryKey: ["job-sections"] });
     },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update"),
   });
+
+  useJobDetailHead(data?.job);
 
   if (isLoading) {
     return (
