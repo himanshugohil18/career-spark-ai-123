@@ -380,9 +380,28 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
         });
         if (error) throw error;
         toast.success("Check your email to confirm your account.");
+        // Fire welcome email in the background (server function derives
+        // recipient from the session — auto no-op if signup requires
+        // email confirmation).
+        void (async () => {
+          try {
+            const { notifyWelcome } = await import("@/lib/email/notify.functions");
+            await notifyWelcome();
+          } catch {
+            /* non-fatal */
+          }
+        })();
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+        void (async () => {
+          try {
+            const { notifyLogin } = await import("@/lib/email/notify.functions");
+            await notifyLogin({ data: { provider: "password", userAgent: navigator.userAgent } });
+          } catch {
+            /* non-fatal */
+          }
+        })();
         navigate({ to: "/dashboard" });
       }
     } catch (err) {
