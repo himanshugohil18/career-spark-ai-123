@@ -16,11 +16,17 @@ export const Route = createFileRoute("/api/public/hooks/weekly-summary")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const secret = process.env.AUTO_APPLY_WORKER_SECRET;
-        if (!secret) return json({ error: "worker_secret_not_configured" }, 500);
+        // Accept either the worker secret (bearer) or the Supabase anon key
+        // (apikey header) — matches the pg_cron canonical pattern.
+        const secret = process.env.AUTO_APPLY_WORKER_SECRET ?? "";
+        const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? process.env.VITE_SUPABASE_PUBLISHABLE_KEY ?? "";
         const auth = request.headers.get("authorization") ?? "";
-        const token = auth.startsWith("Bearer ") ? auth.slice(7) : "";
-        if (!timingSafeEqualStr(token, secret)) return json({ error: "unauthorized" }, 401);
+        const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+        const apikey = request.headers.get("apikey") ?? "";
+        const authorized =
+          (secret && timingSafeEqualStr(bearer, secret)) ||
+          (anonKey && timingSafeEqualStr(apikey, anonKey));
+        if (!authorized) return json({ error: "unauthorized" }, 401);
 
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
