@@ -314,7 +314,7 @@ export const getInterviewHub = createServerFn({ method: "GET" })
     const [{ data: sessions }, { data: questions }, { data: workspaces }] = await Promise.all([
       context.supabase
         .from("interview_sessions")
-        .select("id, workspace_id, kind, difficulty, question_count, practiced_count, created_at, workspace:application_workspaces(id, job:jobs(title, company:companies(name)))")
+        .select("id, workspace_id, focus, total_questions, completed_questions, created_at, workspace:application_workspaces(id, job:jobs(title, company:companies(name)))")
         .eq("user_id", context.userId)
         .order("created_at", { ascending: false })
         .limit(50),
@@ -331,6 +331,7 @@ export const getInterviewHub = createServerFn({ method: "GET" })
         .order("last_opened_at", { ascending: false })
         .limit(20),
     ]);
+
 
     const byCategory: Record<string, { total: number; practiced: number }> = {};
     for (const q of (questions ?? []) as any[]) {
@@ -396,6 +397,45 @@ export const getAgentActivity = createServerFn({ method: "GET" })
     };
   });
 
+// ---------- Interview progress ----------
+
+export const toggleQuestionPracticed = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z.object({ id: z.string().uuid(), practiced: z.boolean() }).parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("interview_questions")
+      .update({ practiced: data.practiced })
+      .eq("id", data.id)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+
+    // Recompute practiced_count on the parent session
+    const { data: q } = await context.supabase
+      .from("interview_questions")
+      .select("session_id")
+      .eq("id", data.id)
+      .eq("user_id", context.userId)
+      .maybeSingle();
+    if (q?.session_id) {
+      const { count } = await context.supabase
+        .from("interview_questions")
+        .select("id", { count: "exact", head: true })
+        .eq("session_id", q.session_id)
+        .eq("user_id", context.userId)
+        .eq("practiced", true);
+      await context.supabase
+        .from("interview_sessions")
+        .update({ completed_questions: count ?? 0 })
+        .eq("id", q.session_id)
+        .eq("user_id", context.userId);
+    }
+
+    return { ok: true };
+  });
+
 // ---------- Settings ----------
 
 export const updateProfilePrefs = createServerFn({ method: "POST" })
@@ -419,4 +459,5 @@ export const updateProfilePrefs = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
 
