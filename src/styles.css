@@ -230,7 +230,8 @@ html.theme-premium { color-scheme: light; }
   color: transparent;
 }
 .theme-premium .metric-hero,
-.theme-premium .stat-value {
+.theme-premium .stat-value,
+.theme-premium .text-gradient-stat {
   color: #0F172A;
   background: none;
   -webkit-text-fill-color: currentColor;
