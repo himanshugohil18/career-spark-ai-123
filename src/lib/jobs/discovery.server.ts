@@ -164,10 +164,19 @@ export async function runDiscovery(
   stats.filteredOffTrack = stats.perProvider.reduce((s, p) => s + p.droppedOffTrack, 0);
   stats.removed = stats.perProvider.flatMap((p) => p.removed);
 
-  // Dedup within this batch by fingerprint; upsert companies then jobs.
+  // Dedup within this batch by fingerprint AND by (provider, source_id) —
+  // then persist companies + jobs in bulk. The previous per-row sequential
+  // loop made 3+ round trips per job which timed out on Cloudflare Workers
+  // for large result sets (Greenhouse returns 3k+). Bulk upserts finish in
+  // 1-2 round trips per provider.
   const byFingerprint = new Map<string, NormalizedJob>();
+  const byProviderSource = new Set<string>();
   for (const j of collected) {
     if (!j.applicationUrl) continue;
+    if (!j.provider || !j.sourceId) continue;
+    const key = `${j.provider}::${j.sourceId}`;
+    if (byProviderSource.has(key)) continue;
+    byProviderSource.add(key);
     const fp = computeFingerprint({
       company: j.company.name,
       title: j.title,
@@ -181,20 +190,50 @@ export async function runDiscovery(
     byFingerprint.set(fp, j);
   }
 
+  // 1) Bulk upsert unique companies by slug, then build slug→id map.
+  const uniqueCompanies = new Map<string, NormalizedJob["company"]>();
+  for (const job of byFingerprint.values()) {
+    if (!uniqueCompanies.has(job.company.slug)) {
+      uniqueCompanies.set(job.company.slug, job.company);
+    }
+  }
+  const companyRows = [...uniqueCompanies.values()].map((c) => ({
+    name: c.name,
+    slug: c.slug,
+    domain: c.domain,
+    logo_url: c.logoUrl,
+    website: c.website,
+    industry: c.industry,
+    size: c.size,
+    remote_policy: c.remotePolicy,
+    tech_stack: c.techStack,
+    description: c.description,
+  }));
+  const slugToId = new Map<string, string>();
+  if (companyRows.length) {
+    for (let i = 0; i < companyRows.length; i += 200) {
+      const chunk = companyRows.slice(i, i + 200);
+      const { data: upserted, error: cErr } = await supabase
+        .from("companies")
+        .upsert(chunk, { onConflict: "slug" })
+        .select("id, slug");
+      if (cErr) {
+        stats.errors.push({ provider: "companies", message: cErr.message });
+        continue;
+      }
+      for (const row of upserted ?? []) {
+        if (row.slug && row.id) slugToId.set(row.slug as string, row.id as string);
+      }
+    }
+  }
+
+  // 2) Bulk upsert jobs on (provider, source_id) conflict.
+  const nowIso = new Date().toISOString();
+  const jobRows: Array<Record<string, unknown>> = [];
   for (const [fp, job] of byFingerprint) {
-    const companyId = await upsertCompany(supabase, job.company);
-
-    // Existing job with same fingerprint from another provider?
-    const { data: existing } = await supabase
-      .from("jobs")
-      .select("id, provider, source_id, last_seen_at")
-      .eq("fingerprint", fp)
-      .maybeSingle();
-
-    const nowIso = new Date().toISOString();
-    const payload: Record<string, unknown> = {
+    jobRows.push({
       title: job.title,
-      company_id: companyId,
+      company_id: slugToId.get(job.company.slug) ?? null,
       location: job.location,
       location_country: job.locationCountry,
       remote_status: job.remoteStatus,
@@ -216,37 +255,41 @@ export async function runDiscovery(
       expires_at: job.expiresAt,
       fingerprint: fp,
       raw_payload: job.rawPayload ?? null,
+      first_seen_at: nowIso,
       last_seen_at: nowIso,
       is_active: true,
-    };
+    });
+  }
 
-    if (existing?.id) {
-      await supabase.from("jobs").update(payload).eq("id", existing.id);
-      stats.updated++;
-      if (existing.provider !== job.provider || existing.source_id !== job.sourceId) {
-        await supabase
-          .from("job_provider_ids")
-          .upsert(
-            { job_id: existing.id, provider: job.provider, source_id: job.sourceId, url: job.applicationUrl },
-            { onConflict: "provider,source_id" },
-          );
-        stats.duplicatesMerged++;
-      }
-    } else {
-      const { data: inserted, error: insErr } = await supabase
+  const providerIdRows: Array<Record<string, unknown>> = [];
+  if (jobRows.length) {
+    for (let i = 0; i < jobRows.length; i += 200) {
+      const chunk = jobRows.slice(i, i + 200);
+      const { data: upserted, error: jErr } = await supabase
         .from("jobs")
-        .insert({ ...payload, first_seen_at: nowIso })
-        .select("id")
-        .maybeSingle();
-      if (!insErr && inserted?.id) {
-        stats.inserted++;
-        await supabase
-          .from("job_provider_ids")
-          .upsert(
-            { job_id: inserted.id, provider: job.provider, source_id: job.sourceId, url: job.applicationUrl },
-            { onConflict: "provider,source_id" },
-          );
+        .upsert(chunk, { onConflict: "provider,source_id" })
+        .select("id, provider, source_id, application_url");
+      if (jErr) {
+        stats.errors.push({ provider: "jobs", message: jErr.message });
+        continue;
       }
+      stats.inserted += upserted?.length ?? 0;
+      for (const row of upserted ?? []) {
+        providerIdRows.push({
+          job_id: row.id,
+          provider: row.provider,
+          source_id: row.source_id,
+          url: row.application_url,
+        });
+      }
+    }
+  }
+
+  if (providerIdRows.length) {
+    for (let i = 0; i < providerIdRows.length; i += 200) {
+      await supabase
+        .from("job_provider_ids")
+        .upsert(providerIdRows.slice(i, i + 200), { onConflict: "provider,source_id" });
     }
   }
 
