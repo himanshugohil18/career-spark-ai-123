@@ -662,19 +662,8 @@ export const kickMatchRefresh = createServerFn({ method: "POST" })
     const candidateProfile = buildProfileFromSnapshot(brain);
     const discovery = await runDiscovery(supabaseAdmin, { candidateProfile });
 
-    let seeded = 0;
-    const { count: jobsCount } = await supabaseAdmin
-      .from("jobs")
-      .select("id", { count: "exact", head: true })
-      .eq("is_active", true);
-    if ((jobsCount ?? 0) === 0) {
-      const { seedDevJobs } = await import("./jobs/dev-seed.server");
-      const r = await seedDevJobs(supabaseAdmin);
-      seeded = r.inserted;
-    }
-
     const match = await refreshUserMatches(context.supabase, brain, { limit: 40 });
-    return { discovery, seeded, ...match };
+    return { discovery, seeded: 0, ...match };
   });
 
 /**
@@ -705,14 +694,6 @@ export const ensureInitialMatches = createServerFn({ method: "POST" })
       const { buildProfileFromSnapshot } = await import("./jobs/role-synonyms");
       const candidateProfile = buildProfileFromSnapshot(brain);
       await runDiscovery(supabaseAdmin, { candidateProfile });
-      const { count: after } = await supabaseAdmin
-        .from("jobs")
-        .select("id", { count: "exact", head: true })
-        .eq("is_active", true);
-      if ((after ?? 0) === 0) {
-        const { seedDevJobs } = await import("./jobs/dev-seed.server");
-        await seedDevJobs(supabaseAdmin);
-      }
     }
 
     const result = await refreshUserMatches(context.supabase, brain, { limit: 30 });
