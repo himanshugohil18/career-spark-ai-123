@@ -143,7 +143,7 @@ function toText(title: string, body: string, cta?: CTA): string {
 
 export function welcomeEmail(input: { name?: string | null }): RenderedEmail {
   const name = input.name?.trim() || "there";
-  const subject = "Welcome to CareerOS 🚀";
+  const subject = "Welcome to CareerOS 🎉";
   const intro = `Hi ${escapeHtml(name)}, we're glad you're here. CareerOS is your AI-powered career operating system — a single place to organize your resume, discover matching jobs, and prep for interviews.`;
   const bodyHtml = `
     <div style="border:1px solid ${COLOR.border};border-radius:12px;padding:16px 18px;background:${COLOR.bg};margin-bottom:18px">
