@@ -61,12 +61,11 @@ async function runParse(
   > = [{ type: "text", text: USER_PROMPT }];
 
   const usableText = (extractedText ?? resume.raw_text ?? "").trim();
-  if (usableText.length > 0) {
-    content.push({
-      type: "text",
-      text: `\n\nRESUME TEXT:\n${usableText.slice(0, 60_000)}`,
-    });
-  } else if (resume.mime_type === "application/pdf") {
+  const isPdf = resume.mime_type === "application/pdf";
+
+  // Always attach the PDF binary when available — the model uses visual
+  // layout (columns, icons, headings) to disambiguate sections.
+  if (isPdf) {
     const { data: file, error: dlErr } = await supabase.storage
       .from("resumes")
       .download(resume.file_path);
@@ -80,9 +79,20 @@ async function runParse(
         file_data: `data:application/pdf;base64,${base64}`,
       },
     });
-  } else {
+  }
+
+  // Attach verbatim extracted text as the AUTHORITATIVE source for URLs,
+  // emails, phones, and dates. When both are present the prompt tells the
+  // model to prefer this text for any field it could copy verbatim.
+  if (usableText.length > 0) {
+    content.push({
+      type: "text",
+      text: `\n\nVERBATIM RESUME TEXT (authoritative for URLs, emails, phone numbers, and dates — copy characters exactly from here):\n${usableText.slice(0, 80_000)}`,
+    });
+  } else if (!isPdf) {
     throw new Error("Unable to extract resume text. Please re-upload the file.");
   }
+
 
   const raw = await callLovableAI({
     model: AI_MODEL,
