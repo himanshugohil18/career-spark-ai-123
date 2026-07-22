@@ -20,9 +20,18 @@ import {
   computeBaselineScores,
   computeMissingSkills,
 } from "./scoring";
+import {
+  buildProfileFromSnapshot,
+  domainConfidence,
+  familyTitleRelevance,
+  jobFamilyFitProfile,
+  semanticTechOverlap,
+  type RoleFamily,
+} from "./role-synonyms";
 import type { MatchScore, NormalizedJob } from "./types";
 
-const MODEL = "google/gemini-3-flash-preview";
+const MODEL = "google/gemini-3.6-flash";
+const AI_REFINEMENT_TIMEOUT_MS = 2200;
 
 const AiSchema = z.object({
   overall: z.number().min(0).max(100).optional(),
@@ -45,31 +54,37 @@ const AiSchema = z.object({
 export async function computeMatch(
   brain: CareerBrainSnapshot,
   job: NormalizedJob,
+  opts: { refineWithAi?: boolean } = {},
 ): Promise<MatchScore> {
   const baseline = computeBaselineScores(brain, job);
   const missingBaseline = computeMissingSkills(brain, job);
 
-  const prompt = buildPrompt(brain, job, baseline);
   let aiRefinement: z.infer<typeof AiSchema> | null = null;
   let aiModel: string | null = null;
 
-  try {
-    const raw = await callLovableAI({
-      model: MODEL,
-      responseFormat: "json_object",
-      temperature: 0.3,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        { role: "user", content: prompt },
-      ],
-    });
-    const parsed = AiSchema.safeParse(JSON.parse(extractJson(raw)));
-    if (parsed.success) {
-      aiRefinement = parsed.data;
-      aiModel = MODEL;
+  if (opts.refineWithAi) {
+    const prompt = buildPrompt(brain, job, baseline);
+    try {
+      const raw = await withTimeout(
+        callLovableAI({
+          model: MODEL,
+          responseFormat: "json_object",
+          temperature: 0.3,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: prompt },
+          ],
+        }),
+        AI_REFINEMENT_TIMEOUT_MS,
+      );
+      const parsed = AiSchema.safeParse(JSON.parse(extractJson(raw)));
+      if (parsed.success) {
+        aiRefinement = parsed.data;
+        aiModel = MODEL;
+      }
+    } catch {
+      // Fall back to deterministic scores; keep pipeline resilient.
     }
-  } catch {
-    // Fall back to deterministic scores; keep pipeline resilient.
   }
 
   const adjust = (base: number, ai?: number) => {
@@ -140,18 +155,21 @@ export async function refreshUserMatches(
 ): Promise<{ evaluated: number; upserted: number; skipped: number }> {
   const limit = opts.limit ?? 40;
   const stale = opts.staleAfterDays ?? 7;
+  const profile = buildProfileFromSnapshot(brain);
 
   const { data: jobs } = await supabase
     .from("jobs")
-    .select("*")
+    .select("*, company:companies(id,name,slug,domain,logo_url,website,industry,size,remote_policy,tech_stack,description)")
     .eq("is_active", true)
     .order("posted_at", { ascending: false, nullsFirst: false })
-    .limit(limit);
+    .limit(Math.max(120, limit * 6));
 
   const results = { evaluated: 0, upserted: 0, skipped: 0 };
   const brainVersion = brain.metadata.brainVersion;
 
-  for (const row of jobs ?? []) {
+  const candidates = rankCandidateRows((jobs ?? []) as Array<Record<string, any>>, brain, profile).slice(0, limit);
+
+  for (const row of candidates) {
     const { data: existing } = await supabase
       .from("job_matches")
       .select("computed_at, brain_version")
@@ -168,7 +186,7 @@ export async function refreshUserMatches(
     }
 
     const job = rowToNormalized(row);
-    const score = await computeMatch(brain, job);
+    const score = await computeMatch(brain, job, { refineWithAi: false });
     await persistMatch(supabase, brain.userId, row.id as string, brainVersion, score);
 
     // High-match notification — dedup: skip if the same (user, job, kind)
@@ -202,11 +220,20 @@ export async function refreshUserMatches(
 }
 
 function rowToNormalized(row: Record<string, any>): NormalizedJob {
+  const company = Array.isArray(row.company) ? row.company[0] : row.company;
   return {
     title: row.title,
     company: {
-      name: "", slug: "", domain: null, logoUrl: null, website: null,
-      industry: null, size: null, remotePolicy: null, techStack: [], description: null,
+      name: company?.name ?? "",
+      slug: company?.slug ?? "",
+      domain: company?.domain ?? null,
+      logoUrl: company?.logo_url ?? null,
+      website: company?.website ?? null,
+      industry: company?.industry ?? null,
+      size: company?.size ?? null,
+      remotePolicy: company?.remote_policy ?? null,
+      techStack: company?.tech_stack ?? [],
+      description: company?.description ?? null,
     },
     location: row.location ?? null,
     locationCountry: row.location_country ?? null,
@@ -228,6 +255,60 @@ function rowToNormalized(row: Record<string, any>): NormalizedJob {
     postedAt: row.posted_at,
     expiresAt: row.expires_at,
   };
+}
+
+function rankCandidateRows(
+  rows: Array<Record<string, any>>,
+  brain: CareerBrainSnapshot,
+  profile: ReturnType<typeof buildProfileFromSnapshot>,
+): Array<Record<string, any>> {
+  const brainTech = [
+    ...brain.skills.map((s) => s.name),
+    ...((brain.projects ?? []) as Array<{ technologies?: string[] }>).flatMap((p) => p?.technologies ?? []),
+  ];
+  const scored = rows.map((row) => {
+    const company = Array.isArray(row.company) ? row.company[0] : row.company;
+    const jobLike = {
+      title: row.title ?? "",
+      description: row.description ?? "",
+      requiredSkills: row.required_skills ?? [],
+      preferredSkills: row.preferred_skills ?? [],
+      companyTechStack: company?.tech_stack ?? [],
+      responsibilities: row.responsibilities ?? [],
+      requirements: row.requirements ?? [],
+    };
+    const fit = jobFamilyFitProfile(jobLike, profile);
+    const confidence = domainConfidence(jobLike, profile);
+    const familyTitle = profile.families.length
+      ? Math.max(...profile.families.map((family: RoleFamily) => familyTitleRelevance(row.title ?? "", family)))
+      : 0;
+    const tech = semanticTechOverlap(brainTech, [
+      ...(row.required_skills ?? []),
+      ...(row.preferred_skills ?? []),
+      ...(company?.tech_stack ?? []),
+    ]);
+    const score =
+      (fit.excluded ? -500 : 0) +
+      fit.fit * 120 +
+      confidence.confidence * 100 +
+      familyTitle +
+      tech * 80 +
+      (row.remote_status === "remote" ? 8 : 0);
+    return { row, score, excluded: fit.excluded };
+  });
+  return scored
+    .filter((item) => !item.excluded || scored.every((candidate) => candidate.excluded))
+    .sort((a, b) => b.score - a.score)
+    .map((item) => item.row);
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) => {
+      setTimeout(() => reject(new Error("AI refinement timed out")), ms);
+    }),
+  ]);
 }
 
 function deriveStrengths(s: ReturnType<typeof computeBaselineScores>): string[] {

@@ -52,12 +52,6 @@ export const listJobs = createServerFn({ method: "POST" })
     const expansion = rawQuery ? expandQueryKeywords(rawQuery) : null;
     const roleFamily = expansion?.family ?? null;
 
-    if (rawQuery && brain.ready) {
-      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { runDiscovery } = await import("./jobs/discovery.server");
-      await runDiscovery(supabaseAdmin, { candidateProfile: profile });
-    }
-
     const overFetch = rawQuery || brainFamilies.length ? Math.min(200, pageSize * 5) : pageSize;
     const useMemoryPaging = !!rawQuery || brainFamilies.length > 0;
     const from = useMemoryPaging ? 0 : (page - 1) * pageSize;
@@ -656,14 +650,29 @@ export const kickMatchRefresh = createServerFn({ method: "POST" })
     const brain = (await getCareerBrainSnapshot()) as CareerBrainSnapshot;
     if (!brain.ready) return { discovery: null, evaluated: 0, upserted: 0, skipped: 0, seeded: 0 };
 
+    // Fast path: score the existing real catalog first. Discovery can take
+    // many seconds against public providers; users should see matches from
+    // the current catalog immediately instead of waiting on network fetches.
+    const match = await refreshUserMatches(context.supabase, brain, { limit: 80 });
+    if (match.evaluated > 0 || match.skipped > 0 || match.upserted > 0) {
+      return { discovery: null, seeded: 0, ...match };
+    }
+
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { count: jobsCount } = await supabaseAdmin
+      .from("jobs")
+      .select("id", { count: "exact", head: true })
+      .eq("is_active", true);
+    if ((jobsCount ?? 0) > 0) {
+      return { discovery: null, seeded: 0, ...match };
+    }
+
     const { runDiscovery } = await import("./jobs/discovery.server");
     const { buildProfileFromSnapshot } = await import("./jobs/role-synonyms");
     const candidateProfile = buildProfileFromSnapshot(brain);
     const discovery = await runDiscovery(supabaseAdmin, { candidateProfile });
-
-    const match = await refreshUserMatches(context.supabase, brain, { limit: 40 });
-    return { discovery, seeded: 0, ...match };
+    const retry = await refreshUserMatches(context.supabase, brain, { limit: 80 });
+    return { discovery, seeded: 0, ...retry };
   });
 
 /**
