@@ -9,7 +9,7 @@ import { EmailChangeEmail } from '@/lib/email-templates/email-change'
 import { ReauthenticationEmail } from '@/lib/email-templates/reauthentication'
 
 // Configuration
-const SITE_NAME = "careerosai-platform"
+const SITE_NAME = "CareerOS"
 const SENDER_DOMAIN = "notify.careerosai.site"
 const ROOT_DOMAIN = "careerosai.site"
 const FROM_DOMAIN = "careerosai.site"

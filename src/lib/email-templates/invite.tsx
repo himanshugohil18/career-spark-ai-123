@@ -65,9 +65,9 @@ const text = {
   lineHeight: '1.5',
   margin: '0 0 25px',
 }
-const link = { color: 'inherit', textDecoration: 'underline' }
+const link = { color: '#3B82F6', textDecoration: 'underline' }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#3B82F6',
   color: '#ffffff',
   fontSize: '14px',
   borderRadius: '8px',

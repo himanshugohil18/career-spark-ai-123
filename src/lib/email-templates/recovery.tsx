@@ -59,7 +59,7 @@ const text = {
   margin: '0 0 25px',
 }
 const button = {
-  backgroundColor: '#000000',
+  backgroundColor: '#3B82F6',
   color: '#ffffff',
   fontSize: '14px',
   borderRadius: '8px',
