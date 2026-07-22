@@ -208,3 +208,38 @@ export async function sendSecurityAlertEmail(
   const rendered = T.securityAlertEmail(input);
   return sendEmail({ tag: "security_alert", to: ok(to), userId: input.userId ?? null, ...rendered });
 }
+
+export async function sendNewJobMatchesEmail(
+  to: string,
+  input: Parameters<typeof T.newJobMatchesEmail>[0] & { userId?: string | null },
+) {
+  if (!to) return skip("new_job_matches", to, "no_recipient", input.userId);
+  if (!input.count || input.count <= 0) return skip("new_job_matches", to, "empty", input.userId);
+  if (!rateLimit(`jobs:${to.toLowerCase()}`, 12 * 60 * 60 * 1000))
+    return skip("new_job_matches", to, "rate_limited", input.userId);
+  const rendered = T.newJobMatchesEmail(input);
+  return sendEmail({ tag: "new_job_matches", to: ok(to), userId: input.userId ?? null, ...rendered });
+}
+
+export async function sendAIApplicationStartedEmail(
+  to: string,
+  input: Parameters<typeof T.aiApplicationStartedEmail>[0] & { userId?: string | null; applicationId?: string | null },
+) {
+  if (!to) return skip("ai_application_started", to, "no_recipient", input.userId);
+  const key = `applystart:${to.toLowerCase()}:${input.applicationId ?? `${input.company}:${input.role}`}`;
+  if (!rateLimit(key, 60 * 60 * 1000))
+    return skip("ai_application_started", to, "duplicate", input.userId);
+  const rendered = T.aiApplicationStartedEmail(input);
+  return sendEmail({ tag: "ai_application_started", to: ok(to), userId: input.userId ?? null, ...rendered });
+}
+
+export async function sendWeeklyCareerSummaryEmail(
+  to: string,
+  input: Parameters<typeof T.weeklyCareerSummaryEmail>[0] & { userId?: string | null },
+) {
+  if (!to) return skip("weekly_summary", to, "no_recipient", input.userId);
+  if (!rateLimit(`weekly:${to.toLowerCase()}:${input.weekLabel}`, 6 * 24 * 60 * 60 * 1000))
+    return skip("weekly_summary", to, "duplicate", input.userId);
+  const rendered = T.weeklyCareerSummaryEmail(input);
+  return sendEmail({ tag: "weekly_summary", to: ok(to), userId: input.userId ?? null, ...rendered });
+}
