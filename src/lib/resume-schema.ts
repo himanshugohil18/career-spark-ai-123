@@ -264,18 +264,23 @@ YOUR ONLY JOB: extract what is literally written in the resume into a strict JSO
 
 ABSOLUTE RULES — violating any of these is a failure:
 1. Return ONLY valid JSON. No prose, no markdown, no code fences, no commentary.
-2. NEVER invent, guess, complete, or "clean up" a value. If a field is not present in the resume, use null (for strings) or [] (for arrays).
-3. Preserve the candidate's EXACT wording, casing, punctuation and spacing for names, companies, roles, institutions, and bullet points. Do not paraphrase or shorten.
-4. URLs are extracted VERBATIM from the resume — copy the exact character sequence:
-   - linkedin: the exact LinkedIn URL as written (e.g. "https://linkedin.com/in/johndoe" or "linkedin.com/in/john-doe-1a2b3c"). Do not construct one from a name. If no LinkedIn URL appears, use null.
-   - github: same rule — exact URL only, e.g. "https://github.com/username". null if absent.
-   - portfolio / website: exact URL only, null if absent. Do not put a LinkedIn URL in the portfolio field.
-5. Email and phone: extract exactly as written. Do not normalise formatting.
-6. Dates: keep the resume's format (e.g. "Jan 2023", "2021-2023"). Do not reformat.
-7. Skills: split into categories. A skill belongs to exactly one category. Do NOT add skills that are not mentioned in the resume.
-8. Every extracted item includes a confidence 0-1. Use < 0.7 when the value is ambiguous, OCR-garbled, or inferred rather than directly stated.
-9. careerDna, careerHealth, careerBrain: these are conservative interpretations of what IS in the resume — never invent goals, companies, or strengths the resume does not evidence. Empty arrays are acceptable and preferred over invention.
-10. If the resume text is mostly empty or unreadable, return the schema with mostly null/[] values and a low overallConfidence. Never fabricate a plausible resume.
+2. NEVER invent, guess, complete, or "clean up" a value. If a field is not present in the resume, use null (for strings) or [] (for arrays). Empty is always better than invented.
+3. Preserve the candidate's EXACT wording, casing, punctuation and spacing for names, companies, roles, institutions, and bullet points. Do not paraphrase, summarize, or shorten.
+4. SOURCE PRIORITY: When both a PDF file and a "VERBATIM RESUME TEXT" block are provided, the TEXT block is the authoritative source for URLs, emails, phone numbers, and dates — copy those characters exactly from the text block. Use the PDF only for visual layout (section boundaries, columns, ordering).
+5. URLs are extracted VERBATIM, character-for-character, from whichever source contains them:
+   - linkedin: the exact LinkedIn URL as written (e.g. "https://linkedin.com/in/johndoe", "linkedin.com/in/john-doe-1a2b3c", "www.linkedin.com/in/name"). Do NOT construct one from a name. Do NOT normalize casing or add "https://". If no LinkedIn URL appears anywhere, use null.
+   - github: exact URL only, e.g. "https://github.com/username" or "github.com/username". Never invent from a name. null if absent.
+   - portfolio: the candidate's personal site or portfolio URL (NOT linkedin, github, twitter, medium, leetcode, stackoverflow). null if none.
+   - website: only if a separate "website" URL is explicitly labeled — otherwise null. Do not duplicate portfolio here.
+   - If a URL wraps across two lines in the PDF, rejoin without adding spaces.
+6. Email and phone: extract EXACTLY as written, including original formatting (spaces, dashes, parentheses, country code). Do not normalize.
+7. Dates: keep the resume's exact format (e.g. "Jan 2023", "01/2023", "2021 – 2023", "Present"). Do not reformat or infer missing dates.
+8. Full name, current title, location: exact strings from the header/contact section. Never guess from an email address or filename.
+9. Skills: split into categories. A skill belongs to exactly one category. Only include skills that appear in the resume. Preserve exact casing (e.g. "PostgreSQL", "Node.js", "CI/CD"). Do not merge or split multi-word skills.
+10. Work experiences, projects, education: preserve the order they appear in the resume. Extract every bullet point under responsibilities/achievements verbatim — do not merge, split, or rewrite them.
+11. Every extracted item includes a confidence 0-1. Use ≥ 0.9 when directly stated in clear text, 0.7-0.89 when readable but ambiguous, < 0.7 when OCR-garbled, wrapped awkwardly, or partially inferred.
+12. careerDna, careerHealth, careerBrain: these are CONSERVATIVE interpretations of what IS in the resume — never invent goals, companies, or strengths the resume does not evidence. Empty arrays are acceptable and preferred over invention. Do not include aspirational content the candidate did not write.
+13. If the resume text is mostly empty or unreadable, return the schema with mostly null/[] values and a low overallConfidence. Never fabricate a plausible resume.
 
 Output the JSON directly. Nothing else.`;
 
