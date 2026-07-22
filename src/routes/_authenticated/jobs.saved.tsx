@@ -11,6 +11,7 @@ import { openWorkspace } from "@/lib/workspace.functions";
 import { openExternal } from "@/lib/open-external";
 
 const TABS = [
+  { key: "all", label: "All" },
   { key: "saved", label: "Saved" },
   { key: "favorite", label: "Favorites" },
   { key: "applied_later", label: "Apply later" },
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/_authenticated/jobs/saved")({
 });
 
 function SavedJobs() {
-  const [tab, setTab] = useState<TabKey>("saved");
+  const [tab, setTab] = useState<TabKey>("all");
   const [q, setQ] = useState("");
   const [remoteOnly, setRemoteOnly] = useState(false);
   const [sort, setSort] = useState<SortKey>("recent");
@@ -36,7 +37,7 @@ function SavedJobs() {
 
   const { data, isLoading } = useQuery({
     queryKey: ["saved-jobs", tab],
-    queryFn: () => listSavedJobs({ data: { status: tab } }),
+    queryFn: () => listSavedJobs({ data: tab === "all" ? {} : { status: tab } }),
   });
 
   const remove = useMutation({
