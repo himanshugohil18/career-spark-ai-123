@@ -119,7 +119,7 @@ function InterviewPage() {
                         {s.workspace?.job?.title ?? "Interview"} · <span className="text-muted-foreground">{s.workspace?.job?.company?.name ?? "—"}</span>
                       </p>
                       <p className="mt-0.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-                        {CATEGORY_LABEL[s.kind] ?? s.kind} · {s.difficulty ?? "—"} · {s.practiced_count}/{s.question_count} practiced
+                        {s.focus ?? "mixed"} · {s.completed_questions ?? 0}/{s.total_questions ?? 0} practiced
                       </p>
                     </div>
                     {s.workspace_id && (
@@ -136,6 +136,69 @@ function InterviewPage() {
               </ul>
             )}
           </section>
+
+          {(() => {
+            const unpracticed = (data!.questions ?? []).filter((q: any) => !q.practiced).slice(0, 6);
+            if (unpracticed.length === 0) return null;
+            return (
+              <section>
+                <h3 className="mb-3 font-display text-lg font-semibold">Next up</h3>
+                <ul className="grid gap-2">
+                  {unpracticed.map((q: any) => (
+                    <li key={q.id} className="surface-card flex items-start gap-3 p-4">
+                      <button
+                        type="button"
+                        aria-label="Mark practiced"
+                        onClick={() => toggleMut.mutate({ id: q.id, practiced: true })}
+                        disabled={toggleMut.isPending}
+                        className="mt-0.5 text-muted-foreground transition hover:text-primary"
+                      >
+                        <Circle className="h-4 w-4" />
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-foreground">{q.question}</p>
+                        <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                          {CATEGORY_LABEL[q.category] ?? q.category} · {q.difficulty ?? "—"}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })()}
+
+          {(() => {
+            const practicedRecent = (data!.questions ?? []).filter((q: any) => q.practiced).slice(0, 4);
+            if (practicedRecent.length === 0) return null;
+            return (
+              <section>
+                <h3 className="mb-3 font-display text-lg font-semibold">Recently practiced</h3>
+                <ul className="grid gap-2">
+                  {practicedRecent.map((q: any) => (
+                    <li key={q.id} className="surface-card flex items-start gap-3 p-4">
+                      <button
+                        type="button"
+                        aria-label="Unmark practiced"
+                        onClick={() => toggleMut.mutate({ id: q.id, practiced: false })}
+                        disabled={toggleMut.isPending}
+                        className="mt-0.5 text-primary transition hover:text-muted-foreground"
+                      >
+                        <CheckCircle2 className="h-4 w-4" />
+                      </button>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-foreground/80">{q.question}</p>
+                        <p className="mt-1 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+                          {CATEGORY_LABEL[q.category] ?? q.category} · {q.difficulty ?? "—"}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            );
+          })()}
+
 
           <section>
             <h3 className="mb-3 font-display text-lg font-semibold">Practice from a workspace</h3>
