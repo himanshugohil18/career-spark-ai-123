@@ -42,17 +42,25 @@ export const refreshMyMatches = createServerFn({ method: "POST" })
     if (!brain.ready) {
       throw new Error("Approve your Career Brain first, then we'll match you against jobs.");
     }
-    // Ensure the catalog has fresh jobs before scoring. Any user can trigger
-    // this — the admin gate on `discoverJobs` is separate. Discovery is
-    // driven by the caller's own Career Brain.
+    const result = await refreshUserMatches(context.supabase, brain, { limit: data.limit ?? 80 });
+    if (result.evaluated > 0 || result.skipped > 0 || result.upserted > 0) return result;
+
+    // Only hit external providers when the catalog cannot produce matches.
+    // This keeps the user-facing refresh fast and avoids Worker timeouts.
     try {
       const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-      const { buildProfileFromSnapshot } = await import("./jobs/role-synonyms");
-      const candidateProfile = buildProfileFromSnapshot(brain);
-      await runDiscovery(supabaseAdmin, { candidateProfile });
+      const { count: jobsCount } = await supabaseAdmin
+        .from("jobs")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true);
+      if ((jobsCount ?? 0) === 0) {
+        const { buildProfileFromSnapshot } = await import("./jobs/role-synonyms");
+        const candidateProfile = buildProfileFromSnapshot(brain);
+        await runDiscovery(supabaseAdmin, { candidateProfile });
+        return refreshUserMatches(context.supabase, brain, { limit: data.limit ?? 80 });
+      }
     } catch {
-      // Providers may fail transiently; matching still runs against
-      // whatever real jobs already exist in the catalog.
+      // Providers may fail transiently; return the deterministic result.
     }
-    return refreshUserMatches(context.supabase, brain, { limit: data.limit ?? 40 });
+    return result;
   });
