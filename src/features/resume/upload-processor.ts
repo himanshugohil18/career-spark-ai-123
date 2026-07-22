@@ -43,6 +43,47 @@ async function extractDocxText(file: File): Promise<string> {
 }
 
 /**
+ * Extract verbatim text from a PDF client-side using pdf.js. Groups runs
+ * by rounded Y-coordinate so wrapped lines stay together and preserves
+ * reading order so URLs / dates align with the visual layout.
+ */
+async function extractPdfText(file: File): Promise<string> {
+  const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  // Disable worker for a one-shot main-thread parse — bundling the pdf.js
+  // worker via Vite is fragile and unnecessary here.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (pdfjs as any).GlobalWorkerOptions.workerSrc = "";
+  const arrayBuffer = await file.arrayBuffer();
+  const doc = await pdfjs.getDocument({
+    data: new Uint8Array(arrayBuffer),
+    disableWorker: true,
+    isEvalSupported: false,
+    useSystemFonts: true,
+  }).promise;
+  const pages: string[] = [];
+  for (let i = 1; i <= doc.numPages; i++) {
+    const page = await doc.getPage(i);
+    const tc = await page.getTextContent();
+    const rows = new Map<number, Array<{ x: number; s: string }>>();
+    for (const raw of tc.items as Array<{ str: string; transform: number[] }>) {
+      const s = raw.str;
+      if (!s) continue;
+      const y = Math.round((raw.transform?.[5] ?? 0) * 2) / 2;
+      const x = raw.transform?.[4] ?? 0;
+      const row = rows.get(y) ?? [];
+      row.push({ x, s });
+      rows.set(y, row);
+    }
+    const ordered = [...rows.entries()].sort((a, b) => b[0] - a[0]);
+    const lines = ordered.map(([, items]) =>
+      items.sort((a, b) => a.x - b.x).map((i) => i.s).join(" ").replace(/[ \t]+/g, " ").trim(),
+    );
+    pages.push(lines.filter(Boolean).join("\n"));
+  }
+  return pages.join("\n\n").trim();
+}
+
+/**
  * Full upload pipeline: validate → upload to private storage →
  * insert resume row → invoke Gemini processing.
  */
