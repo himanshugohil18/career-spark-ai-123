@@ -121,7 +121,20 @@ export async function uploadAndProcessResume(
     if (!extractedText || extractedText.length < 20) {
       throw new Error("This resume appears empty or unreadable.");
     }
+  } else {
+    // PDF: extract text client-side so the AI receives both the PDF file
+    // AND ground-truth text (URLs, emails, dates verbatim). If extraction
+    // fails or yields little text (image-only PDF), fall through and let
+    // the server fall back to sending the PDF directly to the model.
+    cb.onPhase?.("extracting");
+    try {
+      const pdfText = await extractPdfText(file);
+      if (pdfText && pdfText.length >= 40) extractedText = pdfText;
+    } catch {
+      // ignore — server will parse from the PDF binary
+    }
   }
+
 
   cb.onPhase?.("uploading");
   cb.onProgress?.(0, file.size);
