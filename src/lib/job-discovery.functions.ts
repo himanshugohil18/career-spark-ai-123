@@ -43,7 +43,13 @@ export const refreshMyMatches = createServerFn({ method: "POST" })
       throw new Error("Approve your Career Brain first, then we'll match you against jobs.");
     }
     const result = await refreshUserMatches(context.supabase, brain, { limit: data.limit ?? 80 });
-    if (result.evaluated > 0 || result.skipped > 0 || result.upserted > 0) return result;
+    if (result.evaluated > 0 || result.skipped > 0 || result.upserted > 0) {
+      if (result.newMatches.length) {
+        const { notifyNewJobMatches } = await import("./email/notify-matches.server");
+        await notifyNewJobMatches(context.supabase, context.userId, result.newMatches);
+      }
+      return result;
+    }
 
     // Only hit external providers when the catalog cannot produce matches.
     // This keeps the user-facing refresh fast and avoids Worker timeouts.
@@ -57,7 +63,12 @@ export const refreshMyMatches = createServerFn({ method: "POST" })
         const { buildProfileFromSnapshot } = await import("./jobs/role-synonyms");
         const candidateProfile = buildProfileFromSnapshot(brain);
         await runDiscovery(supabaseAdmin, { candidateProfile });
-        return refreshUserMatches(context.supabase, brain, { limit: data.limit ?? 80 });
+        const retry = await refreshUserMatches(context.supabase, brain, { limit: data.limit ?? 80 });
+        if (retry.newMatches.length) {
+          const { notifyNewJobMatches } = await import("./email/notify-matches.server");
+          await notifyNewJobMatches(context.supabase, context.userId, retry.newMatches);
+        }
+        return retry;
       }
     } catch {
       // Providers may fail transiently; return the deterministic result.

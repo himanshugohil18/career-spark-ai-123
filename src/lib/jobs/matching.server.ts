@@ -152,7 +152,12 @@ export async function refreshUserMatches(
   supabase: SupabaseClient,
   brain: CareerBrainSnapshot,
   opts: { limit?: number; staleAfterDays?: number } = {},
-): Promise<{ evaluated: number; upserted: number; skipped: number }> {
+): Promise<{
+  evaluated: number;
+  upserted: number;
+  skipped: number;
+  newMatches: Array<{ jobId: string; title: string; company: string; matchPercent: number; location: string | null }>;
+}> {
   const limit = opts.limit ?? 40;
   const stale = opts.staleAfterDays ?? 7;
   const profile = buildProfileFromSnapshot(brain);
@@ -164,7 +169,12 @@ export async function refreshUserMatches(
     .order("posted_at", { ascending: false, nullsFirst: false })
     .limit(Math.max(120, limit * 6));
 
-  const results = { evaluated: 0, upserted: 0, skipped: 0 };
+  const results = {
+    evaluated: 0,
+    upserted: 0,
+    skipped: 0,
+    newMatches: [] as Array<{ jobId: string; title: string; company: string; matchPercent: number; location: string | null }>,
+  };
   const brainVersion = brain.metadata.brainVersion;
 
   const candidates = rankCandidateRows((jobs ?? []) as Array<Record<string, any>>, brain, profile).slice(0, limit);
@@ -188,6 +198,17 @@ export async function refreshUserMatches(
     const job = rowToNormalized(row);
     const score = await computeMatch(brain, job, { refineWithAi: false });
     await persistMatch(supabase, brain.userId, row.id as string, brainVersion, score);
+
+    if (!existing && score.overall >= 60) {
+      const company = Array.isArray(row.company) ? row.company[0] : row.company;
+      results.newMatches.push({
+        jobId: row.id as string,
+        title: String(row.title ?? ""),
+        company: String(company?.name ?? ""),
+        matchPercent: score.overall,
+        location: (row.location as string | null) ?? null,
+      });
+    }
 
     // High-match notification — dedup: skip if the same (user, job, kind)
     // was fired in the last 7 days.

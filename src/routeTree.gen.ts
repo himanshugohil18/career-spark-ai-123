@@ -48,6 +48,7 @@ import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authe
 import { Route as AuthenticatedAdminAiRouteImport } from './routes/_authenticated/admin.ai'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
 import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
+import { Route as ApiPublicHooksWeeklySummaryRouteImport } from './routes/api/public/hooks/weekly-summary'
 import { Route as ApiPublicHooksRefreshMatchesRouteImport } from './routes/api/public/hooks/refresh-matches'
 import { Route as ApiPublicHooksRazorpayWebhookRouteImport } from './routes/api/public/hooks/razorpay-webhook'
 import { Route as ApiPublicHooksEmailDiagnosticRouteImport } from './routes/api/public/hooks/email-diagnostic'
@@ -260,6 +261,12 @@ const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
   path: '/lovable/email/auth/preview',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksWeeklySummaryRoute =
+  ApiPublicHooksWeeklySummaryRouteImport.update({
+    id: '/api/public/hooks/weekly-summary',
+    path: '/api/public/hooks/weekly-summary',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksRefreshMatchesRoute =
   ApiPublicHooksRefreshMatchesRouteImport.update({
     id: '/api/public/hooks/refresh-matches',
@@ -347,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/email-diagnostic': typeof ApiPublicHooksEmailDiagnosticRoute
   '/api/public/hooks/razorpay-webhook': typeof ApiPublicHooksRazorpayWebhookRoute
   '/api/public/hooks/refresh-matches': typeof ApiPublicHooksRefreshMatchesRoute
+  '/api/public/hooks/weekly-summary': typeof ApiPublicHooksWeeklySummaryRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
 }
@@ -393,6 +401,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/email-diagnostic': typeof ApiPublicHooksEmailDiagnosticRoute
   '/api/public/hooks/razorpay-webhook': typeof ApiPublicHooksRazorpayWebhookRoute
   '/api/public/hooks/refresh-matches': typeof ApiPublicHooksRefreshMatchesRoute
+  '/api/public/hooks/weekly-summary': typeof ApiPublicHooksWeeklySummaryRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
 }
@@ -442,6 +451,7 @@ export interface FileRoutesById {
   '/api/public/hooks/email-diagnostic': typeof ApiPublicHooksEmailDiagnosticRoute
   '/api/public/hooks/razorpay-webhook': typeof ApiPublicHooksRazorpayWebhookRoute
   '/api/public/hooks/refresh-matches': typeof ApiPublicHooksRefreshMatchesRoute
+  '/api/public/hooks/weekly-summary': typeof ApiPublicHooksWeeklySummaryRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
 }
@@ -491,6 +501,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-diagnostic'
     | '/api/public/hooks/razorpay-webhook'
     | '/api/public/hooks/refresh-matches'
+    | '/api/public/hooks/weekly-summary'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -537,6 +548,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-diagnostic'
     | '/api/public/hooks/razorpay-webhook'
     | '/api/public/hooks/refresh-matches'
+    | '/api/public/hooks/weekly-summary'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
   id:
@@ -585,6 +597,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-diagnostic'
     | '/api/public/hooks/razorpay-webhook'
     | '/api/public/hooks/refresh-matches'
+    | '/api/public/hooks/weekly-summary'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
   fileRoutesById: FileRoutesById
@@ -604,6 +617,7 @@ export interface RootRouteChildren {
   ApiPublicHooksEmailDiagnosticRoute: typeof ApiPublicHooksEmailDiagnosticRoute
   ApiPublicHooksRazorpayWebhookRoute: typeof ApiPublicHooksRazorpayWebhookRoute
   ApiPublicHooksRefreshMatchesRoute: typeof ApiPublicHooksRefreshMatchesRoute
+  ApiPublicHooksWeeklySummaryRoute: typeof ApiPublicHooksWeeklySummaryRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
 }
@@ -883,6 +897,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/weekly-summary': {
+      id: '/api/public/hooks/weekly-summary'
+      path: '/api/public/hooks/weekly-summary'
+      fullPath: '/api/public/hooks/weekly-summary'
+      preLoaderRoute: typeof ApiPublicHooksWeeklySummaryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/refresh-matches': {
       id: '/api/public/hooks/refresh-matches'
       path: '/api/public/hooks/refresh-matches'
@@ -1066,6 +1087,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksEmailDiagnosticRoute: ApiPublicHooksEmailDiagnosticRoute,
   ApiPublicHooksRazorpayWebhookRoute: ApiPublicHooksRazorpayWebhookRoute,
   ApiPublicHooksRefreshMatchesRoute: ApiPublicHooksRefreshMatchesRoute,
+  ApiPublicHooksWeeklySummaryRoute: ApiPublicHooksWeeklySummaryRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
 }
