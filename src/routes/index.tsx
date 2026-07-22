@@ -10,11 +10,11 @@ export const Route = createFileRoute("/")({
         content:
           "CareerOS is an AI-powered platform for resume optimization, job discovery, interview preparation, career planning, and application management.",
       },
-      { property: "og:title", content: "CareerOS | AI Career Operating System" },
+      { property: "og:title", content: "CareerOS – AI Career Operating System" },
       {
         property: "og:description",
         content:
-          "CareerOS helps professionals manage resumes, job discovery, applications, cover letters, interviews, and career growth with AI.",
+          "CareerOS is an AI-powered platform for resume optimization, job discovery, interview preparation, career planning, and application management.",
       },
       { property: "og:url", content: "https://careerosai.site/" },
       { property: "og:type", content: "website" },

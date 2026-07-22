@@ -88,11 +88,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "CareerOS" },
+      { title: "CareerOS – AI Career Operating System" },
       {
         name: "description",
         content:
-          "CareerOS is an AI career management platform for resumes, job discovery, application tracking, cover letters, interviews, and career growth.",
+          "CareerOS is an AI-powered platform for resume optimization, job discovery, interview preparation, career planning, and application management.",
       },
       { name: "google-site-verification", content: "3VPdRr9PdIwDlfyWDzxPbM9sbgpJpiwTojUJe9yV75o" },
       { name: "author", content: "CareerOS" },
@@ -102,26 +102,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "theme-color", content: "#1E1E1E" },
 
       { property: "og:site_name", content: "CareerOS" },
-      { property: "og:title", content: "CareerOS | AI Career Operating System" },
+      { property: "og:title", content: "CareerOS – AI Career Operating System" },
       {
         property: "og:description",
         content:
-          "CareerOS helps professionals manage resumes, job discovery, applications, cover letters, interviews, and career growth with AI.",
+          "CareerOS is an AI-powered platform for resume optimization, job discovery, interview preparation, career planning, and application management.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "CareerOS | AI Career Operating System" },
+      { name: "twitter:title", content: "CareerOS – AI Career Operating System" },
       {
         name: "twitter:description",
         content:
-          "CareerOS helps professionals manage resumes, job discovery, applications, cover letters, interviews, and career growth with AI.",
+          "CareerOS is an AI-powered platform for resume optimization, job discovery, interview preparation, career planning, and application management.",
       },
+      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/6c6f6991-7b80-435f-9448-458a3f3f8650" },
+      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/6c6f6991-7b80-435f-9448-458a3f3f8650" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.ico?v=3", sizes: "any" },
-      { rel: "icon", type: "image/png", sizes: "32x32", href: "/icon-32.png?v=3" },
-      { rel: "icon", type: "image/png", sizes: "16x16", href: "/icon-16.png?v=3" },
+      { rel: "icon", type: "image/x-icon", sizes: "32x32", href: "/favicon.ico?v=3" },
+      { rel: "icon", type: "image/x-icon", sizes: "16x16", href: "/favicon.ico?v=3" },
       { rel: "apple-touch-icon", sizes: "180x180", href: "/apple-touch-icon.png?v=3" },
 
       { rel: "manifest", href: "/manifest.webmanifest" },
