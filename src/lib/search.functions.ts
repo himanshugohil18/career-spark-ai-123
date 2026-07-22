@@ -1,5 +1,5 @@
 /**
- * Global search — searches jobs (matched + saved), applications, companies,
+ * Global search — searches jobs (all + user's matches), applications, companies,
  * skills, and interview questions for the signed-in user. Powers the ⌘K
  * command palette.
  */
@@ -19,6 +19,8 @@ export type SearchHit = {
   score?: number;
 };
 
+const sel = (s: string): string => s;
+
 export const globalSearch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
@@ -26,43 +28,76 @@ export const globalSearch = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     const q = data.q.trim();
-    const like = `%${q.replace(/[%_]/g, "")}%`;
+    const safe = q.replace(/[%_,()]/g, " ").trim();
+    const like = `%${safe}%`;
     const uid = context.userId;
     const s = context.supabase;
 
-    const [jobs, apps, companies, skills, questions, resumes] = await Promise.all([
+    // 1) Resolve matching companies for company-name hits on jobs
+    const companyHits = await s
+      .from("companies")
+      .select(sel("id, name, industry"))
+      .ilike("name", like)
+      .limit(20);
+    const companyIds = (companyHits.data ?? []).map((c: any) => c.id);
+
+    // Build OR filter for jobs: title/location ilike, or company_id in matched companies
+    const orParts = [`title.ilike.${like}`, `location.ilike.${like}`];
+    if (companyIds.length) orParts.push(`company_id.in.(${companyIds.join(",")})`);
+
+    const [jobsAll, matches, apps, skills, questions, resumes] = await Promise.all([
+      s.from("jobs")
+        .select(sel("id, title, location, company:companies(id,name)"))
+        .or(orParts.join(","))
+        .order("posted_at", { ascending: false })
+        .limit(20),
       s.from("job_matches")
-        .select("overall_score, job:jobs(id,title,location,company:companies(name))")
+        .select(sel("job_id, overall_score"))
         .eq("user_id", uid)
         .order("overall_score", { ascending: false })
-        .limit(200),
+        .limit(500),
       s.from("application_workspaces")
-        .select("id, current_stage, readiness_score, job:jobs(title, company:companies(name))")
+        .select(sel("id, current_stage, readiness_score, job:jobs(title, company:companies(name))"))
         .eq("user_id", uid)
         .limit(200),
-      s.from("companies").select("id, name, industry").ilike("name", like).limit(10),
-      s.from("skills").select("id, name, category, proficiency").eq("user_id", uid).ilike("name", like).limit(10),
-      s.from("interview_questions").select("id, question, category, workspace_id:session_id").eq("user_id", uid).ilike("question", like).limit(8),
-      s.from("resume_versions").select("id, version_name, is_active").eq("user_id", uid).ilike("version_name", like).limit(5),
+      s.from("skills")
+        .select(sel("id, name, category, proficiency"))
+        .eq("user_id", uid)
+        .ilike("name", like)
+        .limit(10),
+      s.from("interview_questions")
+        .select(sel("id, question, category"))
+        .eq("user_id", uid)
+        .ilike("question", like)
+        .limit(8),
+      s.from("resume_versions")
+        .select(sel("id, version_name, is_active"))
+        .eq("user_id", uid)
+        .ilike("version_name", like)
+        .limit(5),
     ]);
+
+    const scoreByJob = new Map<string, number>();
+    for (const m of (matches.data ?? []) as any[]) {
+      if (m.job_id) scoreByJob.set(m.job_id, Number(m.overall_score ?? 0));
+    }
 
     const ql = q.toLowerCase();
     const hits: SearchHit[] = [];
 
-    for (const m of (jobs.data ?? []) as any[]) {
-      const j = m.job;
-      if (!j) continue;
-      const hay = `${j.title ?? ""} ${j.company?.name ?? ""} ${j.location ?? ""}`.toLowerCase();
-      if (!hay.includes(ql)) continue;
+    // Jobs (matched ones first, then others)
+    const jobRows = ((jobsAll.data ?? []) as any[]).slice();
+    jobRows.sort((a, b) => (scoreByJob.get(b.id) ?? -1) - (scoreByJob.get(a.id) ?? -1));
+    for (const j of jobRows) {
       hits.push({
         kind: "job",
         id: j.id,
         title: j.title,
         subtitle: [j.company?.name, j.location].filter(Boolean).join(" · "),
         href: `/jobs/${j.id}`,
-        score: Number(m.overall_score ?? 0),
+        score: scoreByJob.get(j.id),
       });
-      if (hits.length >= 8) break;
+      if (hits.filter((h) => h.kind === "job").length >= 10) break;
     }
 
     for (const w of (apps.data ?? []) as any[]) {
@@ -78,7 +113,7 @@ export const globalSearch = createServerFn({ method: "POST" })
       });
     }
 
-    for (const c of companies.data ?? []) {
+    for (const c of ((companyHits.data ?? []) as any[]).slice(0, 8)) {
       hits.push({
         kind: "company",
         id: c.id,
@@ -88,7 +123,7 @@ export const globalSearch = createServerFn({ method: "POST" })
       });
     }
 
-    for (const sk of skills.data ?? []) {
+    for (const sk of (skills.data ?? []) as any[]) {
       hits.push({
         kind: "skill",
         id: sk.id,
@@ -108,7 +143,7 @@ export const globalSearch = createServerFn({ method: "POST" })
       });
     }
 
-    for (const r of resumes.data ?? []) {
+    for (const r of (resumes.data ?? []) as any[]) {
       hits.push({
         kind: "resume",
         id: r.id,
@@ -118,5 +153,6 @@ export const globalSearch = createServerFn({ method: "POST" })
       });
     }
 
-    return { q, hits: hits.slice(0, 30) };
+
+    return { q, hits: hits.slice(0, 40) };
   });
