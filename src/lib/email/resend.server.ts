@@ -36,7 +36,7 @@ function getConfig() {
   const apiKey = process.env.RESEND_API_KEY;
   const fromEmail = process.env.RESEND_FROM_EMAIL || "support@careerosai.site";
   const fromName = process.env.RESEND_FROM_NAME || "CareerOS";
-  const replyTo = process.env.RESEND_REPLY_TO || "himanshugohil828@gmail.com";
+  const replyTo = process.env.RESEND_REPLY_TO || "support@careerosai.site";
   return { apiKey, fromEmail, fromName, replyTo };
 }
 
