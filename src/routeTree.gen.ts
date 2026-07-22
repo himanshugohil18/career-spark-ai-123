@@ -41,6 +41,7 @@ import { Route as AuthenticatedApplicationsWorkspaceIdRouteImport } from './rout
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminJobsRouteImport } from './routes/_authenticated/admin.jobs'
 import { Route as AuthenticatedAdminHealthRouteImport } from './routes/_authenticated/admin.health'
+import { Route as AuthenticatedAdminEmailsRouteImport } from './routes/_authenticated/admin.emails'
 import { Route as AuthenticatedAdminBillingRouteImport } from './routes/_authenticated/admin.billing'
 import { Route as AuthenticatedAdminAutoApplyRouteImport } from './routes/_authenticated/admin.auto-apply'
 import { Route as AuthenticatedAdminAnalyticsRouteImport } from './routes/_authenticated/admin.analytics'
@@ -217,6 +218,12 @@ const AuthenticatedAdminHealthRoute =
     path: '/health',
     getParentRoute: () => AuthenticatedAdminRoute,
   } as any)
+const AuthenticatedAdminEmailsRoute =
+  AuthenticatedAdminEmailsRouteImport.update({
+    id: '/emails',
+    path: '/emails',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminBillingRoute =
   AuthenticatedAdminBillingRouteImport.update({
     id: '/billing',
@@ -302,6 +309,7 @@ export interface FileRoutesByFullPath {
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/auto-apply': typeof AuthenticatedAdminAutoApplyRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/health': typeof AuthenticatedAdminHealthRoute
   '/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -344,6 +352,7 @@ export interface FileRoutesByTo {
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/auto-apply': typeof AuthenticatedAdminAutoApplyRoute
   '/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/health': typeof AuthenticatedAdminHealthRoute
   '/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -389,6 +398,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/_authenticated/admin/auto-apply': typeof AuthenticatedAdminAutoApplyRoute
   '/_authenticated/admin/billing': typeof AuthenticatedAdminBillingRoute
+  '/_authenticated/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/_authenticated/admin/health': typeof AuthenticatedAdminHealthRoute
   '/_authenticated/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
@@ -434,6 +444,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/auto-apply'
     | '/admin/billing'
+    | '/admin/emails'
     | '/admin/health'
     | '/admin/jobs'
     | '/admin/users'
@@ -476,6 +487,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/auto-apply'
     | '/admin/billing'
+    | '/admin/emails'
     | '/admin/health'
     | '/admin/jobs'
     | '/admin/users'
@@ -520,6 +532,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/analytics'
     | '/_authenticated/admin/auto-apply'
     | '/_authenticated/admin/billing'
+    | '/_authenticated/admin/emails'
     | '/_authenticated/admin/health'
     | '/_authenticated/admin/jobs'
     | '/_authenticated/admin/users'
@@ -781,6 +794,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminHealthRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/emails': {
+      id: '/_authenticated/admin/emails'
+      path: '/emails'
+      fullPath: '/admin/emails'
+      preLoaderRoute: typeof AuthenticatedAdminEmailsRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/billing': {
       id: '/_authenticated/admin/billing'
       path: '/billing'
@@ -859,6 +879,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminAnalyticsRoute: typeof AuthenticatedAdminAnalyticsRoute
   AuthenticatedAdminAutoApplyRoute: typeof AuthenticatedAdminAutoApplyRoute
   AuthenticatedAdminBillingRoute: typeof AuthenticatedAdminBillingRoute
+  AuthenticatedAdminEmailsRoute: typeof AuthenticatedAdminEmailsRoute
   AuthenticatedAdminHealthRoute: typeof AuthenticatedAdminHealthRoute
   AuthenticatedAdminJobsRoute: typeof AuthenticatedAdminJobsRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
@@ -870,6 +891,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminAnalyticsRoute: AuthenticatedAdminAnalyticsRoute,
   AuthenticatedAdminAutoApplyRoute: AuthenticatedAdminAutoApplyRoute,
   AuthenticatedAdminBillingRoute: AuthenticatedAdminBillingRoute,
+  AuthenticatedAdminEmailsRoute: AuthenticatedAdminEmailsRoute,
   AuthenticatedAdminHealthRoute: AuthenticatedAdminHealthRoute,
   AuthenticatedAdminJobsRoute: AuthenticatedAdminJobsRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
