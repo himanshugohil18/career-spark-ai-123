@@ -129,6 +129,8 @@ function JobsFeed() {
       void trackJobInteraction({ data: { jobId, kind: "saved" } }).catch(() => {});
       void queryClient.invalidateQueries({ queryKey: ["jobs-feed"] });
       void queryClient.invalidateQueries({ queryKey: ["job-sections"] });
+      void queryClient.invalidateQueries({ queryKey: ["saved-jobs"] });
+      void queryClient.invalidateQueries({ queryKey: ["job-detail", jobId] });
       toast.success("Saved list updated.");
     },
   });
