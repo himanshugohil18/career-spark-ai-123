@@ -21,6 +21,15 @@ export const Route = createFileRoute("/_authenticated/jobs/$jobId")({
   component: JobDetail,
 });
 
+function useJobDetailHead(job: { title?: string | null; company?: { name?: string | null } | null } | null | undefined) {
+  useEffect(() => {
+    if (!job?.title) return;
+    const prev = document.title;
+    document.title = `${job.title}${job.company?.name ? ` · ${job.company.name}` : ""} · CareerOS`;
+    return () => { document.title = prev; };
+  }, [job?.title, job?.company?.name]);
+}
+
 function JobDetail() {
   const { jobId } = Route.useParams();
   const queryClient = useQueryClient();
