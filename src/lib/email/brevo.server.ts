@@ -2,7 +2,9 @@
  * Brevo transactional email client (server-only).
  * Sends via https://api.brevo.com/v3/smtp/email using BREVO_API_KEY.
  *
- * Do NOT import from client code.
+ * Writes every attempt (sent/failed/throttled) to `public.email_logs`
+ * for admin analytics. Never throws — returns a structured result so
+ * callers can decide whether to warn without crashing the user flow.
  */
 
 export type BrevoRecipient = { email: string; name?: string };
@@ -12,10 +14,14 @@ export interface SendEmailInput {
   subject: string;
   html: string;
   text?: string;
-  tag?: string; // used for logging / template type
+  tag?: string; // template name, used for logging
   replyTo?: BrevoRecipient;
   headers?: Record<string, string>;
   params?: Record<string, unknown>;
+  /** Optional owning user id — associates the log entry with an account. */
+  userId?: string | null;
+  /** Extra metadata to persist alongside the log entry. */
+  metadata?: Record<string, unknown>;
 }
 
 export interface SendEmailResult {
@@ -24,6 +30,7 @@ export interface SendEmailResult {
   messageId?: string;
   error?: string;
   reason?: string;
+  retries?: number;
 }
 
 const BREVO_URL = "https://api.brevo.com/v3/smtp/email";
@@ -36,13 +43,46 @@ function getConfig() {
   return { apiKey, fromEmail, fromName, replyTo };
 }
 
+function firstRecipient(to: BrevoRecipient | BrevoRecipient[]): string {
+  return Array.isArray(to) ? to[0]?.email ?? "" : to.email;
+}
+
+async function persistLog(entry: {
+  userId?: string | null;
+  recipient: string;
+  template: string;
+  subject: string;
+  status: string;
+  providerMessageId?: string | null;
+  retryCount: number;
+  errorMessage?: string | null;
+  metadata?: Record<string, unknown>;
+}) {
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    await supabaseAdmin.from("email_logs").insert({
+      user_id: entry.userId ?? null,
+      recipient: entry.recipient,
+      template: entry.template,
+      subject: entry.subject,
+      status: entry.status,
+      provider_message_id: entry.providerMessageId ?? null,
+      retry_count: entry.retryCount,
+      error_message: entry.errorMessage ?? null,
+      metadata: entry.metadata ?? {},
+    });
+  } catch (e) {
+    // Never let logging failures affect send flow.
+    console.warn("[email] log insert failed", (e as Error).message);
+  }
+}
+
 function logSend(
   tag: string,
   to: BrevoRecipient | BrevoRecipient[],
   result: SendEmailResult,
 ) {
   const recipients = Array.isArray(to) ? to.map((r) => r.email).join(",") : to.email;
-  // Never log body/html — only metadata.
   console.info("[email]", {
     tag,
     to: recipients,
@@ -51,21 +91,29 @@ function logSend(
     messageId: result.messageId,
     reason: result.reason,
     error: result.error,
+    retries: result.retries,
     at: new Date().toISOString(),
   });
 }
 
-/**
- * Send one transactional email through Brevo. Retries once on 5xx / network
- * error. Never throws — returns a structured result so callers can decide
- * whether to surface a warning without crashing the user flow.
- */
 export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult> {
   const cfg = getConfig();
   const tag = input.tag ?? "unknown";
+  const recipient = firstRecipient(input.to);
+
   if (!cfg.apiKey) {
-    const result = { sent: false, reason: "missing_api_key" } as SendEmailResult;
+    const result: SendEmailResult = { sent: false, reason: "missing_api_key", retries: 0 };
     logSend(tag, input.to, result);
+    void persistLog({
+      userId: input.userId,
+      recipient,
+      template: tag,
+      subject: input.subject,
+      status: "failed",
+      retryCount: 0,
+      errorMessage: "BREVO_API_KEY not configured",
+      metadata: input.metadata,
+    });
     return result;
   }
 
@@ -114,12 +162,48 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
     }
   };
 
+  let retries = 0;
   let result = await attempt();
   if (!result.sent && (!result.status || result.status >= 500 || result.reason === "network_error")) {
-    // brief backoff, single retry
     await new Promise((r) => setTimeout(r, 400));
+    retries = 1;
     result = await attempt();
   }
+  result.retries = retries;
   logSend(tag, input.to, result);
+
+  void persistLog({
+    userId: input.userId,
+    recipient,
+    template: tag,
+    subject: input.subject,
+    status: result.sent ? "sent" : "failed",
+    providerMessageId: result.messageId ?? null,
+    retryCount: retries,
+    errorMessage: result.sent ? null : (result.error ?? result.reason ?? "unknown"),
+    metadata: input.metadata,
+  });
+
   return result;
+}
+
+/** Record a throttled/skipped send in email_logs without hitting the provider. */
+export async function logSkippedSend(entry: {
+  userId?: string | null;
+  recipient: string;
+  template: string;
+  reason: string;
+  metadata?: Record<string, unknown>;
+}) {
+  console.info("[email] skipped", entry);
+  await persistLog({
+    userId: entry.userId,
+    recipient: entry.recipient,
+    template: entry.template,
+    subject: `[${entry.reason}]`,
+    status: "throttled",
+    retryCount: 0,
+    errorMessage: entry.reason,
+    metadata: entry.metadata,
+  });
 }
