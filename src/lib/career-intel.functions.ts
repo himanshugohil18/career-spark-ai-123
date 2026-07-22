@@ -254,12 +254,28 @@ export const getCareerAnalytics = createServerFn({ method: "GET" })
   .handler(async ({ context }) => {
     const brain = (await getCareerBrainSnapshot()) as CareerBrainSnapshot;
 
-    const [{ data: matches }, { count: savedCount }, { count: viewedCount }, { data: workspaces }, { count: notifCount }] = await Promise.all([
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+    const [
+      { data: matches },
+      { count: savedCount },
+      { count: viewedCount },
+      { data: workspaces },
+      { count: notifCount },
+      { data: recentApps },
+      { data: recentPracticed },
+      { count: totalQuestions },
+      { count: practicedQuestions },
+    ] = await Promise.all([
       context.supabase.from("job_matches").select("overall_score, computed_at, job:jobs(company:companies(name,industry))").eq("user_id", context.userId),
       context.supabase.from("saved_jobs").select("id", { count: "exact", head: true }).eq("user_id", context.userId),
       context.supabase.from("viewed_jobs").select("id", { count: "exact", head: true }).eq("user_id", context.userId),
-      context.supabase.from("application_workspaces").select("id, readiness_score, current_stage, created_at").eq("user_id", context.userId),
+      context.supabase.from("application_workspaces").select("id, readiness_score, current_stage, status, created_at").eq("user_id", context.userId),
       context.supabase.from("job_notifications").select("id", { count: "exact", head: true }).eq("user_id", context.userId),
+      context.supabase.from("application_workspaces").select("created_at").eq("user_id", context.userId).gte("created_at", since),
+      context.supabase.from("interview_questions").select("updated_at").eq("user_id", context.userId).eq("practiced", true).gte("updated_at", since),
+      context.supabase.from("interview_questions").select("id", { count: "exact", head: true }).eq("user_id", context.userId),
+      context.supabase.from("interview_questions").select("id", { count: "exact", head: true }).eq("user_id", context.userId).eq("practiced", true),
     ]);
 
     const scores = (matches ?? []).map((m: any) => Number(m.overall_score ?? 0));
@@ -283,6 +299,35 @@ export const getCareerAnalytics = createServerFn({ method: "GET" })
       ? Math.round(workspaces!.reduce((s: number, w: any) => s + Number(w.readiness_score ?? 0), 0) / workspaces!.length)
       : 0;
 
+    // Funnel by stage
+    const funnel = new Map<string, number>();
+    for (const w of (workspaces ?? []) as any[]) {
+      const stage = w.current_stage ?? w.status ?? "draft";
+      funnel.set(stage, (funnel.get(stage) ?? 0) + 1);
+    }
+
+    // 30-day activity buckets by ISO date
+    const dayKey = (iso: string) => iso.slice(0, 10);
+    const days: Record<string, { apps: number; practiced: number; matches: number }> = {};
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+      days[d] = { apps: 0, practiced: 0, matches: 0 };
+    }
+    for (const a of (recentApps ?? []) as any[]) {
+      const k = dayKey(a.created_at);
+      if (days[k]) days[k].apps++;
+    }
+    for (const q of (recentPracticed ?? []) as any[]) {
+      const k = dayKey(q.updated_at);
+      if (days[k]) days[k].practiced++;
+    }
+    for (const m of (matches ?? []) as any[]) {
+      if (!m.computed_at) continue;
+      const k = dayKey(m.computed_at);
+      if (days[k]) days[k].matches++;
+    }
+    const activity = Object.entries(days).map(([date, v]) => ({ date, ...v }));
+
     return {
       ready: brain.ready,
       totals: {
@@ -291,11 +336,15 @@ export const getCareerAnalytics = createServerFn({ method: "GET" })
         viewed: viewedCount ?? 0,
         workspaces: workspaces?.length ?? 0,
         notifications: notifCount ?? 0,
+        questions: totalQuestions ?? 0,
+        practiced: practicedQuestions ?? 0,
       },
       averageMatchScore: scores.length ? Math.round(scores.reduce((s, n) => s + n, 0) / scores.length) : 0,
       distribution: buckets,
       topIndustries,
       averageReadiness: avgReadiness,
+      funnel: Array.from(funnel.entries()).map(([stage, count]) => ({ stage, count })),
+      activity,
       careerHealth: (brain.health as any)?.score ?? null,
       brainVersion: brain.metadata.brainVersion,
       lastMatchAt: (matches ?? [])
@@ -305,6 +354,7 @@ export const getCareerAnalytics = createServerFn({ method: "GET" })
         .pop() ?? null,
     };
   });
+
 
 // ---------- Interview Hub ----------
 
