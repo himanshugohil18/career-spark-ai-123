@@ -225,7 +225,11 @@ async function applyApprovedResume(
   resumeId: string,
   edited: ParsedResume,
   aiOriginal: ParsedResume | null,
-): Promise<{ brainVersion: number }> {
+): Promise<{
+  brainVersion: number;
+  counts: { projects: number; skills: number; experiences: number; education: number };
+  completeness: number;
+}> {
   await Promise.all([
     supabase.from("work_experiences").delete().eq("user_id", userId),
     supabase.from("projects").delete().eq("user_id", userId),
@@ -512,7 +516,7 @@ async function applyApprovedResume(
     brainVersion: nextBrainVersion,
     counts: {
       projects: edited.projects.length,
-      skills: edited.skills.length,
+      skills: Object.values(edited.skills).reduce((n, arr) => n + (Array.isArray(arr) ? arr.length : 0), 0),
       experiences: edited.workExperiences.length,
       education: edited.education.length,
     },
