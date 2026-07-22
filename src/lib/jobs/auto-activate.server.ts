@@ -51,7 +51,7 @@ export async function activateCareerBrainPipeline(
   //    which families are allowed, which are excluded, and which role queries
   //    are used to match provider results.
   let discovered = 0;
-  let seeded = 0;
+  const seeded = 0;
   try {
     const { runDiscovery } = await import("./discovery.server");
     const { buildProfileFromSnapshot } = await import("./role-synonyms");
@@ -59,22 +59,8 @@ export async function activateCareerBrainPipeline(
     const d = await runDiscovery(supabaseAdmin, { candidateProfile });
     discovered = (d as any)?.inserted ?? (d as any)?.upserted ?? 0;
   } catch {
-    // Providers may rate-limit; the seed fallback keeps the pipeline alive.
-  }
-
-
-  const { count: jobsCount } = await supabaseAdmin
-    .from("jobs")
-    .select("id", { count: "exact", head: true })
-    .eq("is_active", true);
-  if ((jobsCount ?? 0) === 0) {
-    try {
-      const { seedDevJobs } = await import("./dev-seed.server");
-      const r = await seedDevJobs(supabaseAdmin);
-      seeded = r.inserted;
-    } catch {
-      // If seed fails there's nothing to match against — degrade gracefully.
-    }
+    // Providers may rate-limit or fail transiently; matching still runs
+    // against whatever real jobs already exist in the catalog.
   }
 
   // 2. Score every recent job against this Career Brain.
