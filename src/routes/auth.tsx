@@ -263,6 +263,9 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
     try {
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
+        // Always show the Google account chooser instead of silently
+        // reusing the browser's already-signed-in account.
+        extraParams: { prompt: "select_account" },
       });
       if (result.error) {
         toast.error("Google sign-in failed", { description: result.error.message });
