@@ -2,6 +2,7 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/features/app-shell/app-shell";
 import { WorkspaceBoot } from "@/components/ai/workspace-boot";
+import { useCrossModuleSync } from "@/hooks/use-cross-module-sync";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -14,6 +15,7 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 function AuthenticatedLayout() {
+  useCrossModuleSync();
   return (
     <WorkspaceBoot>
       <AppShell>
@@ -22,4 +24,5 @@ function AuthenticatedLayout() {
     </WorkspaceBoot>
   );
 }
+
 
