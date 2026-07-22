@@ -256,7 +256,7 @@ export const SKILL_CATEGORY_LABELS: Record<keyof z.infer<typeof SkillCategoriesS
 // Resume parsing is a one-shot, high-value call. Use Gemini 2.5 Pro for
 // maximum extraction fidelity (URLs, dates, names). Other modules stay on
 // Flash for cost.
-export const AI_MODEL = "google/gemini-2.5-pro";
+export const AI_MODEL = "google/gemini-2.5-flash";
 
 export const SYSTEM_PROMPT = `You are the CareerOS Resume Extraction Agent.
 
