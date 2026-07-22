@@ -314,7 +314,7 @@ export const getInterviewHub = createServerFn({ method: "GET" })
     const [{ data: sessions }, { data: questions }, { data: workspaces }] = await Promise.all([
       context.supabase
         .from("interview_sessions")
-        .select("id, workspace_id, kind, difficulty, question_count, practiced_count, created_at, workspace:application_workspaces(id, job:jobs(title, company:companies(name)))")
+        .select("id, workspace_id, focus, total_questions, completed_questions, created_at, workspace:application_workspaces(id, job:jobs(title, company:companies(name)))")
         .eq("user_id", context.userId)
         .order("created_at", { ascending: false })
         .limit(50),
@@ -331,6 +331,7 @@ export const getInterviewHub = createServerFn({ method: "GET" })
         .order("last_opened_at", { ascending: false })
         .limit(20),
     ]);
+
 
     const byCategory: Record<string, { total: number; practiced: number }> = {};
     for (const q of (questions ?? []) as any[]) {
