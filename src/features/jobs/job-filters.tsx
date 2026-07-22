@@ -148,7 +148,7 @@ export function JobFiltersPanel({
           className="w-full rounded-md border border-border bg-elevated px-2.5 py-1.5 text-sm outline-none focus:border-primary"
         />
       </Section>
-    </aside>
+    </section>
   );
 }
 
