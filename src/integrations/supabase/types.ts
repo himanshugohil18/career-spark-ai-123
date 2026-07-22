@@ -1388,6 +1388,51 @@ export type Database = {
           },
         ]
       }
+      email_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          metadata: Json
+          provider_message_id: string | null
+          recipient: string
+          retry_count: number
+          status: string
+          subject: string | null
+          template: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          provider_message_id?: string | null
+          recipient: string
+          retry_count?: number
+          status?: string
+          subject?: string | null
+          template: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          metadata?: Json
+          provider_message_id?: string | null
+          recipient?: string
+          retry_count?: number
+          status?: string
+          subject?: string | null
+          template?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       gap_analysis: {
         Row: {
           ai_model: string | null
