@@ -17,15 +17,16 @@ import { z } from "zod";
 import { callLovableAI, extractJson } from "@/lib/ai-gateway.server";
 import type { CareerBrainSnapshot } from "@/lib/career-brain.service";
 import {
-  buildProfileFromSnapshot,
   computeBaselineScores,
   computeMissingSkills,
 } from "./scoring";
 import {
+  buildProfileFromSnapshot,
   domainConfidence,
   familyTitleRelevance,
   jobFamilyFitProfile,
   semanticTechOverlap,
+  type RoleFamily,
 } from "./role-synonyms";
 import type { MatchScore, NormalizedJob } from "./types";
 
@@ -279,7 +280,7 @@ function rankCandidateRows(
     const fit = jobFamilyFitProfile(jobLike, profile);
     const confidence = domainConfidence(jobLike, profile);
     const familyTitle = profile.families.length
-      ? Math.max(...profile.families.map((family) => familyTitleRelevance(row.title ?? "", family)))
+      ? Math.max(...profile.families.map((family: RoleFamily) => familyTitleRelevance(row.title ?? "", family)))
       : 0;
     const tech = semanticTechOverlap(brainTech, [
       ...(row.required_skills ?? []),
