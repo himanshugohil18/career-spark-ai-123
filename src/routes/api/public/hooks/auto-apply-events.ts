@@ -24,7 +24,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { stepProgress } from "@/lib/auto-apply/driver";
-import { formatIST } from "@/lib/email/format-date";
+
 
 export const Route = createFileRoute("/api/public/hooks/auto-apply-events")({
   server: {
@@ -149,92 +149,7 @@ export const Route = createFileRoute("/api/public/hooks/auto-apply-events")({
           await sb.from("ai_application_sessions").update(patch).eq("id", sessionId);
         }
 
-        // Notify user when the AI application transitions to a running/submitting
-        // state for the first time (started email).
-        const runningStates = new Set(["running", "submitting", "awaiting_input", "awaiting_approval"]);
-        const wasIdle = !runningStates.has(String(sess.status ?? ""));
-        if (status && runningStates.has(status) && wasIdle) {
-          try {
-            const { data: full } = await sb
-              .from("ai_application_sessions")
-              .select("id, user_id, workspace_id, company_name, role_title")
-              .eq("id", sessionId)
-              .maybeSingle();
-            if (full) {
-              const { data: profile } = await sb
-                .from("profiles")
-                .select("email, full_name")
-                .eq("user_id", full.user_id)
-                .maybeSingle();
-              let email: string | null = profile?.email ?? null;
-              if (!email) {
-                try {
-                  const { data: userRes } = await sb.auth.admin.getUserById(full.user_id);
-                  email = userRes?.user?.email ?? null;
-                } catch { /* ignore */ }
-              }
-              if (email) {
-                const { sendAIApplicationStartedEmail } = await import(
-                  "@/lib/email/senders.server"
-                );
-                await sendAIApplicationStartedEmail(email, {
-                  company: String(full.company_name ?? "the company"),
-                  role: String(full.role_title ?? "the role"),
-                  when: formatIST(),
-                  estimatedMinutes: 5,
-                  workspaceUrl: full.workspace_id
-                    ? `https://careerosai.site/applications/${full.workspace_id}`
-                    : undefined,
-                  applicationId: sessionId,
-                  userId: full.user_id,
-                });
-              }
-            }
-          } catch (e) {
-            console.warn("[auto-apply] started email failed", (e as Error).message);
-          }
-        }
-
-        // Notify user on successful submission (best-effort).
-        if (status === "completed" && sess.status !== "completed") {
-          try {
-            const { data: full } = await sb
-              .from("ai_application_sessions")
-              .select("id, user_id, workspace_id, company_name, role_title, target_url")
-              .eq("id", sessionId)
-              .maybeSingle();
-            if (full) {
-              const { data: profile } = await sb
-                .from("profiles")
-                .select("email, full_name")
-                .eq("user_id", full.user_id)
-                .maybeSingle();
-              let email: string | null = profile?.email ?? null;
-              if (!email) {
-                try {
-                  const { data: userRes } = await sb.auth.admin.getUserById(full.user_id);
-                  email = userRes?.user?.email ?? null;
-                } catch { /* ignore */ }
-              }
-              if (email) {
-                const { sendAIApplicationSubmittedEmail } = await import(
-                  "@/lib/email/senders.server"
-                );
-                await sendAIApplicationSubmittedEmail(email, {
-                  company: String(full.company_name ?? "the company"),
-                  role: String(full.role_title ?? "the role"),
-                  when: formatIST(),
-                  status: "Submitted",
-                  workspaceUrl: full.workspace_id
-                    ? `https://careerosai.site/applications/${full.workspace_id}`
-                    : undefined,
-                });
-              }
-            }
-          } catch (e) {
-            console.warn("[auto-apply] submitted email failed", (e as Error).message);
-          }
-        }
+        // AI application started/submitted emails removed per product decision.
 
         return json({ ok: true });
       },
