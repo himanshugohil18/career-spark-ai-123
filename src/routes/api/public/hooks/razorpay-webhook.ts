@@ -7,6 +7,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { verifyWebhookSignature } from "@/lib/billing/razorpay.server";
+import { formatIST } from "@/lib/email/format-date";
 
 async function resolveEmailForUser(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -103,8 +104,8 @@ export const Route = createFileRoute("/api/public/hooks/razorpay-webhook")({
                     amountFormatted: amount,
                     currency: String(pay.currency ?? "INR"),
                     transactionId: String(pay.payment_id ?? p.id ?? ""),
-                    when: new Date(pay.invoice_issued_at ?? Date.now()).toUTCString(),
-                    renewalDate: sub?.expires_at ? new Date(sub.expires_at).toUTCString() : null,
+                    when: formatIST(pay.invoice_issued_at ?? Date.now()),
+                    renewalDate: sub?.expires_at ? formatIST(sub.expires_at) : null,
                     dashboardUrl: "https://careerosai.site/dashboard",
                     billingUrl: "https://careerosai.site/billing",
                     invoiceUrl: "https://careerosai.site/billing",
@@ -121,7 +122,7 @@ export const Route = createFileRoute("/api/public/hooks/razorpay-webhook")({
                     planName,
                     amountFormatted: amount,
                     currency: String(pay.currency ?? "INR"),
-                    attemptedAt: new Date().toUTCString(),
+                    attemptedAt: formatIST(),
                     reason: err,
                     retryUrl: "https://careerosai.site/billing",
                     userId: pay.user_id,
@@ -161,7 +162,7 @@ export const Route = createFileRoute("/api/public/hooks/razorpay-webhook")({
                   await sendSubscriptionActivatedEmail(email, {
                     planName,
                     expiresAt: s.current_end
-                      ? new Date(s.current_end * 1000).toUTCString()
+                      ? formatIST(s.current_end * 1000)
                       : null,
                     userId: sub.user_id,
                     idempotencyKey: `${s.id}:activated`,
@@ -176,7 +177,7 @@ export const Route = createFileRoute("/api/public/hooks/razorpay-webhook")({
                     amountFormatted: pay?.amount ? paiseToInr(pay.amount) : null,
                     currency: pay?.currency ?? "INR",
                     nextRenewalDate: s.current_end
-                      ? new Date(s.current_end * 1000).toUTCString()
+                      ? formatIST(s.current_end * 1000)
                       : null,
                     invoiceNumber: pay?.invoice_id ?? null,
                     userId: sub.user_id,
@@ -207,7 +208,7 @@ export const Route = createFileRoute("/api/public/hooks/razorpay-webhook")({
                 );
                 await sendSubscriptionCancelledEmail(email, {
                   planName: sub.plan ?? "CareerOS Subscription",
-                  accessUntil: sub.expires_at ? new Date(sub.expires_at).toUTCString() : null,
+                  accessUntil: sub.expires_at ? formatIST(sub.expires_at) : null,
                   userId: sub.user_id,
                   idempotencyKey: `${s.id}:cancelled`,
                 });

@@ -24,6 +24,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { stepProgress } from "@/lib/auto-apply/driver";
+import { formatIST } from "@/lib/email/format-date";
 
 export const Route = createFileRoute("/api/public/hooks/auto-apply-events")({
   server: {
@@ -179,7 +180,7 @@ export const Route = createFileRoute("/api/public/hooks/auto-apply-events")({
                 await sendAIApplicationStartedEmail(email, {
                   company: String(full.company_name ?? "the company"),
                   role: String(full.role_title ?? "the role"),
-                  when: new Date().toUTCString(),
+                  when: formatIST(),
                   estimatedMinutes: 5,
                   workspaceUrl: full.workspace_id
                     ? `https://careerosai.site/applications/${full.workspace_id}`
@@ -222,7 +223,7 @@ export const Route = createFileRoute("/api/public/hooks/auto-apply-events")({
                 await sendAIApplicationSubmittedEmail(email, {
                   company: String(full.company_name ?? "the company"),
                   role: String(full.role_title ?? "the role"),
-                  when: new Date().toUTCString(),
+                  when: formatIST(),
                   status: "Submitted",
                   workspaceUrl: full.workspace_id
                     ? `https://careerosai.site/applications/${full.workspace_id}`

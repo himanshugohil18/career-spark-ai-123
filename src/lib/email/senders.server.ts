@@ -4,6 +4,7 @@
  */
 import { sendEmail, logSkippedSend, type SendEmailResult } from "./resend.server";
 import * as T from "./templates";
+import { formatIST } from "./format-date";
 
 // In-worker rate limit for the current instance. Prevents duplicate sends
 // for the same (tag+recipient) within `windowMs` on this Worker only.
@@ -82,7 +83,7 @@ export async function sendLoginAlertEmail(
   if (!rateLimit(key, 10 * 60 * 1000)) return skip("login_alert", to, "rate_limited", info.userId);
   const rendered = T.loginAlertEmail({
     provider: info.provider,
-    when: new Date().toUTCString(),
+    when: formatIST(),
     ip: info.ip ?? null,
     browser: info.browser ?? null,
     os: info.os ?? null,
@@ -106,7 +107,7 @@ export async function sendPasswordChangedEmail(
   if (!rateLimit(`pwchange:${to.toLowerCase()}`, 5 * 60 * 1000))
     return skip("password_changed", to, "rate_limited", info.userId);
   const rendered = T.passwordChangedEmail({
-    when: new Date().toUTCString(),
+    when: formatIST(),
     ip: info.ip ?? null,
     browser: info.browser ?? null,
     os: info.os ?? null,

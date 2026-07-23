@@ -1,3 +1,4 @@
+import { formatIST } from "./format-date";
 /**
  * CareerOS email templates. Pure functions returning { subject, html, text }.
  *
@@ -198,7 +199,7 @@ export function loginAlertEmail(input: {
   location?: string | null;
 }): RenderedEmail {
   const provider = input.provider === "google" ? "Google" : input.provider === "password" ? "Email & password" : (input.provider ?? "Unknown");
-  const when = input.when ?? new Date().toUTCString();
+  const when = input.when ?? formatIST();
   const subject = "New sign-in detected";
   const intro = `We noticed a new sign in to your CareerOS account. If this was you, no action is needed.`;
   const rows: Array<[string, string]> = [
@@ -241,7 +242,7 @@ export function passwordResetEmail(input: { link: string; expiresInMinutes?: num
 
 export function passwordChangedEmail(input: { when?: string; ip?: string | null; browser?: string | null; os?: string | null }): RenderedEmail {
   const subject = "Your CareerOS password was changed";
-  const when = input.when ?? new Date().toUTCString();
+  const when = input.when ?? formatIST();
   const intro = "This is a confirmation that your CareerOS account password was just changed.";
   const rows: Array<[string, string]> = [["When", when]];
   if (input.browser) rows.push(["Browser", input.browser]);
@@ -457,7 +458,7 @@ export function securityAlertEmail(input: {
 }): RenderedEmail {
   const subject = `Security alert — ${input.reason}`;
   const intro = `We detected a security-sensitive event on your CareerOS account: <b style="color:${COLOR.danger}">${escapeHtml(input.reason)}</b>. Review the details below.`;
-  const rows: Array<[string, string]> = [["When", input.when ?? new Date().toUTCString()]];
+  const rows: Array<[string, string]> = [["When", input.when ?? formatIST()]];
   if (input.details) rows.push(["Details", input.details]);
   if (input.userAgent) rows.push(["Device", input.userAgent.slice(0, 160)]);
   if (input.ip) rows.push(["IP", input.ip]);
