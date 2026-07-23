@@ -547,37 +547,8 @@ export const approveResume = createServerFn({ method: "POST" })
       aiOriginal,
     );
 
-    // Notify the user (best-effort, non-blocking).
-    try {
-      const email = (context.claims as { email?: string }).email;
-      if (email) {
-        const { sendResumeParsedEmail } = await import("@/lib/email/senders.server");
-        // Best-effort certifications count from the profile.
-        let certifications = 0;
-        try {
-          const { count } = await supabase
-            .from("certifications")
-            .select("*", { count: "exact", head: true })
-            .eq("user_id", userId);
-          certifications = count ?? 0;
-        } catch {
-          /* ignore */
-        }
-        void sendResumeParsedEmail(email, {
-          name: edited.personal.fullName ?? null,
-          version: brainVersion,
-          projects: counts.projects,
-          skills: counts.skills,
-          experiences: counts.experiences,
-          education: counts.education,
-          certifications,
-          completeness,
-          userId,
-        });
-      }
-    } catch {
-      /* non-fatal */
-    }
+    // Resume-parsed email removed per product decision — users are notified
+    // via the "new job matches" email once matches are computed.
 
     // NOTE: heavy discovery + AI matching runs on the next Dashboard/Jobs
     // visit via `ensureInitialMatches` — inline execution here would exceed
