@@ -24,7 +24,7 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { stepProgress } from "@/lib/auto-apply/driver";
-import { formatIST } from "@/lib/email/format-date";
+
 
 export const Route = createFileRoute("/api/public/hooks/auto-apply-events")({
   server: {
