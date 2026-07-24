@@ -2174,6 +2174,7 @@ export type Database = {
           user_id: string
           verified_fields: string[]
           website_url: string | null
+          welcomed_at: string | null
           years_of_experience: number | null
         }
         Insert: {
@@ -2197,6 +2198,7 @@ export type Database = {
           user_id: string
           verified_fields?: string[]
           website_url?: string | null
+          welcomed_at?: string | null
           years_of_experience?: number | null
         }
         Update: {
@@ -2220,6 +2222,7 @@ export type Database = {
           user_id?: string
           verified_fields?: string[]
           website_url?: string | null
+          welcomed_at?: string | null
           years_of_experience?: number | null
         }
         Relationships: []
