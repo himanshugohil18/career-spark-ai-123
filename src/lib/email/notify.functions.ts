@@ -62,8 +62,24 @@ export const notifyWelcome = createServerFn({ method: "POST" })
     try {
       const to = await getRecipient(supabase, userId, claims as { email?: string });
       if (!to) return { ok: false, reason: "no_email" };
+      // Only send the welcome email the first time — gate on profiles.welcomed_at
+      // so re-signing in never re-triggers it.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sb = supabase as any;
+      const { data: prof } = await sb
+        .from("profiles")
+        .select("welcomed_at")
+        .eq("user_id", userId)
+        .maybeSingle();
+      if (prof?.welcomed_at) return { ok: false, reason: "already_welcomed" };
       const { sendWelcomeEmail } = await import("./senders.server");
       const res = await sendWelcomeEmail(to.email, to.name, userId);
+      if (res.sent) {
+        await sb
+          .from("profiles")
+          .update({ welcomed_at: new Date().toISOString() })
+          .eq("user_id", userId);
+      }
       return { ok: res.sent, reason: res.reason };
     } catch (e) {
       console.warn("[notifyWelcome] failed", (e as Error).message);
