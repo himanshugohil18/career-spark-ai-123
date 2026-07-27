@@ -273,6 +273,7 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
         return;
       }
       if (result.redirected) return;
+      toast.success("Signed in successfully", { description: "Taking you to your dashboard…" });
       navigate({ to: "/dashboard" });
     } catch (e) {
       toast.error("Google sign-in failed", {
@@ -353,6 +354,7 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
     try {
       const { error } = await supabase.auth.verifyOtp({ email, token: otpCode, type: "email" });
       if (error) throw error;
+      toast.success("Signed in successfully", { description: "Taking you to your dashboard…" });
       navigate({ to: "/dashboard" });
     } catch (err) {
       toast.error("Invalid or expired code", {
