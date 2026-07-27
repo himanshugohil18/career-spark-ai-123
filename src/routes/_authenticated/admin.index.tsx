@@ -101,11 +101,17 @@ function AdminOverview() {
                 <p className="truncate text-[13px] font-medium">{u.full_name || u.email || u.user_id}</p>
                 <p className="truncate font-mono text-[10px] text-muted-foreground">{u.email}</p>
               </div>
-              <span className="font-mono text-[10px] text-muted-foreground">
-                {new Date(u.created_at).toLocaleDateString()}
-              </span>
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="rounded-full border border-border bg-elevated px-2 py-0.5 text-[10px] capitalize text-muted-foreground">
+                  {u.provider === "google" ? "Google" : "Email"}
+                </span>
+                <span className="font-mono text-[10px] text-muted-foreground">
+                  {u.created_at ? new Date(u.created_at).toLocaleDateString() : "—"}
+                </span>
+              </div>
             </li>
           ))}
+
         </ul>
       </Panel>
     </div>
