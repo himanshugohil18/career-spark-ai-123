@@ -1,5 +1,7 @@
 import { motion, useMotionValue, useSpring, useTransform, useScroll } from "framer-motion";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { useSession } from "@/hooks/use-session";
 import {
   Sparkles,
   ArrowRight,
