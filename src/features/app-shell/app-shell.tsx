@@ -292,7 +292,14 @@ export function AppShell({ children }: { children: ReactNode }) {
               <NavItem key={item.label} {...item} collapsed={false} active={isRouteActive(item.to)} />
             ))}
           </nav>
-          <div className="border-t border-border p-3">
+          <div className="space-y-2 border-t border-border p-3">
+            <Link
+              to="/"
+              className="flex h-10 w-full items-center justify-center gap-2 rounded-md border border-border bg-elevated text-sm text-muted-foreground transition-colors hover:text-foreground"
+            >
+              <Home className="h-4 w-4" />
+              Back to homepage
+            </Link>
             <button
               onClick={handleSignOut}
               className="flex h-10 w-full items-center justify-center gap-2 rounded-md border border-border bg-elevated text-sm text-muted-foreground transition-colors hover:text-foreground"
