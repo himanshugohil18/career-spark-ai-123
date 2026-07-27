@@ -143,10 +143,11 @@ export const getAdminOverview = createServerFn({ method: "GET" })
 
 export const getUsersList = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((d: { search?: string; page?: number; pageSize?: number }) => ({
+  .inputValidator((d: { search?: string; page?: number; pageSize?: number; provider?: string }) => ({
     search: (d?.search ?? "").trim().toLowerCase(),
     page: Math.max(0, d?.page ?? 0),
     pageSize: Math.min(100, d?.pageSize ?? 25),
+    provider: (d?.provider ?? "all").toLowerCase(),
   }))
   .handler(async ({ context, data }) => {
     await assertAdmin(context);
@@ -166,11 +167,18 @@ export const getUsersList = createServerFn({ method: "GET" })
     const activeWeek = authUsers.filter((u) => u.last_sign_in_at && u.last_sign_in_at >= weekAgo).length;
     const activeMonth = authUsers.filter((u) => u.last_sign_in_at && u.last_sign_in_at >= monthAgo).length;
 
-    // provider breakdown
+    // All sign-in methods available per account (an account can have several).
+    const methodsOf = (u: any): string[] => {
+      const ids: string[] = (u.identities ?? []).map((i: any) => String(i.provider));
+      const primary = (u.app_metadata?.provider as string) || "email";
+      const all = new Set<string>([...ids, primary].filter(Boolean));
+      return [...all];
+    };
+
+    // provider breakdown (counts every method an account can use)
     const providers: Record<string, number> = {};
     for (const u of authUsers) {
-      const p = (u.app_metadata?.provider as string) || "email";
-      providers[p] = (providers[p] ?? 0) + 1;
+      for (const p of methodsOf(u)) providers[p] = (providers[p] ?? 0) + 1;
     }
 
     // Source the list from auth users so BOTH Google and email/password
@@ -180,8 +188,24 @@ export const getUsersList = createServerFn({ method: "GET" })
       .select("user_id, email, full_name, avatar_url, preferred_role, current_title, created_at");
     const profileMap = new Map((profileRows ?? []).map((p: any) => [p.user_id, p]));
 
+    // Latest recorded login event per user (captures the method actually used).
+    const { data: loginRows } = await supabaseAdmin
+      .from("login_events")
+      .select("user_id, provider, created_at, event_type")
+      .order("created_at", { ascending: false })
+      .limit(2000);
+    const lastLogin = new Map<string, any>();
+    for (const r of loginRows ?? []) {
+      if (!lastLogin.has(r.user_id)) lastLogin.set(r.user_id, r);
+    }
+
     const merged = authUsers.map((a) => {
       const p: any = profileMap.get(a.id) ?? {};
+      const methods = methodsOf(a);
+      const evt = lastLogin.get(a.id);
+      const lastMethod =
+        (evt?.provider as string | undefined) ||
+        ((a.app_metadata?.provider as string) || "email");
       return {
         user_id: a.id,
         email: (a.email ?? p.email ?? "") as string,
@@ -197,23 +221,39 @@ export const getUsersList = createServerFn({ method: "GET" })
         current_title: (p.current_title as string | null) ?? null,
         created_at: (a.created_at as string) ?? (p.created_at as string) ?? null,
         provider: (a.app_metadata?.provider as string) || "email",
-        last_sign_in_at: a.last_sign_in_at ?? null,
+        methods,
+        is_manual: methods.includes("email"),
+        is_google: methods.includes("google"),
+        last_method: lastMethod,
+        last_sign_in_at: a.last_sign_in_at ?? evt?.created_at ?? null,
+        email_confirmed_at: (a as any).email_confirmed_at ?? null,
       };
     });
 
+    const googleUsers = merged.filter((u) => u.is_google).length;
+    const manualUsers = merged.filter((u) => u.is_manual).length;
+
+    const byProvider =
+      data.provider === "google"
+        ? merged.filter((u) => u.is_google)
+        : data.provider === "manual" || data.provider === "email"
+          ? merged.filter((u) => u.is_manual)
+          : merged;
+
     const filtered = data.search
-      ? merged.filter((u) =>
-          [u.email, u.full_name, u.preferred_role, u.current_title, u.provider]
+      ? byProvider.filter((u) =>
+          [u.email, u.full_name, u.preferred_role, u.current_title, ...u.methods]
             .filter(Boolean)
             .some((v) => String(v).toLowerCase().includes(data.search)),
         )
-      : merged;
+      : byProvider;
 
     filtered.sort((a, b) => {
       const x = a.last_sign_in_at ?? a.created_at ?? "";
       const y = b.last_sign_in_at ?? b.created_at ?? "";
       return y.localeCompare(x);
     });
+
 
     const count = filtered.length;
     const from = data.page * data.pageSize;
@@ -256,7 +296,10 @@ export const getUsersList = createServerFn({ method: "GET" })
         activeToday,
         activeWeek,
         activeMonth,
+        googleUsers,
+        manualUsers,
       },
+
       providers,
       rows: enriched,
       total: count ?? 0,
