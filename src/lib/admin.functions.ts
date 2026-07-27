@@ -173,25 +173,54 @@ export const getUsersList = createServerFn({ method: "GET" })
       providers[p] = (providers[p] ?? 0) + 1;
     }
 
-    // filter+paginate profiles server-side
-    const from = data.page * data.pageSize;
-    const to = from + data.pageSize - 1;
-    let q = supabaseAdmin
+    // Source the list from auth users so BOTH Google and email/password
+    // accounts appear even if a profiles row was never created.
+    const { data: profileRows } = await supabaseAdmin
       .from("profiles")
-      .select(
-        "user_id, email, full_name, avatar_url, preferred_role, current_title, created_at",
-        { count: "exact" },
-      )
-      .order("created_at", { ascending: false });
-    if (data.search) {
-      q = q.or(
-        `email.ilike.%${data.search}%,full_name.ilike.%${data.search}%,preferred_role.ilike.%${data.search}%`,
-      );
-    }
-    const { data: rows, count } = await q.range(from, to);
+      .select("user_id, email, full_name, avatar_url, preferred_role, current_title, created_at");
+    const profileMap = new Map((profileRows ?? []).map((p: any) => [p.user_id, p]));
+
+    const merged = authUsers.map((a) => {
+      const p: any = profileMap.get(a.id) ?? {};
+      return {
+        user_id: a.id,
+        email: (a.email ?? p.email ?? "") as string,
+        full_name:
+          (p.full_name as string | null) ??
+          ((a.user_metadata?.full_name as string | undefined) ||
+            (a.user_metadata?.name as string | undefined) ||
+            null),
+        avatar_url:
+          (p.avatar_url as string | null) ??
+          ((a.user_metadata?.avatar_url as string | undefined) ?? null),
+        preferred_role: (p.preferred_role as string | null) ?? null,
+        current_title: (p.current_title as string | null) ?? null,
+        created_at: (a.created_at as string) ?? (p.created_at as string) ?? null,
+        provider: (a.app_metadata?.provider as string) || "email",
+        last_sign_in_at: a.last_sign_in_at ?? null,
+      };
+    });
+
+    const filtered = data.search
+      ? merged.filter((u) =>
+          [u.email, u.full_name, u.preferred_role, u.current_title, u.provider]
+            .filter(Boolean)
+            .some((v) => String(v).toLowerCase().includes(data.search)),
+        )
+      : merged;
+
+    filtered.sort((a, b) => {
+      const x = a.last_sign_in_at ?? a.created_at ?? "";
+      const y = b.last_sign_in_at ?? b.created_at ?? "";
+      return y.localeCompare(x);
+    });
+
+    const count = filtered.length;
+    const from = data.page * data.pageSize;
+    const pageRows = filtered.slice(from, from + data.pageSize);
 
     // enrich per-user counts (subscription plan, applications, ai gens)
-    const ids = (rows ?? []).map((r) => r.user_id);
+    const ids = pageRows.map((r) => r.user_id);
     const [subs, ws, ai] = await Promise.all([
       ids.length
         ? supabaseAdmin
@@ -213,17 +242,13 @@ export const getUsersList = createServerFn({ method: "GET" })
     const aiCount = new Map<string, number>();
     for (const g of ai.data ?? []) aiCount.set(g.user_id, (aiCount.get(g.user_id) ?? 0) + 1);
 
-    const enriched = (rows ?? []).map((r) => {
-      const a = authMap.get(r.user_id);
-      return {
-        ...r,
-        provider: (a?.app_metadata?.provider as string) || "email",
-        last_sign_in_at: a?.last_sign_in_at ?? null,
-        plan: planMap.get(r.user_id) ?? "free",
-        applications: wsCount.get(r.user_id) ?? 0,
-        ai_generations: aiCount.get(r.user_id) ?? 0,
-      };
-    });
+    const enriched = pageRows.map((r) => ({
+      ...r,
+      plan: planMap.get(r.user_id) ?? "free",
+      applications: wsCount.get(r.user_id) ?? 0,
+      ai_generations: aiCount.get(r.user_id) ?? 0,
+    }));
+
 
     return {
       totals: {
