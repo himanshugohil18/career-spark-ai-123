@@ -8,16 +8,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { computeMatch, persistMatch } from "@/lib/jobs/matching.server";
 import { computeCompleteness } from "@/lib/completeness";
+import { isAuthorizedCronRequest } from "@/lib/cron-auth.server";
 
 export const Route = createFileRoute("/api/public/hooks/refresh-matches")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apikey = request.headers.get("apikey");
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY;
-        if (!apikey || !expected || apikey !== expected) {
+        if (!isAuthorizedCronRequest(request)) {
           return new Response("Unauthorized", { status: 401 });
         }
+
         try {
           const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
           const stats = await refreshAll(supabaseAdmin);
