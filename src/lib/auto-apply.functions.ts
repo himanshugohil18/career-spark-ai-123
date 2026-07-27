@@ -11,8 +11,15 @@ export const startAutoApply = createServerFn({ method: "POST" })
   .inputValidator((i: unknown) => z.object({ workspaceId: z.string().uuid() }).parse(i))
   .handler(async ({ data, context }) => {
     const { startAutoApplySession } = await import("./auto-apply/orchestrator.server");
-    const req = getRequest();
-    const origin = new URL(req.url).origin;
+    // Never derive the worker callback origin from the incoming request
+    // (Host header is client-controllable and the worker secret is sent to it).
+    const configured = process.env.APP_URL ?? "";
+    let origin = "https://careerosai.site";
+    try {
+      if (configured) origin = new URL(configured).origin;
+    } catch {
+      /* fall back to the canonical production origin */
+    }
     return startAutoApplySession({
       supabase: context.supabase,
       userId: context.userId,
@@ -20,6 +27,7 @@ export const startAutoApply = createServerFn({ method: "POST" })
       siteOrigin: origin,
     });
   });
+
 
 // ---- Read ----------------------------------------------------------------
 
