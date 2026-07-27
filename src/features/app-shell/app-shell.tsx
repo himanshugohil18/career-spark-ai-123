@@ -333,8 +333,17 @@ export function AppShell({ children }: { children: ReactNode }) {
           </button>
 
           <div className="flex items-center gap-2">
+            <Link
+              to="/"
+              className="hidden h-10 items-center gap-2 rounded-lg border border-border bg-elevated px-3 text-sm text-muted-foreground transition-colors hover:text-foreground sm:flex"
+              aria-label="Back to homepage"
+            >
+              <Home className="h-4 w-4" />
+              <span>Home</span>
+            </Link>
             <ThemeToggle />
             <NotificationCenter />
+
             <Link
               to="/me"
               className="grid h-10 w-10 place-items-center rounded-lg border border-border bg-elevated text-muted-foreground transition-all hover:-translate-y-[1px] hover:border-primary/40 hover:text-primary hover:shadow-[0_8px_20px_-8px_color-mix(in_oklab,var(--primary)_45%,transparent)]"
