@@ -112,7 +112,30 @@ function AdminUsers() {
       <Panel
         title="Users"
         action={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1 rounded-md border border-border bg-elevated p-0.5">
+              {([
+                ["all", "All"],
+                ["google", "Google"],
+                ["manual", "Manual"],
+              ] as const).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => {
+                    setPage(0);
+                    setProvider(key);
+                  }}
+                  className={`rounded px-2 py-1 text-[11px] font-medium transition-colors ${
+                    provider === key
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             <Input
               placeholder="Search name / email / role"
               value={search}
@@ -136,13 +159,13 @@ function AdminUsers() {
             <thead className="bg-elevated text-left text-[11px] uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="px-3 py-2">User</th>
-                <th className="px-3 py-2">Provider</th>
+                <th className="px-3 py-2">Sign-in methods</th>
                 <th className="px-3 py-2">Plan</th>
                 <th className="px-3 py-2">Role</th>
                 <th className="px-3 py-2">Apps</th>
                 <th className="px-3 py-2">AI</th>
-                <th className="px-3 py-2">Joined</th>
-                <th className="px-3 py-2">Last login</th>
+                <th className="px-3 py-2">Joined (IST)</th>
+                <th className="px-3 py-2">Last login (IST)</th>
               </tr>
             </thead>
             <tbody>
@@ -169,17 +192,32 @@ function AdminUsers() {
                       </div>
                     </div>
                   </td>
-                  <td className="px-3 py-2 font-mono text-[11px]">{u.provider}</td>
+                  <td className="px-3 py-2">
+                    <div className="flex flex-wrap items-center gap-1">
+                      {(u.methods ?? [u.provider]).map((m: string) => (
+                        <MethodBadge key={m} method={m} />
+                      ))}
+                    </div>
+                    {u.last_method && (
+                      <p className="mt-1 text-[10px] text-muted-foreground">
+                        last via {PROVIDER_LABEL[u.last_method] ?? u.last_method}
+                      </p>
+                    )}
+                  </td>
                   <td className="px-3 py-2"><StatusPill status={u.plan} /></td>
                   <td className="px-3 py-2 text-[12px] text-muted-foreground">{u.preferred_role || u.current_title || "—"}</td>
                   <td className="px-3 py-2 font-mono text-[12px]">{u.applications}</td>
                   <td className="px-3 py-2 font-mono text-[12px]">{u.ai_generations}</td>
                   <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
-                    {new Date(u.created_at).toLocaleDateString()}
+                    {fmtIST(u.created_at)}
                   </td>
                   <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
-                    {u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleDateString() : "—"}
+                    <div>{fmtIST(u.last_sign_in_at)}</div>
+                    {u.last_sign_in_at && (
+                      <div className="text-[10px] opacity-70">{relative(u.last_sign_in_at)}</div>
+                    )}
                   </td>
+
                 </tr>
               ))}
             </tbody>
