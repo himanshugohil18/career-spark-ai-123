@@ -24,6 +24,8 @@ import { Skeleton } from "@/components/ai/skeleton";
 import { ResumeUpload } from "@/features/resume/resume-upload";
 import { DevDebugPanel } from "@/features/debug/dev-debug-panel";
 import { DashboardWidgets } from "@/features/jobs/dashboard-widgets";
+import { ProfileSummaryCard } from "@/features/profile/profile-summary-card";
+
 import { ApplicationsSummary } from "@/features/applications/applications-summary";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { LiveDot } from "@/components/ui/live-dot";
@@ -155,6 +157,19 @@ function Dashboard() {
           </div>
         </div>
       </motion.div>
+
+      {/* Signed-in profile details */}
+      {isLoading ? (
+        <Skeleton className="h-32 rounded-2xl" />
+      ) : (
+        <ProfileSummaryCard
+          profile={profile}
+          fallbackEmail={user.email}
+          completeness={completeness.score}
+        />
+      )}
+
+
 
       {/* Activation / activated hero */}
       {isLoading ? (
