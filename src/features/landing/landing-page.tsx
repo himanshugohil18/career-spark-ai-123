@@ -48,12 +48,48 @@ const ease = [0.22, 1, 0.36, 1] as const;
 // Landing page — CareerOS
 // -----------------------------------------------------------------------------
 
+function AuthAwareSignInCta() {
+  const { isAuthenticated, loading } = useSession();
+  if (loading) return null;
+  return (
+    <Button asChild variant="outline" size="xl" className="backdrop-blur">
+      {isAuthenticated ? (
+        <Link to="/dashboard">Go to dashboard</Link>
+      ) : (
+        <Link to="/auth">Sign in</Link>
+      )}
+    </Button>
+  );
+}
+
+/** After a Google OAuth round-trip the provider returns to "/" — forward
+ *  the now-signed-in user to their dashboard. */
+function useOAuthLandingRedirect() {
+  const { isAuthenticated } = useSession();
+  const navigate = useNavigate();
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    let pending = false;
+    try {
+      pending = sessionStorage.getItem("careeros:oauth-redirect") === "1";
+      if (pending) sessionStorage.removeItem("careeros:oauth-redirect");
+    } catch {
+      /* ignore */
+    }
+    if (!pending) return;
+    toast.success("Signed in successfully", { description: "Taking you to your dashboard…" });
+    navigate({ to: "/dashboard" });
+  }, [isAuthenticated, navigate]);
+}
+
 export function LandingPage() {
+  useOAuthLandingRedirect();
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <AmbientBackdrop />
       <Navbar />
       <main className="relative pt-16">
+
         <Hero />
         <LogoMarquee />
         
