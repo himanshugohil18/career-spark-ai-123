@@ -396,7 +396,7 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
           return;
         }
 
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -405,7 +405,17 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
           },
         });
         if (error) throw error;
+        // Supabase returns a decoy user with no identities when the email
+        // already exists — treat that as a duplicate registration.
+        if (signUpData?.user && (signUpData.user.identities?.length ?? 0) === 0) {
+          toast.error("This email is already registered", {
+            description: "Try signing in instead, or reset your password.",
+          });
+          setMode("signin");
+          return;
+        }
         toast.success("Check your email to confirm your account.");
+
         // Fire welcome email in the background (server function derives
         // recipient from the session — auto no-op if signup requires
         // email confirmation).
