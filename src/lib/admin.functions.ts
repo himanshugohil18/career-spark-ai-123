@@ -348,6 +348,35 @@ export const getBillingOverview = createServerFn({ method: "GET" })
       ? await supabaseAdmin.from("profiles").select("user_id, email, full_name").in("user_id", uids)
       : { data: [] as any[] };
     const pmap = new Map((profs ?? []).map((p: any) => [p.user_id, p]));
+
+    // Fall back to auth users when a profile row is missing or has no email,
+    // otherwise paying customers show up as "—" in the admin table.
+    const missing = uids.filter((id) => !pmap.get(id)?.email);
+    if (missing.length) {
+      const found = await Promise.all(
+        missing.map(async (id) => {
+          try {
+            const { data } = await supabaseAdmin.auth.admin.getUserById(id as string);
+            const u = data?.user;
+            if (!u) return null;
+            const meta = (u.user_metadata ?? {}) as Record<string, unknown>;
+            return {
+              user_id: id,
+              email: u.email ?? null,
+              full_name:
+                (pmap.get(id)?.full_name as string | undefined) ??
+                (meta.full_name as string | undefined) ??
+                (meta.name as string | undefined) ??
+                null,
+            };
+          } catch {
+            return null;
+          }
+        }),
+      );
+      for (const r of found) if (r) pmap.set(r.user_id, r);
+    }
+
     const recent = (recentPays.data ?? []).map((p: any) => ({
       ...p,
       email: pmap.get(p.user_id)?.email ?? null,
