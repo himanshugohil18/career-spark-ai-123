@@ -1485,9 +1485,7 @@ function CTA() {
               </Link>
             </Button>
           </div>
-          <Button asChild variant="outline" size="xl" className="backdrop-blur">
-            <Link to="/auth">Sign in</Link>
-          </Button>
+          <AuthAwareSignInCta />
         </div>
         <div className="mt-8 flex items-center justify-center gap-6 text-xs text-muted-foreground">
           <span className="flex items-center gap-1.5"><Users className="h-3.5 w-3.5 text-accent" /> 12,000+ users</span>
