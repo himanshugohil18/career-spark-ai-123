@@ -102,6 +102,35 @@ export const getAdminOverview = createServerFn({ method: "GET" })
         .limit(10),
     ]);
 
+    // Source user stats + recent signups from auth so BOTH Google and
+    // email/password accounts show up, even without a profiles row.
+    const { data: authList } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    const authUsers = authList?.users ?? [];
+    const profileById = new Map((recentUsers.data ?? []).map((p: any) => [p.user_id, p]));
+
+    const recentSignups = [...authUsers]
+      .sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? ""))
+      .slice(0, 10)
+      .map((a) => {
+        const p: any = profileById.get(a.id) ?? {};
+        return {
+          user_id: a.id,
+          email: a.email ?? p.email ?? "—",
+          full_name:
+            (p.full_name as string | null) ??
+            ((a.user_metadata?.full_name as string | undefined) ||
+              (a.user_metadata?.name as string | undefined) ||
+              null),
+          created_at: a.created_at ?? p.created_at ?? null,
+          provider: (a.app_metadata?.provider as string) || "email",
+          last_sign_in_at: a.last_sign_in_at ?? null,
+        };
+      });
+
+    const authCount = authUsers.length;
+    const countSince = (since: string) =>
+      authUsers.filter((u) => (u.created_at ?? "") >= since).length;
+
     const sumAmt = (rows: { amount: number }[] | null) =>
       (rows ?? []).reduce((a, r) => a + (r.amount || 0), 0);
 
@@ -110,10 +139,11 @@ export const getAdminOverview = createServerFn({ method: "GET" })
 
     return {
       counts: {
-        users: usersC.count ?? 0,
-        newToday: newToday.count ?? 0,
-        newWeek: newWeek.count ?? 0,
-        newMonth: newMonth.count ?? 0,
+        users: authCount || (usersC.count ?? 0),
+        newToday: authCount ? countSince(today) : (newToday.count ?? 0),
+        newWeek: authCount ? countSince(weekAgo) : (newWeek.count ?? 0),
+        newMonth: authCount ? countSince(monthAgo) : (newMonth.count ?? 0),
+
         activeSubs: activeSubs.count ?? 0,
         activeJobs: jobsC.count ?? 0,
         matches: matchesC.count ?? 0,
