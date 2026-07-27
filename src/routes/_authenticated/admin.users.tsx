@@ -12,14 +12,67 @@ export const Route = createFileRoute("/_authenticated/admin/users")({
   component: AdminUsers,
 });
 
+const IST = "Asia/Kolkata";
+
+/** Exact date + time in IST, e.g. "23 Jul 2026, 10:47 AM IST". */
+function fmtIST(value?: string | null) {
+  if (!value) return "—";
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return "—";
+  return (
+    d.toLocaleString("en-IN", {
+      timeZone: IST,
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    }) + " IST"
+  );
+}
+
+function relative(value?: string | null) {
+  if (!value) return "";
+  const diff = Date.now() - new Date(value).getTime();
+  if (Number.isNaN(diff)) return "";
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return "just now";
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+const PROVIDER_LABEL: Record<string, string> = {
+  google: "Google",
+  email: "Email & password",
+};
+
+function MethodBadge({ method }: { method: string }) {
+  const isGoogle = method === "google";
+  return (
+    <span
+      className={`rounded-full border px-2 py-0.5 text-[10px] font-medium ${
+        isGoogle
+          ? "border-primary/40 bg-primary/10 text-primary"
+          : "border-border bg-elevated text-muted-foreground"
+      }`}
+    >
+      {PROVIDER_LABEL[method] ?? method}
+    </span>
+  );
+}
+
 function AdminUsers() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
+  const [provider, setProvider] = useState<"all" | "google" | "manual">("all");
   const pageSize = 25;
 
   const q = useQuery({
-    queryKey: ["admin-users", search, page],
-    queryFn: () => getUsersList({ data: { search, page, pageSize } }),
+    queryKey: ["admin-users", search, page, provider],
+    queryFn: () => getUsersList({ data: { search, page, pageSize, provider } }),
     refetchInterval: 60_000,
   });
 
@@ -35,23 +88,26 @@ function AdminUsers() {
 
   return (
     <div className="space-y-6">
-      <section className="grid gap-3 md:grid-cols-4">
+      <section className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
         <StatCard label="Total users" value={d?.totals.users ?? "—"} icon={Users} />
+        <StatCard label="Google sign-in" value={(d?.totals as any)?.googleUsers ?? "—"} icon={UserCheck} />
+        <StatCard label="Manual (email)" value={(d?.totals as any)?.manualUsers ?? "—"} icon={UserPlus} />
         <StatCard label="Active today" value={d?.totals.activeToday ?? "—"} icon={UserCheck} tone="success" />
         <StatCard label="Active this week" value={d?.totals.activeWeek ?? "—"} icon={UserCheck} />
         <StatCard label="Active this month" value={d?.totals.activeMonth ?? "—"} icon={UserPlus} />
       </section>
 
       <Panel title="Auth provider breakdown">
-        <div className="flex flex-wrap gap-2 px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2 px-4 py-3">
           {Object.entries(d?.providers ?? {}).map(([p, n]) => (
             <span key={p} className="rounded-full border border-border bg-elevated px-2 py-1 font-mono text-[11px]">
-              {p}: <span className="font-semibold">{n as number}</span>
+              {PROVIDER_LABEL[p] ?? p}: <span className="font-semibold">{n as number}</span>
             </span>
           ))}
           {!d && <span className="text-xs text-muted-foreground">Loading…</span>}
         </div>
       </Panel>
+
 
       <Panel
         title="Users"
