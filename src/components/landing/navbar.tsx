@@ -5,6 +5,7 @@ import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Logo } from "./logo";
+import { useSession } from "@/hooks/use-session";
 
 const NAV = [
   { label: "Features", href: "#features", id: "features" },
@@ -15,6 +16,7 @@ const NAV = [
 ];
 
 export function Navbar() {
+  const { isAuthenticated, loading } = useSession();
   const [open, setOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [active, setActive] = useState<string | null>(null);
@@ -91,18 +93,26 @@ export function Navbar() {
           </nav>
 
           <div className="hidden items-center gap-2 md:flex">
-            <Link
-              to="/auth"
-              search={{ mode: "signin" }}
-              className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              Sign in
-            </Link>
-            <Button asChild variant="primary" size="sm">
-              <Link to="/auth" search={{ mode: "signup" }}>
-                Get started
-              </Link>
-            </Button>
+            {loading ? null : isAuthenticated ? (
+              <Button asChild variant="primary" size="sm">
+                <Link to="/dashboard">Go to dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Link
+                  to="/auth"
+                  search={{ mode: "signin" }}
+                  className="rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Sign in
+                </Link>
+                <Button asChild variant="primary" size="sm">
+                  <Link to="/auth" search={{ mode: "signup" }}>
+                    Get started
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
 
           <button
@@ -133,14 +143,22 @@ export function Navbar() {
             </a>
           ))}
           <div className="mt-3 flex flex-col gap-2 border-t border-border pt-4">
-            <Button asChild variant="ghost">
-              <Link to="/auth" search={{ mode: "signin" }}>Sign in</Link>
-            </Button>
-            <Button asChild variant="primary">
-              <Link to="/auth" search={{ mode: "signup" }}>
-                Get started
-              </Link>
-            </Button>
+            {loading ? null : isAuthenticated ? (
+              <Button asChild variant="primary">
+                <Link to="/dashboard">Go to dashboard</Link>
+              </Button>
+            ) : (
+              <>
+                <Button asChild variant="ghost">
+                  <Link to="/auth" search={{ mode: "signin" }}>Sign in</Link>
+                </Button>
+                <Button asChild variant="primary">
+                  <Link to="/auth" search={{ mode: "signup" }}>
+                    Get started
+                  </Link>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </motion.div>

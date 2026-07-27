@@ -261,8 +261,16 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
   async function handleOAuth() {
     setLoading("google");
     try {
+      // Remember that we started an OAuth flow so the landing page can
+      // forward the user to the dashboard once the session is hydrated.
+      try {
+        sessionStorage.setItem("careeros:oauth-redirect", "1");
+      } catch {
+        /* ignore */
+      }
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
+
         // Always show the Google account chooser instead of silently
         // reusing the browser's already-signed-in account.
         extraParams: { prompt: "select_account" },
@@ -273,6 +281,7 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
         return;
       }
       if (result.redirected) return;
+      toast.success("Signed in successfully", { description: "Taking you to your dashboard…" });
       navigate({ to: "/dashboard" });
     } catch (e) {
       toast.error("Google sign-in failed", {
@@ -353,6 +362,7 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
     try {
       const { error } = await supabase.auth.verifyOtp({ email, token: otpCode, type: "email" });
       if (error) throw error;
+      toast.success("Signed in successfully", { description: "Taking you to your dashboard…" });
       navigate({ to: "/dashboard" });
     } catch (err) {
       toast.error("Invalid or expired code", {
@@ -372,6 +382,20 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
     setLoading("email");
     try {
       if (isSignup) {
+        // Server-side duplicate-email validation before creating the account.
+        const { checkEmailAvailable } = await import("@/lib/auth.functions");
+        const check = await checkEmailAvailable({ data: { email } });
+        if (!check.available) {
+          toast.error("This email is already registered", {
+            description:
+              check.provider === "google"
+                ? "That account was created with Google — use “Continue with Google” to sign in."
+                : "Try signing in instead, or reset your password.",
+          });
+          setMode("signin");
+          return;
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -404,8 +428,10 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
             /* non-fatal */
           }
         })();
+        toast.success("Signed in successfully", { description: "Taking you to your dashboard…" });
         navigate({ to: "/dashboard" });
       }
+
     } catch (err) {
       toast.error(isSignup ? "Sign up failed" : "Sign in failed", {
         description: err instanceof Error ? err.message : String(err),
