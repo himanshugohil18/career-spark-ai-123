@@ -296,7 +296,10 @@ export const getUsersList = createServerFn({ method: "GET" })
         activeToday,
         activeWeek,
         activeMonth,
+        googleUsers,
+        manualUsers,
       },
+
       providers,
       rows: enriched,
       total: count ?? 0,
