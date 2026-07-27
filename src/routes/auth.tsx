@@ -261,8 +261,16 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
   async function handleOAuth() {
     setLoading("google");
     try {
+      // Remember that we started an OAuth flow so the landing page can
+      // forward the user to the dashboard once the session is hydrated.
+      try {
+        sessionStorage.setItem("careeros:oauth-redirect", "1");
+      } catch {
+        /* ignore */
+      }
       const result = await lovable.auth.signInWithOAuth("google", {
         redirect_uri: window.location.origin,
+
         // Always show the Google account chooser instead of silently
         // reusing the browser's already-signed-in account.
         extraParams: { prompt: "select_account" },
