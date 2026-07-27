@@ -68,11 +68,12 @@ function GoRedirect() {
       <h1 className="font-display text-lg">
         {error ? error : "Taking you to the job posting…"}
       </h1>
-      {u && !error && (
+      {u && !error && allowed && (
         <a href={u} className="text-sm text-primary underline underline-offset-4" rel="noopener noreferrer">
           Open job posting
         </a>
       )}
+
     </div>
   );
 }
