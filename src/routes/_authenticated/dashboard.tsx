@@ -156,6 +156,19 @@ function Dashboard() {
         </div>
       </motion.div>
 
+      {/* Signed-in profile details */}
+      {isLoading ? (
+        <Skeleton className="h-32 rounded-2xl" />
+      ) : (
+        <ProfileSummaryCard
+          profile={profile}
+          fallbackEmail={user.email}
+          completeness={completeness.score}
+        />
+      )}
+
+
+
       {/* Activation / activated hero */}
       {isLoading ? (
         <Skeleton className="h-56 rounded-2xl" />
