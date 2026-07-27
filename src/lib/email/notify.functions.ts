@@ -95,6 +95,17 @@ export const notifyLogin = createServerFn({ method: "POST" })
     try {
       const to = await getRecipient(supabase, userId, claims as { email?: string });
       if (!to) return { ok: false, reason: "no_email" };
+      // Only ever alert on the FIRST successful login per account — durable
+      // check against email_logs so later sign-ins (incl. Google) stay quiet.
+      const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+      const { data: prior } = await supabaseAdmin
+        .from("email_logs")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("template", "login_alert")
+        .eq("status", "sent")
+        .limit(1);
+      if (prior && prior.length > 0) return { ok: false, reason: "already_alerted" };
       const ua = parseUserAgent(data.userAgent);
       const { sendLoginAlertEmail } = await import("./senders.server");
       const res = await sendLoginAlertEmail(to.email, {
@@ -113,6 +124,7 @@ export const notifyLogin = createServerFn({ method: "POST" })
       return { ok: false, reason: "exception" };
     }
   });
+
 
 export const notifyPasswordChanged = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
