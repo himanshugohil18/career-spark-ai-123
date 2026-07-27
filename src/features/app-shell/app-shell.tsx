@@ -35,6 +35,7 @@ import {
   Bot,
   Shield,
   Menu,
+  Home,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { ThemeToggle } from "@/components/settings/theme-toggle";
