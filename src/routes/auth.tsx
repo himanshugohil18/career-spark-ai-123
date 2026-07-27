@@ -372,6 +372,20 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
     setLoading("email");
     try {
       if (isSignup) {
+        // Server-side duplicate-email validation before creating the account.
+        const { checkEmailAvailable } = await import("@/lib/auth.functions");
+        const check = await checkEmailAvailable({ data: { email } });
+        if (!check.available) {
+          toast.error("This email is already registered", {
+            description:
+              check.provider === "google"
+                ? "That account was created with Google — use “Continue with Google” to sign in."
+                : "Try signing in instead, or reset your password.",
+          });
+          setMode("signin");
+          return;
+        }
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -404,8 +418,10 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
             /* non-fatal */
           }
         })();
+        toast.success("Signed in successfully", { description: "Taking you to your dashboard…" });
         navigate({ to: "/dashboard" });
       }
+
     } catch (err) {
       toast.error(isSignup ? "Sign up failed" : "Sign in failed", {
         description: err instanceof Error ? err.message : String(err),
