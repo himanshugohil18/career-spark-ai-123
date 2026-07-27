@@ -165,7 +165,7 @@ export const getAdminOverview = createServerFn({ method: "GET" })
       },
       recentSessions: recentSessions.data ?? [],
       failedGenerations: failedGens.data ?? [],
-      recentUsers: recentUsers.data ?? [],
+      recentUsers: recentSignups,
     };
   });
 
