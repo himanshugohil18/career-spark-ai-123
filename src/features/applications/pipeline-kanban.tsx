@@ -23,7 +23,7 @@ export function PipelineKanban({ workspaces }: { workspaces: PipelineWorkspace[]
     mutationFn: (vars: { workspaceId: string; stage: Stage }) =>
       setWorkspaceStage({ data: vars }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+      queryClient.invalidateQueries({ queryKey: ["applications-list"] });
     },
     onError: (err: unknown, vars) => {
       setOverrides((prev) => {
