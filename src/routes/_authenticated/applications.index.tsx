@@ -2,11 +2,12 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Building2, Command, Search, Sparkles } from "lucide-react";
+import { Building2, Command, LayoutGrid, List, Search, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ai/skeleton";
 import { MatchRing } from "@/features/jobs/match-ring";
 import { listWorkspaces } from "@/lib/workspace.functions";
+import { PipelineKanban } from "@/features/applications/pipeline-kanban";
 
 export const Route = createFileRoute("/_authenticated/applications/")({
   head: () => ({ meta: [{ title: "Applications · CareerOS" }] }),
@@ -31,6 +32,7 @@ type SortKey = "recent" | "readiness" | "company";
 function ApplicationsIndex() {
   const [q, setQ] = useState("");
   const [sort, setSort] = useState<SortKey>("recent");
+  const [view, setView] = useState<"kanban" | "list">("kanban");
   const { data, isLoading } = useQuery({
     queryKey: ["applications-list"],
     queryFn: () => listWorkspaces(),
@@ -82,9 +84,31 @@ function ApplicationsIndex() {
           <option value="readiness">Highest readiness</option>
           <option value="company">Company A→Z</option>
         </select>
-        <span className="ml-auto font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
+        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
           {rows.length} of {(data ?? []).length}
         </span>
+        <div className="ml-auto flex items-center gap-1 rounded-md border border-border bg-elevated p-0.5">
+          <button
+            type="button"
+            onClick={() => setView("kanban")}
+            aria-pressed={view === "kanban"}
+            className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs transition ${
+              view === "kanban" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <LayoutGrid className="h-3.5 w-3.5" /> Pipeline
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("list")}
+            aria-pressed={view === "list"}
+            className={`inline-flex items-center gap-1.5 rounded px-2.5 py-1 text-xs transition ${
+              view === "list" ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <List className="h-3.5 w-3.5" /> List
+          </button>
+        </div>
       </div>
 
       {isLoading && (
@@ -107,7 +131,9 @@ function ApplicationsIndex() {
         </div>
       )}
 
-      {!isLoading && rows.length > 0 && (
+      {!isLoading && rows.length > 0 && view === "kanban" && <PipelineKanban workspaces={rows} />}
+
+      {!isLoading && rows.length > 0 && view === "list" && (
         <div className="surface-card overflow-hidden">
           <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)_90px_90px_90px_120px_90px] items-center gap-3 border-b border-border bg-elevated/50 px-4 py-2.5 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
             <div>Company · Role</div>

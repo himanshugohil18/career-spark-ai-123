@@ -1,11 +1,15 @@
-import { useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { Bot, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ai/skeleton";
-import { listAutoApplySessions } from "@/lib/auto-apply.functions";
+import { SpringNumber } from "@/components/motion/spring-number";
+import { listAutoApplySessions, getAutoApplySession } from "@/lib/auto-apply.functions";
 import { STEP_LABELS } from "@/lib/auto-apply/driver";
+import { StatusPill } from "@/features/auto-apply/status-pill";
+import { ProgressRing } from "@/features/auto-apply/progress-ring";
+import { ConsoleLog, type ConsoleEvent } from "@/features/auto-apply/console-log";
 
 const LIVE_STATUSES = new Set(["queued", "running", "awaiting_input", "awaiting_approval", "submitting"]);
 
@@ -31,13 +35,48 @@ export function ActivityCenter() {
     };
   }, [qc]);
 
-  if (isLoading) return <Skeleton className="h-64 rounded-2xl" />;
   const rows = (data ?? []) as Array<Record<string, unknown>>;
   const live = rows.filter((r) => LIVE_STATUSES.has(String(r.status)));
   const past = rows.filter((r) => !LIVE_STATUSES.has(String(r.status))).slice(0, 12);
+  const focusedId = live[0] ? String(live[0].id) : null;
+
+  const sessionState =
+    live.some((r) => r.status === "running" || r.status === "submitting")
+      ? "running"
+      : live.some((r) => r.status === "awaiting_approval" || r.status === "awaiting_input")
+        ? "paused"
+        : live.length > 0
+          ? "queued"
+          : "idle";
+
+  if (isLoading) return <Skeleton className="h-64 rounded-2xl" />;
 
   return (
     <div className="space-y-6">
+      {/* Session header */}
+      <section className="surface-card flex flex-wrap items-center gap-4 p-5">
+        <div className="grid h-10 w-10 place-items-center rounded-full border border-primary/40 bg-primary/10">
+          <Bot className="h-5 w-5 text-primary" />
+        </div>
+        <div className="min-w-0">
+          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Agent session</p>
+          <div className="mt-1 flex items-center gap-2">
+            <StatusPill status={sessionState} layoutId="session-header-status" />
+          </div>
+        </div>
+        <div className="ml-auto flex items-center gap-5 font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          <span>
+            <SpringNumber value={live.length} className="text-foreground text-base font-semibold" /> active
+          </span>
+          <span>
+            <SpringNumber value={rows.length} className="text-foreground text-base font-semibold" /> total
+          </span>
+        </div>
+      </section>
+
+      {/* Live terminal for the most relevant running session */}
+      <FocusedConsole sessionId={focusedId} />
+
       <section className="surface-card p-5">
         <div className="mb-3 flex items-center gap-2">
           <Bot className="h-4 w-4 text-primary" />
@@ -75,6 +114,33 @@ export function ActivityCenter() {
   );
 }
 
+function FocusedConsole({ sessionId }: { sessionId: string | null }) {
+  const { data } = useQuery({
+    queryKey: ["auto-apply", sessionId, "console"],
+    queryFn: () => getAutoApplySession({ data: { sessionId: sessionId! } }),
+    enabled: Boolean(sessionId),
+    refetchInterval: sessionId ? 4000 : false,
+  });
+
+  const events: ConsoleEvent[] = useMemo(() => {
+    if (!data?.events) return [];
+    return (data.events as Array<Record<string, unknown>>).map((e) => ({
+      id: String(e.id),
+      created_at: String(e.created_at),
+      kind: e.kind ? String(e.kind) : null,
+      step: e.step ? String(e.step) : null,
+      message: String(e.message),
+    }));
+  }, [data]);
+
+  return (
+    <ConsoleLog
+      events={events}
+      title={sessionId ? "Live agent console" : "Agent console"}
+    />
+  );
+}
+
 function SessionRow({ row, live = false }: { row: Record<string, unknown>; live?: boolean }) {
   const job = row.jobs as Record<string, unknown> | null;
   const company = row.companies as Record<string, unknown> | null;
@@ -107,19 +173,10 @@ function SessionRow({ row, live = false }: { row: Record<string, unknown>; live?
             {String(company?.name ?? job?.company_name ?? "—")} · {STEP_LABELS[step] ?? step}
           </p>
         </div>
-        <div className="hidden w-40 md:block">
-          <div className="h-1.5 overflow-hidden rounded-full bg-elevated">
-            <div className="h-full rounded-full bg-primary" style={{ width: `${progress}%` }} />
-          </div>
-          <p className="mt-1 text-right font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            {progress}%
-          </p>
-        </div>
-        <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          {status.replace(/_/g, " ")}
-        </span>
+        {live && <ProgressRing progress={progress} size={32} />}
+        <StatusPill status={status} />
         {live && (
-          <span className="font-mono text-[10px] text-muted-foreground">
+          <span className="hidden font-mono text-[10px] text-muted-foreground sm:inline">
             {Math.floor(elapsed / 60)}m {elapsed % 60}s
           </span>
         )}

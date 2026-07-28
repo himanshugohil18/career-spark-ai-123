@@ -53,11 +53,17 @@ export function JobCard({
   onSave,
   onClick,
   insights,
+  selected,
+  onSelect,
 }: {
   job: JobCardData;
   onSave?: (id: string) => void;
   onClick?: (id: string) => void;
   insights?: string[];
+  /** When true, renders with the "selected in radar list" highlight. */
+  selected?: boolean;
+  /** Optional: called instead of navigating (used by the split-view radar list on large screens). */
+  onSelect?: (id: string) => void;
 }) {
   const navigate = useNavigate();
   const salary = formatSalary(job);
@@ -77,6 +83,10 @@ export function JobCard({
       return;
     }
     onClick?.(job.id);
+    if (onSelect) {
+      onSelect(job.id);
+      return;
+    }
     void navigate({ to: "/jobs/$jobId", params: { jobId: job.id } }).catch((err) => {
       console.error("Navigation to job detail failed", err);
       toast.error("Could not open job details.");
@@ -90,7 +100,11 @@ export function JobCard({
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -3, scale: 1.006 }}
       transition={{ type: "spring", stiffness: 300, damping: 26 }}
-      className="surface-card card-interactive group relative flex flex-col gap-3 p-5"
+      className={cn(
+        "surface-card card-interactive group relative flex flex-col gap-3 p-5",
+        selected && "border-primary/50 ring-1 ring-primary/30",
+      )}
+      onClick={() => onSelect?.(job.id)}
     >
       <motion.span
         aria-hidden
@@ -100,7 +114,12 @@ export function JobCard({
       {overall >= 90 && <span className="ribbon">Top Match</span>}
       <div className="flex items-start gap-4">
         {job.match ? (
-          <MatchRing value={overall} size={56} />
+          <MatchRing
+            value={overall}
+            size={56}
+            breakdown={job.match as unknown as Record<string, unknown>}
+            explanation={job.match.explanation}
+          />
         ) : (
           <div className="flex h-14 w-14 items-center justify-center rounded-full border border-dashed border-border font-mono text-[10px] text-muted-foreground">
             NEW
@@ -121,10 +140,12 @@ export function JobCard({
                     {initials || <Building2 className="h-3 w-3" />}
                   </span>
                 )}
-                <button
+                <motion.button
+                  layoutId={`job-title-${job.id}`}
                   type="button"
                   onClick={(e) => {
                     e.preventDefault();
+                    e.stopPropagation();
                     goToDetails();
                   }}
                   className="line-clamp-1 truncate text-left font-display text-base font-semibold text-foreground transition-colors hover:text-primary disabled:cursor-not-allowed disabled:opacity-60"
@@ -132,13 +153,13 @@ export function JobCard({
                   title={hasValidId ? job.title : "Job identifier missing"}
                 >
                   {job.title}
-                </button>
+                </motion.button>
 
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                <span className="inline-flex items-center gap-1">
+                <motion.span layoutId={`job-company-${job.id}`} className="inline-flex items-center gap-1">
                   <Building2 className="h-3 w-3" /> {job.company?.name ?? "—"}
-                </span>
+                </motion.span>
                 {job.location && (
                   <span className="inline-flex items-center gap-1">
                     <MapPin className="h-3 w-3" /> {job.location}

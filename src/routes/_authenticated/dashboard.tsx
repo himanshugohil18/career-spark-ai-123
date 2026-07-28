@@ -33,8 +33,13 @@ import { getGreeting } from "@/lib/greeting";
 import { getWorkspace } from "@/lib/profile.functions";
 import { ensureInitialMatches } from "@/lib/jobs.functions";
 import { getAgentActivity } from "@/lib/career-intel.functions";
+import { getMySubscription } from "@/lib/billing.functions";
+import { listWorkspaces } from "@/lib/workspace.functions";
 import { computeCompleteness } from "@/lib/completeness";
 import { Reveal } from "@/components/motion/reveal";
+import { BentoGrid, BentoTile } from "@/features/dashboard/bento";
+import { CascadeGroup, CascadeItem, useCascadeGate } from "@/features/dashboard/cascade";
+import { PulseRow, PulseRowSkeleton } from "@/features/dashboard/pulse-row";
 
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -47,6 +52,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 function Dashboard() {
   const { user } = AuthRoute.useRouteContext();
   const queryClient = useQueryClient();
+  const cascadeArmed = useCascadeGate();
 
   const { data, isLoading } = useQuery({
     queryKey: ["workspace"],
@@ -68,6 +74,20 @@ function Dashboard() {
     queryFn: () => getAgentActivity(),
     enabled: hasResume,
     staleTime: 30_000,
+  });
+
+  const { data: subscription } = useQuery({
+    queryKey: ["my-subscription"],
+    queryFn: () => getMySubscription(),
+    staleTime: 60_000,
+  });
+
+  // Same query key as ApplicationsSummary — dedupes with its fetch, we only
+  // read `isFetching` here to drive the freshness shimmer on that tile.
+  const { data: workspacesForPulse, isFetching: applicationsFetching } = useQuery({
+    queryKey: ["applications-list"],
+    queryFn: () => listWorkspaces(),
+    enabled: hasResume,
   });
 
   const { primary, secondary } = getGreeting({
@@ -110,8 +130,23 @@ function Dashboard() {
     projectsCount: data?.projects?.length ?? 0,
   });
 
+  const agents = deriveAgents({
+    hasResume,
+    hasParsedPendingReview: !!parsedResume,
+    brainVersion: brain?.version ?? null,
+    skillCount: data?.skills?.length ?? 0,
+    matchCount: activity?.matchCount ?? 0,
+    highMatchCount: activity?.highMatchCount ?? 0,
+    workspaceCount: activity?.workspaceCount ?? 0,
+    readyWorkspaceCount: activity?.readyWorkspaceCount ?? 0,
+    interviewSessionCount: activity?.interviewSessionCount ?? 0,
+    practicedQuestionCount: activity?.practicedQuestionCount ?? 0,
+    gapCount: activity?.gapCount ?? 0,
+  });
+  const agentsRunning = agents.filter((a) => a.state === "active" || a.state === "ready").length;
+
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-10 p-6 md:p-10">
+    <div className="mx-auto w-full max-w-6xl space-y-8 p-6 md:p-10">
       {/* Greeting */}
       <motion.div
         initial={{ opacity: 0, y: 6 }}
@@ -159,98 +194,117 @@ function Dashboard() {
         </div>
       </motion.div>
 
-      {/* Signed-in profile details */}
+      {/* Live pulse row */}
       {isLoading ? (
-        <Skeleton className="h-32 rounded-2xl" />
+        <PulseRowSkeleton />
       ) : (
-        <ProfileSummaryCard
-          profile={profile}
-          fallbackEmail={user.email}
-          completeness={completeness.score}
+        <PulseRow
+          agentsRunning={agentsRunning}
+          agentsTotal={agents.length}
+          jobsMatched={activity?.matchCount ?? 0}
+          applications={activity?.workspaceCount ?? (workspacesForPulse?.length ?? 0)}
+          plan={subscription?.plan ?? "free"}
         />
       )}
 
+      <CascadeGroup armed={cascadeArmed} className="space-y-8">
+
+      {/* Signed-in profile details */}
+      <CascadeItem>
+        {isLoading ? (
+          <Skeleton className="h-32 rounded-2xl" />
+        ) : (
+          <ProfileSummaryCard
+            profile={profile}
+            fallbackEmail={user.email}
+            completeness={completeness.score}
+          />
+        )}
+      </CascadeItem>
 
 
-      {/* Activation / activated hero */}
-      {isLoading ? (
-        <Skeleton className="h-56 rounded-2xl" />
-      ) : parsedResume && !hasResume ? (
+      {/* Mission control bento — activation dominates until the workspace is
+          live; then job signal + pipeline take over as the dominant tiles. */}
+      <CascadeItem>
+        {isLoading ? (
+          <BentoGrid>
+            <BentoTile span={4} rowSpan={2}><Skeleton className="h-72 rounded-2xl" /></BentoTile>
+            <BentoTile span={2}><Skeleton className="h-28 rounded-2xl" /></BentoTile>
+            <BentoTile span={1}><Skeleton className="h-28 rounded-2xl" /></BentoTile>
+            <BentoTile span={1}><Skeleton className="h-28 rounded-2xl" /></BentoTile>
+          </BentoGrid>
+        ) : parsedResume && !hasResume ? (
+          <BentoGrid>
+            <BentoTile span={4} rowSpan={2}>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.05, ease }}
+                className="surface-elevated flex h-full flex-col items-start justify-center gap-4 rounded-2xl border border-primary/40 bg-primary/5 p-8 md:flex-row md:items-center md:justify-between"
+              >
+                <div>
+                  <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">Awaiting your review</p>
+                  <h3 className="mt-1 font-display text-2xl font-semibold">Approve your Career Brain</h3>
+                  <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+                    I parsed <span className="text-foreground">{parsedResume.file_name}</span>. Review the extracted details, then approve to activate the workspace.
+                  </p>
+                </div>
+                <Link to="/resume-review/$resumeId" params={{ resumeId: parsedResume.id }}>
+                  <Button variant="primary" size="lg">
+                    Review & Approve <ArrowUpRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+              </motion.div>
+            </BentoTile>
+            <BentoTile span={2}>
+              <EmptyCard icon={Radar} eyebrow="Opportunities" title="No matches yet" body="The Job Discovery Agent will begin searching once your Career Brain is created." />
+            </BentoTile>
+            <BentoTile span={2}>
+              <EmptyCard icon={FileText} eyebrow="Applications" title="Nothing submitted yet" body="Your Application Agent hasn't submitted any applications yet." />
+            </BentoTile>
+          </BentoGrid>
+        ) : !hasResume ? (
+          <BentoGrid>
+            <BentoTile span={4} rowSpan={2}>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, delay: 0.05, ease }}
+                className="h-full"
+              >
+                <ResumeUpload
+                  onCompleted={() => {
+                    void queryClient.invalidateQueries({ queryKey: ["workspace"] });
+                  }}
+                />
+              </motion.div>
+            </BentoTile>
+            <BentoTile span={2}>
+              <EmptyCard icon={Radar} eyebrow="Opportunities" title="No matches yet" body="The Job Discovery Agent will begin searching once your Career Brain is created." />
+            </BentoTile>
+            <BentoTile span={2}>
+              <EmptyCard icon={FileText} eyebrow="Applications" title="Nothing submitted yet" body="Your Application Agent hasn't submitted any applications yet." />
+            </BentoTile>
+          </BentoGrid>
+        ) : (
+          <BentoGrid>
+            <StatCard icon={Heart} eyebrow="Career Health" value={Number(health?.score ?? 0)} suffix="/100" trendLabel="Overall" gradient breathe />
+            <StatCard icon={TrendingUp} eyebrow="Experience" value={Number(profile?.years_of_experience ?? 0)} suffix={` yr${(profile?.years_of_experience ?? 0) === 1 ? "" : "s"}`} trendLabel={profile?.current_title ?? "Set current title"} />
+            <StatCard icon={Zap} eyebrow="Skills" value={Number(data?.skills?.length ?? 0)} trendLabel={`${data?.projects?.length ?? 0} projects mapped`} />
+            <StatCard icon={Star} eyebrow="Career DNA" value={dna ? Math.round(strongestDimension(dna).value) : 0} suffix="/100" trendLabel={dna ? strongestDimension(dna).label : "—"} />
 
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.05, ease }}
-          className="surface-elevated flex flex-col items-start justify-between gap-4 rounded-2xl border border-primary/40 bg-primary/5 p-6 md:flex-row md:items-center"
-        >
-          <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-primary">Awaiting your review</p>
-            <h3 className="mt-1 font-display text-xl font-semibold">Approve your Career Brain</h3>
-            <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-              I parsed <span className="text-foreground">{parsedResume.file_name}</span>. Review the extracted details, then approve to activate the workspace.
-            </p>
-          </div>
-          <Link to="/resume-review/$resumeId" params={{ resumeId: parsedResume.id }}>
-            <Button variant="primary" size="lg">
-              Review & Approve <ArrowUpRight className="h-4 w-4" />
-            </Button>
-          </Link>
-        </motion.div>
-      ) : !hasResume ? (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.05, ease }}
-        >
-          <ResumeUpload
-            onCompleted={() => {
-              void queryClient.invalidateQueries({ queryKey: ["workspace"] });
-            }}
-          />
-        </motion.div>
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, delay: 0.05, ease }}
-          className="grid gap-5 md:grid-cols-4"
-        >
-          <StatCard
-            icon={Heart}
-            eyebrow="Career Health"
-            value={Number(health?.score ?? 0)}
-            suffix="/100"
-            trendLabel="Overall"
-            gradient
-            breathe
-          />
-          <StatCard
-            icon={TrendingUp}
-            eyebrow="Experience"
-            value={Number(profile?.years_of_experience ?? 0)}
-            suffix={` yr${(profile?.years_of_experience ?? 0) === 1 ? "" : "s"}`}
-            trendLabel={profile?.current_title ?? "Set current title"}
-          />
-          <StatCard
-            icon={Zap}
-            eyebrow="Skills"
-            value={Number(data?.skills?.length ?? 0)}
-            trendLabel={`${data?.projects?.length ?? 0} projects mapped`}
-          />
-          <StatCard
-            icon={Star}
-            eyebrow="Career DNA"
-            value={dna ? Math.round(strongestDimension(dna).value) : 0}
-            suffix="/100"
-            trendLabel={dna ? strongestDimension(dna).label : "—"}
-          />
-
-        </motion.div>
-      )}
+            {/* Dominant tiles: job signal + pipeline */}
+            <DashboardWidgets />
+            <BentoTile span={4} isFetching={applicationsFetching}>
+              <ApplicationsSummary />
+            </BentoTile>
+          </BentoGrid>
+        )}
+      </CascadeItem>
 
       {/* Career Brain metadata — real DB values only */}
       {hasResume && (
-        <section className="grid gap-3 md:grid-cols-5">
+        <CascadeItem className="grid gap-3 md:grid-cols-5">
           <MetaCard label="Brain Version" value={brain?.version ? `v${brain.version}` : "—"} />
           <MetaCard label="Resume Version" value={activeResume ? `v${activeResume.version}` : "—"} />
           <MetaCard
@@ -263,13 +317,13 @@ function Dashboard() {
             value={brain?.overall_confidence != null ? `${Math.round(Number(brain.overall_confidence) * 100)}%` : "—"}
             tone={brain?.overall_confidence != null && Number(brain.overall_confidence) < 0.75 ? "warning" : "default"}
           />
-        </section>
+        </CascadeItem>
       )}
 
 
       {/* Career Brain summary (once activated) */}
       {hasResume && data?.careerBrain?.summary && (
-        <section className="surface-card p-6">
+        <CascadeItem className="surface-card p-6">
           <div className="mb-3 flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-accent" />
             <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
@@ -284,126 +338,104 @@ function Dashboard() {
               Source · v{activeResume.version} · {activeResume.file_name}
             </p>
           )}
-        </section>
-      )}
-
-      {/* AI signals from the matching engine (real data only) */}
-      {hasResume && (
-        <Reveal>
-          <DashboardWidgets />
-        </Reveal>
-      )}
-      {hasResume && (
-        <Reveal delay={0.05}>
-          <ApplicationsSummary />
-        </Reveal>
+        </CascadeItem>
       )}
 
       {/* Agents grid */}
-      <section>
-        <div className="mb-4 flex items-end justify-between">
-          <div>
-            <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-              Agents
-            </p>
-            <h3 className="mt-1 font-display text-xl font-semibold">
-              Your team is assembled.
-            </h3>
+      <CascadeItem>
+        <section>
+          <div className="mb-4 flex items-end justify-between">
+            <div>
+              <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
+                Agents
+              </p>
+              <h3 className="mt-1 font-display text-xl font-semibold">
+                Your team is assembled.
+              </h3>
+            </div>
+            <span className="hidden font-mono text-[11px] uppercase tracking-widest text-muted-foreground md:inline">
+              Live status
+            </span>
           </div>
-          <span className="hidden font-mono text-[11px] uppercase tracking-widest text-muted-foreground md:inline">
-            Live status
-          </span>
-        </div>
-        <AgentGrid
-          agents={deriveAgents({
-            hasResume,
-            hasParsedPendingReview: !!parsedResume,
-            brainVersion: brain?.version ?? null,
-            skillCount: data?.skills?.length ?? 0,
-            matchCount: activity?.matchCount ?? 0,
-            highMatchCount: activity?.highMatchCount ?? 0,
-            workspaceCount: activity?.workspaceCount ?? 0,
-            readyWorkspaceCount: activity?.readyWorkspaceCount ?? 0,
-            interviewSessionCount: activity?.interviewSessionCount ?? 0,
-            practicedQuestionCount: activity?.practicedQuestionCount ?? 0,
-            gapCount: activity?.gapCount ?? 0,
-          })}
-        />
-      </section>
+          <AgentGrid agents={agents} />
+        </section>
+      </CascadeItem>
 
       {/* Real profile cards */}
-      {hasResume ? (
-        <div className="grid gap-5 md:grid-cols-2">
-          <ProfileCard
-            icon={Briefcase}
-            eyebrow="Experience"
-            title={
-              data && data.experiences.length
-                ? `${data.experiences.length} roles`
-                : "No roles yet"
-            }
-            body={
-              data?.experiences[0]
-                ? `${data.experiences[0].role} · ${data.experiences[0].company}`
-                : "Add roles to your profile."
-            }
-          />
-          <ProfileCard
-            icon={Wrench}
-            eyebrow="Projects"
-            title={
-              data && data.projects.length
-                ? `${data.projects.length} projects`
-                : "No projects yet"
-            }
-            body={
-              data?.projects[0]?.name ??
-              "Great projects make your Career DNA stronger."
-            }
-          />
-          <ProfileCard
-            icon={GraduationCap}
-            eyebrow="Education"
-            title={
-              data && data.education.length
-                ? data.education[0].degree
-                : "No education added"
-            }
-            body={data?.education[0]?.institution ?? "Add education to your profile."}
-          />
-          <ProfileCard
-            icon={Award}
-            eyebrow="Certifications"
-            title={
-              data && data.certifications.length
-                ? `${data.certifications.length} certifications`
-                : "No certifications yet"
-            }
-            body={
-              data?.certifications[0]?.name ??
-              "Certifications boost your Career Health."
-            }
-          />
-        </div>
-      ) : (
-        <div className="grid gap-5 md:grid-cols-2">
-          <EmptyCard
-            icon={Radar}
-            eyebrow="Opportunities"
-            title="No matches yet"
-            body="The Job Discovery Agent will begin searching once your Career Brain is created."
-          />
-          <EmptyCard
-            icon={FileText}
-            eyebrow="Applications"
-            title="Nothing submitted yet"
-            body="Your Application Agent hasn't submitted any applications yet."
-          />
-        </div>
-      )}
+      <CascadeItem>
+        {hasResume ? (
+          <div className="grid gap-5 md:grid-cols-2">
+            <ProfileCard
+              icon={Briefcase}
+              eyebrow="Experience"
+              title={
+                data && data.experiences.length
+                  ? `${data.experiences.length} roles`
+                  : "No roles yet"
+              }
+              body={
+                data?.experiences[0]
+                  ? `${data.experiences[0].role} · ${data.experiences[0].company}`
+                  : "Add roles to your profile."
+              }
+            />
+            <ProfileCard
+              icon={Wrench}
+              eyebrow="Projects"
+              title={
+                data && data.projects.length
+                  ? `${data.projects.length} projects`
+                  : "No projects yet"
+              }
+              body={
+                data?.projects[0]?.name ??
+                "Great projects make your Career DNA stronger."
+              }
+            />
+            <ProfileCard
+              icon={GraduationCap}
+              eyebrow="Education"
+              title={
+                data && data.education.length
+                  ? data.education[0].degree
+                  : "No education added"
+              }
+              body={data?.education[0]?.institution ?? "Add education to your profile."}
+            />
+            <ProfileCard
+              icon={Award}
+              eyebrow="Certifications"
+              title={
+                data && data.certifications.length
+                  ? `${data.certifications.length} certifications`
+                  : "No certifications yet"
+              }
+              body={
+                data?.certifications[0]?.name ??
+                "Certifications boost your Career Health."
+              }
+            />
+          </div>
+        ) : (
+          <div className="grid gap-5 md:grid-cols-2">
+            <EmptyCard
+              icon={Radar}
+              eyebrow="Opportunities"
+              title="No matches yet"
+              body="The Job Discovery Agent will begin searching once your Career Brain is created."
+            />
+            <EmptyCard
+              icon={FileText}
+              eyebrow="Applications"
+              title="Nothing submitted yet"
+              body="Your Application Agent hasn't submitted any applications yet."
+            />
+          </div>
+        )}
+      </CascadeItem>
 
       {/* Recent activity */}
-      <section className="surface-card p-6">
+      <CascadeItem className="surface-card p-6">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-lg font-semibold">Agent activity</h3>
           <span className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
@@ -430,7 +462,9 @@ function Dashboard() {
             </Button>
           )}
         </div>
-      </section>
+      </CascadeItem>
+
+      </CascadeGroup>
       <DevDebugPanel />
     </div>
   );
@@ -550,7 +584,7 @@ function EmptyCard({
       viewport={{ once: true }}
       transition={{ duration: 0.35, ease }}
       whileHover={{ y: -2 }}
-      className="surface-card p-6 transition-colors hover:border-primary/30"
+      className="surface-card h-full p-6 transition-colors hover:border-primary/30"
     >
       <div className="mb-4 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-elevated text-primary">
         <Icon className="h-5 w-5" />

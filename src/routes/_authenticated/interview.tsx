@@ -1,11 +1,13 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { MessagesSquare, Building2, GraduationCap, CheckCircle2, Circle } from "lucide-react";
+import { MessagesSquare, Building2, GraduationCap, CheckCircle2, Circle, Sparkles } from "lucide-react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ai/skeleton";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { getInterviewHub, toggleQuestionPracticed } from "@/lib/career-intel.functions";
+import { FocusMode } from "@/features/interview/focus-mode";
 
 export const Route = createFileRoute("/_authenticated/interview")({
   head: () => ({ meta: [{ title: "Interview Prep · CareerOS" }] }),
@@ -24,6 +26,7 @@ const CATEGORY_LABEL: Record<string, string> = {
 
 function InterviewPage() {
   const queryClient = useQueryClient();
+  const [focusOpen, setFocusOpen] = useState(false);
   const { data, isLoading } = useQuery({
     queryKey: ["interview-hub"],
     queryFn: () => getInterviewHub(),
@@ -54,12 +57,25 @@ function InterviewPage() {
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        className="flex flex-wrap items-start justify-between gap-4"
       >
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Interview Prep</p>
-        <h1 className="mt-1 font-display text-3xl font-semibold">Practice hub</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Interview sessions are generated inside each Application Workspace. This is your central practice history and question bank.
-        </p>
+        <div>
+          <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Interview Prep</p>
+          <h1 className="mt-1 font-display text-3xl font-semibold">Practice hub</h1>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            Interview sessions are generated inside each Application Workspace. This is your central practice history and question bank.
+          </p>
+        </div>
+        {data && data.questions.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setFocusOpen(true)}
+            className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary/15"
+          >
+            <Sparkles className="h-4 w-4" />
+            Enter Focus Mode
+          </button>
+        )}
       </motion.header>
 
       {isLoading ? (
@@ -230,6 +246,14 @@ function InterviewPage() {
             )}
           </section>
         </>
+      )}
+
+      {focusOpen && data && data.questions.length > 0 && (
+        <FocusMode
+          questions={data.questions as any}
+          onClose={() => setFocusOpen(false)}
+          onTogglePracticed={(id, practiced) => toggleMut.mutate({ id, practiced })}
+        />
       )}
     </div>
   );

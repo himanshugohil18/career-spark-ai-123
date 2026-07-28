@@ -139,10 +139,10 @@ function JobDetail() {
         className="surface-elevated flex flex-col gap-4 rounded-2xl p-6 md:flex-row md:items-start md:justify-between"
       >
         <div className="min-w-0">
-          <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
+          <motion.p layoutId={`job-company-${jobId}`} className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
             {j.provider} · {j.company?.name ?? "Company"}
-          </p>
-          <h1 className="mt-1 font-display text-2xl font-semibold md:text-3xl">{j.title}</h1>
+          </motion.p>
+          <motion.h1 layoutId={`job-title-${jobId}`} className="mt-1 font-display text-2xl font-semibold md:text-3xl">{j.title}</motion.h1>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
             {j.location && <span>{j.location}</span>}
             {j.remote_status !== "unknown" && (

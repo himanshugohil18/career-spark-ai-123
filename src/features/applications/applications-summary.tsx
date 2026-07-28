@@ -4,6 +4,8 @@ import { motion } from "framer-motion";
 import { Building2, Command, Gauge } from "lucide-react";
 import { MatchRing } from "@/features/jobs/match-ring";
 import { listWorkspaces } from "@/lib/workspace.functions";
+import { PipelineFunnel } from "./pipeline-funnel";
+import { PIPELINE_COLUMNS, columnForStage } from "./pipeline-stages";
 
 const STAGE_LABEL: Record<string, string> = {
   workspace_created: "Created",
@@ -24,6 +26,10 @@ export function ApplicationsSummary() {
     queryFn: () => listWorkspaces(),
   });
   const rows = (data ?? []).slice(0, 4);
+  const all = (data ?? []) as any[];
+  const funnelCounts = PIPELINE_COLUMNS.map(
+    (col) => all.filter((w) => columnForStage(w.current_stage).key === col.key).length,
+  );
 
   return (
     <section>
@@ -43,6 +49,12 @@ export function ApplicationsSummary() {
           <Command className="h-3.5 w-3.5" /> Open workspace
         </Link>
       </div>
+
+      {all.length > 0 && (
+        <div className="surface-card mb-4 p-4">
+          <PipelineFunnel counts={funnelCounts} total={all.length} />
+        </div>
+      )}
 
       {rows.length === 0 ? (
         <div className="surface-card p-6 text-sm text-muted-foreground">
