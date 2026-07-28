@@ -427,3 +427,41 @@ export const deleteWorkspaceNote = createServerFn({ method: "POST" })
     await supabase.from("application_notes").delete().eq("id", data.noteId).eq("user_id", userId);
     return { ok: true };
   });
+
+// ---------- pipeline stage (manual board move) ----------
+
+const STAGE_VALUES = [
+  "workspace_created",
+  "company_analysis",
+  "job_analysis",
+  "resume_analysis",
+  "ats_analysis",
+  "gap_analysis",
+  "resume_optimization",
+  "ready_for_cover_letter",
+  "ready_for_interview",
+  "application_ready",
+] as const;
+
+/** Manually set a workspace's pipeline stage (used by the Applications kanban board). */
+export const setWorkspaceStage = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d: unknown) =>
+    z
+      .object({ workspaceId: z.string().uuid(), stage: z.enum(STAGE_VALUES) })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const upd = await supabase
+      .from("application_workspaces")
+      .update({ current_stage: data.stage, updated_at: new Date().toISOString() })
+      .eq("id", data.workspaceId)
+      .eq("user_id", userId)
+      .select("id, current_stage")
+      .maybeSingle();
+    if (upd.error) throw new Error(upd.error.message);
+    if (!upd.data) throw new Error("Workspace not found");
+    await logTimeline(supabase, data.workspaceId, userId, "stage_changed", `Stage set to ${data.stage}`);
+    return upd.data;
+  });
