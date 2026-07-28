@@ -45,7 +45,7 @@ export function ScrollPipeline() {
   const beam = useTransform(progress, [0, 1], ["0%", "100%"]);
 
   return (
-    <div ref={ref} className="relative h-[420vh]">
+    <div ref={ref} className="relative h-[300vh]">
       <div className="sticky top-0 flex h-screen items-center overflow-hidden">
         <div className="mx-auto w-full max-w-6xl px-6">
           <div className="mb-10 text-center">
