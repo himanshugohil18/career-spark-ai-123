@@ -479,15 +479,18 @@ function Hero() {
           transition={{ duration: 0.6, delay: 0.7 }}
           className="mt-10 flex flex-col items-center gap-3 sm:flex-row"
         >
-          <div className="group relative">
-            <span className="absolute -inset-0.5 rounded-lg bg-[image:var(--gradient-brand-glow)] opacity-60 blur transition duration-500 group-hover:opacity-100" />
-            <Button asChild variant="primary" size="xl" className="relative">
-              <Link to="/auth" search={{ mode: "signup" }}>
-                Start your Career Brain
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </Button>
-          </div>
+          <Magnetic strength={8}>
+            <div className="group relative">
+              <span className="absolute -inset-0.5 rounded-lg bg-[image:var(--gradient-brand-glow)] opacity-60 blur transition duration-500 group-hover:opacity-100" />
+              <Button asChild variant="primary" size="xl" className="relative">
+                <Link to="/auth" search={{ mode: "signup" }}>
+                  Start your Career Brain
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </Button>
+            </div>
+          </Magnetic>
+
           <Button asChild variant="outline" size="xl" className="backdrop-blur">
             <a href="#preview">Watch demo</a>
           </Button>
