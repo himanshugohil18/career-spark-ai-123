@@ -11,6 +11,7 @@
  */
 
 import type { CareerBrainSnapshot } from "@/lib/career-brain.service";
+import { locationAffinity, preferredLocations } from "./location";
 import {
   buildCandidateProfile,
   jobFamilyFitProfile,
@@ -189,13 +190,14 @@ export function projectsScore(brain: CareerBrainSnapshot, job: NormalizedJob): n
 }
 
 export function locationScore(brain: CareerBrainSnapshot, job: NormalizedJob): number {
-  const prefLoc = brain.identity.preferences.preferredLocation?.toLowerCase() ?? "";
-  if (job.remoteStatus === "remote") return 100;
-  if (!prefLoc) return 70;
-  const loc = (job.location ?? "").toLowerCase();
-  if (loc.includes(prefLoc) || prefLoc.includes(loc)) return 95;
-  if (job.remoteStatus === "hybrid") return 65;
-  return 40;
+  return clamp(
+    locationAffinity({
+      jobLocation: job.location,
+      jobCountry: job.locationCountry,
+      remoteStatus: job.remoteStatus,
+      preferred: preferredLocations(brain),
+    }) * 100,
+  );
 }
 
 export function salaryScore(brain: CareerBrainSnapshot, job: NormalizedJob): number {

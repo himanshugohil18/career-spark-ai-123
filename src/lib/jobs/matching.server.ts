@@ -29,6 +29,7 @@ import {
   type RoleFamily,
 } from "./role-synonyms";
 import { computeRelevance, brainTechVocabulary, jobDedupeKey } from "./relevance";
+import { locationAffinity, preferredLocations } from "./location";
 import type { MatchScore, NormalizedJob } from "./types";
 
 const MODEL = "google/gemini-3.6-flash";
@@ -159,7 +160,7 @@ export async function refreshUserMatches(
   skipped: number;
   newMatches: Array<{ jobId: string; title: string; company: string; matchPercent: number; location: string | null }>;
 }> {
-  const limit = opts.limit ?? 40;
+  const limit = opts.limit ?? 120;
   const stale = opts.staleAfterDays ?? 7;
   const profile = buildProfileFromSnapshot(brain);
 
@@ -168,7 +169,7 @@ export async function refreshUserMatches(
     .select("*, company:companies(id,name,slug,domain,logo_url,website,industry,size,remote_policy,tech_stack,description)")
     .eq("is_active", true)
     .order("posted_at", { ascending: false, nullsFirst: false })
-    .limit(Math.max(400, limit * 10));
+    .limit(Math.max(1500, limit * 12));
 
   const results = {
     evaluated: 0,
@@ -311,6 +312,7 @@ function rankCandidateRows(
   profile: ReturnType<typeof buildProfileFromSnapshot>,
 ): Array<Record<string, any>> {
   const brainTech = brainTechVocabulary(brain);
+  const prefLocations = preferredLocations(brain);
   const scored = rows.map((row) => {
     const company = Array.isArray(row.company) ? row.company[0] : row.company;
     const jobLike = {
@@ -340,7 +342,13 @@ function rankCandidateRows(
       confidence.confidence * 60 +
       familyTitle * 0.5 +
       tech * 80 +
-      (row.remote_status === "remote" ? 8 : 0);
+      (row.remote_status === "remote" ? 8 : 0) +
+      locationAffinity({
+        jobLocation: row.location,
+        jobCountry: row.location_country,
+        remoteStatus: row.remote_status,
+        preferred: prefLocations,
+      }) * 55;
     return { row, score, ok: rel.gate && !fit.excluded, key: jobDedupeKey(String(row.title ?? ""), company?.name) };
   });
 

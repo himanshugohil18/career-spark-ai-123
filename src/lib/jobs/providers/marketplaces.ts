@@ -118,6 +118,53 @@ export const wellfoundProvider = createMarketplaceProvider({
   parse: (html, query) => parseJsonBackedMarketplace(html, query, "wellfound", "Wellfound"),
 });
 
+export const founditProvider = createMarketplaceProvider({
+  id: "foundit",
+  displayName: "Foundit (Monster)",
+  buildUrls: (query, locations) => locations.map((l) =>
+    `https://www.foundit.in/srp/results?query=${encodeURIComponent(query)}&locations=${encodeURIComponent(l)}`,
+  ),
+  parse: (html, query) => parseJsonBackedMarketplace(html, query, "foundit", "Foundit"),
+});
+
+export const shineProvider = createMarketplaceProvider({
+  id: "shine",
+  displayName: "Shine",
+  buildUrls: (query, locations) => locations.map((l) =>
+    `https://www.shine.com/job-search/${slugify(query)}-jobs-in-${slugify(l)}`,
+  ),
+  parse: (html, query) => parseJsonBackedMarketplace(html, query, "shine", "Shine"),
+});
+
+export const timesjobsProvider = createMarketplaceProvider({
+  id: "timesjobs",
+  displayName: "TimesJobs",
+  buildUrls: (query, locations) => locations.map((l) =>
+    `https://www.timesjobs.com/candidate/job-search.html?searchType=personalizedSearch&from=submit&txtKeywords=${encodeURIComponent(query)}&txtLocation=${encodeURIComponent(l)}`,
+  ),
+  parse: (html, query) => parseJsonBackedMarketplace(html, query, "timesjobs", "TimesJobs"),
+});
+
+export const simplyhiredProvider = createMarketplaceProvider({
+  id: "simplyhired",
+  displayName: "SimplyHired",
+  buildUrls: (query, locations) => locations.map((l) =>
+    `https://www.simplyhired.com/search?q=${encodeURIComponent(query)}&l=${encodeURIComponent(l)}`,
+  ),
+  parse: (html, query) => parseJsonBackedMarketplace(html, query, "simplyhired", "SimplyHired"),
+});
+
+export const glassdoorProvider = createMarketplaceProvider({
+  id: "glassdoor",
+  displayName: "Glassdoor",
+  buildUrls: (query) => [
+    `https://www.glassdoor.co.in/Job/${slugify(query)}-jobs-SRCH_KO0,${query.length}.htm`,
+  ],
+  parse: (html, query) => parseJsonBackedMarketplace(html, query, "glassdoor", "Glassdoor"),
+});
+
+
+
 function parseLinkedIn(html: string, query: string): NormalizedJob[] {
   const cards = html.match(/<li[\s\S]*?<\/li>/gi) ?? [];
   return cards.map((card, index) => {
@@ -317,6 +364,11 @@ function absolutize(url: string | null | undefined, provider: string): string | 
     hirist: "https://www.hirist.tech",
     cutshort: "https://cutshort.io",
     wellfound: "https://wellfound.com",
+    foundit: "https://www.foundit.in",
+    shine: "https://www.shine.com",
+    timesjobs: "https://www.timesjobs.com",
+    simplyhired: "https://www.simplyhired.com",
+    glassdoor: "https://www.glassdoor.co.in",
   };
   return `${host[provider] ?? ""}${url.startsWith("/") ? url : `/${url}`}`;
 }
