@@ -147,7 +147,7 @@ function trackFit(candidate: CandidateProfile, family: RoleFamily | null): numbe
   // candidate's PRIMARY family scores 1.0; secondary families decay, so a
   // web developer whose resume also shows some Docker never sees SRE roles
   // ranked above frontend/backend ones.
-  const rankWeight = [1, 0.82, 0.68, 0.55];
+  const rankWeight = [1, 0.8, 0.62, 0.4];
   let best = 0;
   candidate.families.forEach((fam, i) => {
     const w = rankWeight[i] ?? 0.5;
@@ -223,8 +223,9 @@ export function computeRelevance(
 
   // 5. Gate — a job must be on-track AND show real technology evidence.
   const gate =
-    titleFit >= 0.55 &&
+    titleFit >= 0.6 &&
     relevance >= 0.45 &&
+    techFit >= 0.18 &&
     (titleRole.strength >= 0.5 || techFit >= 0.25) &&
     !(titleRole.leadership && candRank <= 2);
 
