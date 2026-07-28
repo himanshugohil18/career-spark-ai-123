@@ -15,6 +15,7 @@ import { refreshUserMatches } from "./jobs/matching.server";
 import { domainConfidence, expandQueryKeywords, titleRelevanceScore } from "./jobs/role-synonyms";
 import { computeRelevance, brainTechVocabulary, jobDedupeKey } from "./jobs/relevance";
 import { buildJobSections, buildInsights } from "./jobs/sections.server";
+import { locationAffinity, preferredLocations } from "./jobs/location";
 
 const FiltersSchema = z.object({
   q: z.string().optional(),
@@ -51,10 +52,11 @@ export const listJobs = createServerFn({ method: "POST" })
     const profile = rawQuery ? profileForExplicitSearch(baseProfile, rawQuery) : baseProfile;
     const brainFamilies = profile.families;
     const brainTechs = brainTechVocabulary(brain);
+    const prefLocations = preferredLocations(brain);
     const expansion = rawQuery ? expandQueryKeywords(rawQuery) : null;
     const roleFamily = expansion?.family ?? null;
 
-    const overFetch = rawQuery || brainFamilies.length ? 400 : pageSize;
+    const overFetch = rawQuery || brainFamilies.length ? 900 : pageSize;
     const useMemoryPaging = !!rawQuery || brainFamilies.length > 0;
     const from = useMemoryPaging ? 0 : (page - 1) * pageSize;
     const to = useMemoryPaging ? overFetch - 1 : from + pageSize - 1;
@@ -204,6 +206,12 @@ export const listJobs = createServerFn({ method: "POST" })
         relevanceReason: relevance.reason,
         domainConfidence: domainConfidence(jobLike, profile),
         interactionBias: bias,
+        locationFit: locationAffinity({
+          jobLocation: row.location,
+          jobCountry: row.location_country,
+          remoteStatus: row.remote_status,
+          preferred: prefLocations,
+        }),
       };
     });
 
@@ -259,8 +267,8 @@ export const listJobs = createServerFn({ method: "POST" })
           const t = (b.titleScore ?? 0) - (a.titleScore ?? 0);
           if (t !== 0) return t;
         }
-        const scoreA = Number(a.match?.overall_score ?? 0) + (a.relevance ?? 0) * 30 + (a.familyScore ?? 0) * 0.1 + (a.interactionBias ?? 0);
-        const scoreB = Number(b.match?.overall_score ?? 0) + (b.relevance ?? 0) * 30 + (b.familyScore ?? 0) * 0.1 + (b.interactionBias ?? 0);
+        const scoreA = Number(a.match?.overall_score ?? 0) + (a.relevance ?? 0) * 30 + (a.familyScore ?? 0) * 0.1 + (a.interactionBias ?? 0) + (a.locationFit ?? 0) * 12;
+        const scoreB = Number(b.match?.overall_score ?? 0) + (b.relevance ?? 0) * 30 + (b.familyScore ?? 0) * 0.1 + (b.interactionBias ?? 0) + (b.locationFit ?? 0) * 12;
         return scoreB - scoreA;
       });
     }

@@ -8,7 +8,14 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type RecommendationCard = {
-  kind: "top_matches" | "learn_skill" | "career_health" | "saved_progress" | "remote_signal";
+  kind:
+    | "top_matches"
+    | "learn_skill"
+    | "career_health"
+    | "saved_progress"
+    | "remote_signal"
+    | "fresh_roles"
+    | "near_you";
   title: string;
   body: string;
   cta?: { label: string; href: string };
@@ -20,7 +27,7 @@ export async function buildRecommendations(
 ): Promise<RecommendationCard[]> {
   const cards: RecommendationCard[] = [];
 
-  const [{ data: topMatches }, { data: highMatches }, { data: saved }] = await Promise.all([
+  const [{ data: topMatches }, { data: highMatches }, { data: saved }, { data: richMatches }] = await Promise.all([
     supabase
       .from("job_matches")
       .select("id, overall_score, missing_skills, job:jobs(id, title, company_id)")
@@ -37,7 +44,15 @@ export async function buildRecommendations(
       .select("id")
       .eq("user_id", userId)
       .in("status", ["saved","favorite","applied_later"]),
+    supabase
+      .from("job_matches")
+      .select("id, overall_score, job:jobs(id, title, location, remote_status, posted_at)")
+      .eq("user_id", userId)
+      .gte("overall_score", 70)
+      .order("overall_score", { ascending: false })
+      .limit(60),
   ]);
+
 
   if ((topMatches ?? []).length > 0) {
     const avg = Math.round(
@@ -90,6 +105,49 @@ export async function buildRecommendations(
       title: `You have ${saved!.length} saved role${saved!.length === 1 ? "" : "s"}`,
       body: "Come back to them or move them into a collection to keep momentum.",
       cta: { label: "Open saved", href: "/jobs/saved" },
+    });
+  }
+
+  const rich = (richMatches ?? []) as any[];
+
+  // Freshly posted, high-scoring roles
+  const cutoff = Date.now() - 3 * 24 * 60 * 60 * 1000;
+  const fresh = rich.filter((m) => {
+    const posted = m.job?.posted_at ? new Date(m.job.posted_at).getTime() : 0;
+    return posted >= cutoff;
+  });
+  if (fresh.length > 0) {
+    cards.push({
+      kind: "fresh_roles",
+      title: `${fresh.length} fresh role${fresh.length === 1 ? "" : "s"} posted in the last 3 days`,
+      body: `Newest: ${fresh[0].job?.title ?? "a matching role"}. Early applicants get seen first.`,
+      cta: { label: "See newest", href: "/jobs?sort=newest" },
+    });
+  }
+
+  // Location clustering — which city has the most matches for this user
+  const cityCounts = new Map<string, number>();
+  let remoteCount = 0;
+  for (const m of rich) {
+    if (m.job?.remote_status === "remote") { remoteCount += 1; continue; }
+    const city = String(m.job?.location ?? "").split(",")[0].trim();
+    if (city.length > 2) cityCounts.set(city, (cityCounts.get(city) ?? 0) + 1);
+  }
+  const topCity = [...cityCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+  if (topCity && topCity[1] >= 2) {
+    cards.push({
+      kind: "near_you",
+      title: `${topCity[1]} strong matches in ${topCity[0]}`,
+      body: "Roles in this location line up with your profile and preferred work base.",
+      cta: { label: `Browse ${topCity[0]}`, href: `/jobs?location=${encodeURIComponent(topCity[0])}` },
+    });
+  }
+  if (remoteCount >= 3) {
+    cards.push({
+      kind: "remote_signal",
+      title: `${remoteCount} remote roles match your profile`,
+      body: "Remote-first companies are hiring for your track right now.",
+      cta: { label: "See remote jobs", href: "/jobs?remote=remote" },
     });
   }
 

@@ -13,13 +13,25 @@ import { workableProvider } from "./workable";
 import { customProvider } from "./custom";
 import {
   cutshortProvider,
+  founditProvider,
+  glassdoorProvider,
   hiristProvider,
   indeedProvider,
   instahyreProvider,
   linkedInJobsProvider,
   naukriProvider,
+  shineProvider,
+  simplyhiredProvider,
+  timesjobsProvider,
   wellfoundProvider,
 } from "./marketplaces";
+import {
+  arbeitnowProvider,
+  himalayasProvider,
+  jobicyProvider,
+  remotiveProvider,
+  weworkremotelyProvider,
+} from "./portals";
 
 const REGISTRY: Record<string, JobProvider> = {
   [greenhouseProvider.id]: greenhouseProvider,
@@ -35,6 +47,16 @@ const REGISTRY: Record<string, JobProvider> = {
   [hiristProvider.id]: hiristProvider,
   [cutshortProvider.id]: cutshortProvider,
   [indeedProvider.id]: indeedProvider,
+  [founditProvider.id]: founditProvider,
+  [shineProvider.id]: shineProvider,
+  [timesjobsProvider.id]: timesjobsProvider,
+  [simplyhiredProvider.id]: simplyhiredProvider,
+  [glassdoorProvider.id]: glassdoorProvider,
+  [remotiveProvider.id]: remotiveProvider,
+  [arbeitnowProvider.id]: arbeitnowProvider,
+  [jobicyProvider.id]: jobicyProvider,
+  [himalayasProvider.id]: himalayasProvider,
+  [weworkremotelyProvider.id]: weworkremotelyProvider,
   [customProvider.id]: customProvider,
 };
 
