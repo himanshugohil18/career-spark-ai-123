@@ -27,6 +27,7 @@ import {
   domainConfidence,
   type CandidateProfile,
 } from "./role-synonyms";
+import { resolveTitleRole } from "./relevance";
 import type { NormalizedJob } from "./types";
 
 export type PerQueryStat = { query: string; matched: number };
@@ -62,7 +63,17 @@ export type DiscoveryStats = {
 
 export async function runDiscovery(
   supabase: SupabaseClient,
-  opts: { providerIds?: string[]; candidateProfile?: CandidateProfile | null } = {},
+  opts: {
+    providerIds?: string[];
+    candidateProfile?: CandidateProfile | null;
+    /**
+     * When true, only jobs matching the candidate's own track are stored.
+     * Default false: `jobs` is a SHARED pool, so one user's discovery run must
+     * never delete other tracks from it. Per-user filtering happens at match
+     * and feed time (relevance engine), not at ingest.
+     */
+    strictProfileFilter?: boolean;
+  } = {},
 ): Promise<DiscoveryStats> {
   const profile = opts.candidateProfile ?? null;
   const stats: DiscoveryStats = {
@@ -122,7 +133,10 @@ export async function runDiscovery(
       perProv.fetched = jobs.length;
       stats.fetched += jobs.length;
 
-      const kept = profile ? filterJobsByProfile(jobs, profile, perProv, queryStats) : jobs;
+      const kept =
+        profile && opts.strictProfileFilter
+          ? filterJobsByProfile(jobs, profile, perProv, queryStats)
+          : filterForSharedPool(jobs, queries_ => queries_, perProv, queryStats, profile);
       perProv.kept = kept.length;
       collected.push(...kept);
 
@@ -307,6 +321,44 @@ export async function runDiscovery(
  * Every kept job also increments the count for each query it matched, so the
  * Debug Panel can show "which queries actually returned jobs".
  */
+/**
+ * Shared-pool ingest filter. Keeps every technical posting regardless of which
+ * user triggered the run — only clearly non-technical roles (sales, HR,
+ * finance, support…) are rejected, since no candidate in this product should
+ * ever be shown those. Query-match stats are still recorded for the debug panel.
+ */
+function filterForSharedPool(
+  jobs: NormalizedJob[],
+  _noop: (q: string[]) => string[],
+  perProv: PerProviderStat,
+  queryStats: Map<string, PerQueryStat>,
+  profile: CandidateProfile | null,
+): NormalizedJob[] {
+  const queries = (profile?.roleQueries ?? []).map((q) => q.toLowerCase());
+  const out: NormalizedJob[] = [];
+  for (const j of jobs) {
+    const role = resolveTitleRole(j.title ?? "");
+    if (role.nonTechnical) {
+      perProv.droppedExcluded++;
+      if (perProv.removed.length < 30) {
+        perProv.removed.push({
+          provider: j.provider,
+          title: j.title,
+          company: j.company?.name ?? "—",
+          reason: "Non-technical role",
+        });
+      }
+      continue;
+    }
+    const hay = `${(j.title ?? "").toLowerCase()} ${(j.description ?? "").toLowerCase().slice(0, 2000)}`;
+    for (const q of queries) {
+      if (q.length >= 3 && hay.includes(q)) queryStats.get(q)?.matched++;
+    }
+    out.push(j);
+  }
+  return out;
+}
+
 function filterJobsByProfile(
   jobs: NormalizedJob[],
   profile: CandidateProfile,
