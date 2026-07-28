@@ -98,11 +98,10 @@ export function resolveTitleRole(rawTitle: string): TitleRole {
     if (score > best.score) best = { family: fam, score };
   }
 
-  // A bare tech noun ("Engineer", "Developer") with no family phrase is a
-  // weak generic engineering title — treat as fullstack-ish but low strength.
-  if (!best.family && TECH_ROLE_NOUN.test(title)) {
-    best = { family: ROLE_FAMILIES.find((f) => f.id === "fullstack") ?? null, score: 35 };
-  }
+  // A bare tech noun ("Engineer", "Developer") with no family phrase stays
+  // UNRESOLVED — it must be corroborated by the posting body and by real
+  // technology overlap before it can ever reach a feed.
+  if (!best.family && TECH_ROLE_NOUN.test(title)) best = { family: null, score: 20 };
 
   return {
     family: best.family,
@@ -222,22 +221,40 @@ export function computeRelevance(
   );
 
   // 5. Gate — a job must be on-track AND show real technology evidence.
+  // Required technology evidence scales inversely with title certainty: an
+  // exact "DevOps Engineer" title needs little corroboration, a vague
+  // "Member of Technical Staff" needs a lot.
+  const requiredTech = titleRole.strength >= 0.85 ? 0.2 : titleRole.strength >= 0.5 ? 0.32 : 0.45;
+  const coverage = requiredSkillCoverage(job, brainTechs);
   const gate =
     titleFit >= 0.6 &&
-    relevance >= 0.45 &&
-    techFit >= 0.18 &&
-    (titleRole.strength >= 0.5 || techFit >= 0.25) &&
-    !(titleRole.leadership && candRank <= 2);
+    relevance >= 0.52 &&
+    techFit >= requiredTech &&
+    coverage >= 0.2 &&
+    !(titleRole.leadership && candRank <= 3);
 
   const reason = !gate
     ? titleFit < 0.55
       ? `Off-track role${titleRole.family ? `: ${titleRole.family.label}` : ""}`
-      : titleRole.leadership && candRank <= 2
+      : titleRole.leadership && candRank <= 3
         ? "Leadership role beyond current experience"
         : "Weak technology overlap"
     : `${titleRole.family?.label ?? bodyFamily?.label ?? "Technical"} role · ${Math.round(techFit * 100)}% tech overlap`;
 
   return { ...base, titleFit, seniorityFit, relevance, gate, vetoed: false, reason };
+}
+
+/**
+ * Fraction of the job's explicitly required skills the candidate can already
+ * evidence (semantically). Jobs listing many requirements the candidate has
+ * never touched are not real matches, whatever the title says.
+ */
+function requiredSkillCoverage(job: JobLike, brainTechs: string[]): number {
+  const req = (job.requiredSkills ?? []).filter(Boolean);
+  if (req.length < 3) return 1;
+  let hit = 0;
+  for (const skill of req) if (semanticTechOverlap([skill], brainTechs) >= 0.5) hit++;
+  return hit / req.length;
 }
 
 const TECH_TOKEN_RE =
