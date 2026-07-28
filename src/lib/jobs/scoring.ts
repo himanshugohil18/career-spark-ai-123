@@ -236,16 +236,20 @@ export function computeBaselineScores(brain: CareerBrainSnapshot, job: Normalize
     location * 0.04 +
     education * 0.03;
 
-  // Hard career-path guardrail. Off-track and excluded-domain jobs can NEVER
-  // climb into the recommended band — no matter what keywords they share.
+  // Hard career-path guardrail. The title-anchored relevance engine decides
+  // whether the job is on-track at all; off-track and non-technical jobs can
+  // NEVER climb into the recommended band, no matter what keywords they share.
   const { profile } = projectBrain(brain);
   const { fit, excluded } = jobFamilyFitProfile(jobToLike(job), profile);
+  const rel = computeRelevance(jobToLike(job), profile, brainTechVocabulary(brain));
+
   let overall = rawOverall;
-  if (excluded) overall = Math.min(overall, 15);          // hard excluded domain
+  if (rel.vetoed || excluded) overall = Math.min(overall, 12);
   else if (profile.families.length > 0) {
-    if (fit === 0) overall = Math.min(overall, 22);        // completely off-track
-    else if (fit <= 0.4) overall = Math.min(overall, 48);  // same track, different role
-    else if (fit <= 0.7) overall = Math.min(overall, 78);  // related family
+    if (!rel.gate) overall = Math.min(overall, 38);
+    // Relevance acts as a ceiling: a 0.6-relevance job cannot exceed ~72.
+    overall = Math.min(overall, 20 + rel.relevance * 85);
+    if (fit === 0) overall = Math.min(overall, 25);
   }
 
   return {
@@ -254,14 +258,18 @@ export function computeBaselineScores(brain: CareerBrainSnapshot, job: Normalize
     experience: Math.round(experience),
     education: Math.round(education),
     technology: Math.round(technology),
-    careerGoal: Math.round(careerGoal),
+    careerGoal: Math.round(clamp(rel.relevance * 100)),
     projects: Math.round(projects),
     location: Math.round(location),
     salary: Math.round(salary),
     familyFit: fit,
-    excluded,
+    excluded: excluded || rel.vetoed,
+    relevance: rel.relevance,
+    relevant: rel.gate,
+    relevanceReason: rel.reason,
   };
 }
+
 
 
 export function computeMissingSkills(
