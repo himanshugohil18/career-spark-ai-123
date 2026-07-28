@@ -17,6 +17,7 @@ import {
 } from "../normalize";
 import type { NormalizedJob } from "../types";
 import type { JobProvider, ProviderFetchOptions } from "./base";
+import { expandSearchLocations } from "./locations";
 
 type MarketplaceSpec = {
   id: string;
@@ -33,7 +34,7 @@ function createMarketplaceProvider(spec: MarketplaceSpec): JobProvider {
     displayName: spec.displayName,
     async fetch(_config, opts?: ProviderFetchOptions) {
       const queries = (opts?.queries?.length ? opts.queries : ["DevOps Engineer"]).slice(0, 10);
-      const locations = opts?.locations?.length ? opts.locations.slice(0, 2) : ["India", "Remote"];
+      const locations = expandSearchLocations(opts?.locations, 6);
       const out: NormalizedJob[] = [];
       const seen = new Set<string>();
       for (const query of queries) {
