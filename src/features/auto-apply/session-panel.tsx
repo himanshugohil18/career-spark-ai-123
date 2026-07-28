@@ -17,6 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ai/skeleton";
+import { SpringNumber } from "@/components/motion/spring-number";
 import { AUTO_APPLY_STEPS, STEP_LABELS } from "@/lib/auto-apply/driver";
 import {
   approveAndSubmit,
@@ -24,17 +25,9 @@ import {
   getAutoApplySession,
   provideFieldValue,
 } from "@/lib/auto-apply.functions";
-
-const STATUS_TONE: Record<string, string> = {
-  running: "text-primary",
-  awaiting_approval: "text-amber-400",
-  awaiting_input: "text-amber-400",
-  submitting: "text-primary",
-  completed: "text-emerald-400",
-  failed: "text-red-400",
-  cancelled: "text-muted-foreground",
-  queued: "text-muted-foreground",
-};
+import { StatusPill } from "@/features/auto-apply/status-pill";
+import { ProgressRing } from "@/features/auto-apply/progress-ring";
+import { ConsoleLog, type ConsoleEvent } from "@/features/auto-apply/console-log";
 
 export function AutoApplySessionPanel({ sessionId }: { sessionId: string }) {
   const qc = useQueryClient();
@@ -110,18 +103,13 @@ export function AutoApplySessionPanel({ sessionId }: { sessionId: string }) {
               {STEP_LABELS[step] ?? step}
             </h3>
           </div>
-          <span className={`font-mono text-xs uppercase tracking-widest ${STATUS_TONE[status] ?? ""}`}>
-            {status.replace(/_/g, " ")}
-          </span>
-        </div>
-        <div className="mt-4 h-1.5 overflow-hidden rounded-full bg-elevated">
-          <div
-            className="h-full rounded-full bg-primary transition-[width] duration-700"
-            style={{ width: `${progress}%` }}
-          />
+          <ProgressRing progress={progress} size={40} />
+          <StatusPill status={status} layoutId={`session-status-${sessionId}`} />
         </div>
         <div className="mt-2 flex items-center gap-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          <span>{progress}%</span>
+          <span>
+            <SpringNumber value={progress} className="text-foreground" />% complete
+          </span>
           <span>·</span>
           <Clock className="h-3 w-3" /> {elapsed}
           {s.browser_session_id ? (
@@ -192,9 +180,20 @@ export function AutoApplySessionPanel({ sessionId }: { sessionId: string }) {
       )}
 
       {/* Log */}
-      <LogPanel events={data.events as Record<string, unknown>[]} />
+      <SessionConsole events={data.events as Record<string, unknown>[]} />
     </div>
   );
+}
+
+function SessionConsole({ events }: { events: Record<string, unknown>[] }) {
+  const rows: ConsoleEvent[] = events.map((e) => ({
+    id: String(e.id),
+    created_at: String(e.created_at),
+    kind: e.kind ? String(e.kind) : null,
+    step: e.step ? String(e.step) : null,
+    message: String(e.message),
+  }));
+  return <ConsoleLog events={rows} title={`Activity console (${rows.length})`} />;
 }
 
 function Timeline({ currentStep, status }: { currentStep: string; status: string }) {
@@ -327,42 +326,6 @@ function ScreenshotsPanel({ shots }: { shots: Record<string, unknown>[] }) {
   );
 }
 
-function LogPanel({ events }: { events: Record<string, unknown>[] }) {
-  const rows = useMemo(() => [...events].reverse().slice(0, 200), [events]);
-  return (
-    <div className="surface-card p-5">
-      <p className="mb-3 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-        Activity log ({events.length})
-      </p>
-      <ol className="space-y-1 font-mono text-[11px]">
-        {rows.map((e) => {
-          const kind = String(e.kind ?? "info");
-          const color =
-            kind === "error"
-              ? "text-red-300"
-              : kind === "warning"
-                ? "text-amber-300"
-                : kind === "approval"
-                  ? "text-primary"
-                  : "text-muted-foreground";
-          return (
-            <li key={String(e.id)} className={`flex gap-3 ${color}`}>
-              <span className="opacity-60">
-                {new Date(String(e.created_at)).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })}
-              </span>
-              <span className="uppercase opacity-60">{String(e.step ?? "")}</span>
-              <span className="flex-1 text-foreground/90">{String(e.message)}</span>
-            </li>
-          );
-        })}
-      </ol>
-    </div>
-  );
-}
 
 function useElapsed(startedAt: string | null, finishedAt: string | null) {
   const [now, setNow] = useState(Date.now());

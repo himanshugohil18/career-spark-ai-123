@@ -31,6 +31,8 @@ import {
 } from "@/lib/profile.functions";
 import { setActiveResume } from "@/lib/resume.functions";
 import { cn } from "@/lib/utils";
+import { getCareerBrainSnapshot } from "@/lib/career-brain.service";
+import { CareerBrainGraph } from "@/features/career-brain/force-graph";
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -44,6 +46,11 @@ function ProfilePage() {
   const { data, isLoading } = useQuery({
     queryKey: ["workspace"],
     queryFn: () => getWorkspace(),
+  });
+
+  const { data: brainSnapshot } = useQuery({
+    queryKey: ["career-brain-snapshot"],
+    queryFn: () => getCareerBrainSnapshot(),
   });
 
   const invalidate = () =>
@@ -101,6 +108,18 @@ function ProfilePage() {
           Optimizer, Interview — reads from here.
         </p>
       </motion.div>
+
+      {/* Career Brain graph — the interactive centerpiece */}
+      <section className="space-y-4">
+        <SectionHeader eyebrow="Career Brain" title="Your knowledge graph" />
+        {brainSnapshot?.ready ? (
+          <CareerBrainGraph snapshot={brainSnapshot} />
+        ) : (
+          <div className="surface-card p-8 text-center text-sm text-muted-foreground">
+            Approve a resume to generate your Career Brain graph.
+          </div>
+        )}
+      </section>
 
       {/* Resume manager */}
       <section className="space-y-4">

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Building2, ChevronDown, RefreshCw, Search, Sparkles } from "lucide-react";
@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ai/skeleton";
 import { JobCard, type JobCardData } from "@/features/jobs/job-card";
 import { Stagger, StaggerItem } from "@/components/motion/reveal";
+import { JobRadarList } from "@/features/jobs/job-radar-list";
+import { JobDetailPreview } from "@/features/jobs/job-detail-preview";
 
 import { JobSection, type JobSectionData } from "@/features/jobs/job-section";
 import { JobFiltersPanel, type FeedFilters } from "@/features/jobs/job-filters";
@@ -24,6 +26,8 @@ import {
   unsaveJob,
 } from "@/lib/jobs.functions";
 import { getCareerBrainSnapshot } from "@/lib/career-brain.service";
+import { openWorkspace } from "@/lib/workspace.functions";
+import { startAutoApply } from "@/lib/auto-apply.functions";
 
 const SORT_LABELS: Record<string, string> = {
   match: "Overall Match",
@@ -40,9 +44,20 @@ export const Route = createFileRoute("/_authenticated/jobs")({
 
 function JobsFeed() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<FeedFilters>({});
   const [sort, setSort] = useState<"match" | "newest" | "salary" | "remote" | "updated">("match");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const update = () => setIsDesktop(mq.matches);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
 
   const brainQuery = useQuery({
     queryKey: ["career-brain"],
@@ -154,6 +169,27 @@ function JobsFeed() {
     void trackJobInteraction({ data: { jobId, kind: "clicked" } }).catch(() => {});
   };
 
+  const dismissMutation = useMutation({
+    mutationFn: (jobId: string) => trackJobInteraction({ data: { jobId, kind: "ignored" } }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["jobs-feed"] });
+      void queryClient.invalidateQueries({ queryKey: ["job-sections"] });
+    },
+  });
+
+  const applyMutation = useMutation({
+    mutationFn: async (jobId: string) => {
+      const ws = await openWorkspace({ data: { jobId } });
+      const sess = await startAutoApply({ data: { workspaceId: ws.workspaceId } });
+      return { workspaceId: ws.workspaceId, sessionId: sess.sessionId };
+    },
+    onSuccess: ({ workspaceId }) => {
+      toast.success("AI agent started. Watch the timeline.");
+      void navigate({ to: "/applications/$workspaceId/agent", params: { workspaceId } });
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not start AI agent"),
+  });
+
   const items = (feed.data?.items ?? []) as unknown as JobCardData[];
   const roleFamily = feed.data?.roleFamily ?? null;
   const activeQuery = feed.data?.query ?? filters.q ?? filters.role ?? null;
@@ -247,7 +283,7 @@ function JobsFeed() {
               </button>
             </div>
           )}
-          <div className="grid gap-6 md:grid-cols-[280px_1fr]">
+          <div className="grid gap-6 md:grid-cols-[240px_1fr] lg:grid-cols-[240px_1fr_360px]">
             <JobFiltersPanel value={filters} onChange={setFilters} />
             <div className="space-y-4">
               {feed.isLoading ? (
@@ -270,20 +306,25 @@ function JobsFeed() {
                       <Sparkles className="h-3 w-3" /> AI-ranked
                     </span>
                   </div>
-                  <Stagger className="space-y-3">
-                    {items.map((job) => (
-                      <StaggerItem key={job.id}>
-                        <JobCard
-                          job={job}
-                          onSave={(id) => saveMutation.mutate(id)}
-                          onClick={onCardClick}
-                        />
-                      </StaggerItem>
-                    ))}
-                  </Stagger>
+                  <JobRadarList
+                    jobs={items}
+                    selectedId={selectedId}
+                    onSelect={setSelectedId}
+                    onSave={(id) => saveMutation.mutate(id)}
+                    onDismiss={(id) => dismissMutation.mutate(id)}
+                    onApply={(id) => applyMutation.mutate(id)}
+                    onClick={onCardClick}
+                    splitView={isDesktop}
+                  />
                 </>
               )}
             </div>
+            <JobDetailPreview
+              jobId={selectedId}
+              saved={!!items.find((i) => i.id === selectedId)?.savedStatus}
+              onSave={(id) => saveMutation.mutate(id)}
+              onClose={() => setSelectedId(null)}
+            />
           </div>
         </motion.div>
       )}

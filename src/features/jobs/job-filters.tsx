@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Filter, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronDown, Filter, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type FeedFilters = {
@@ -20,6 +21,19 @@ const EMP_OPTS = ["full_time", "part_time", "contract", "internship", "freelance
 const EXP_OPTS = ["intern", "entry", "junior", "mid", "senior", "staff", "principal", "lead"];
 const POSTED_OPTS = [1, 3, 7, 14, 30];
 
+function countActive(v: FeedFilters): number {
+  let n = 0;
+  if (v.remoteStatus?.length) n += v.remoteStatus.length;
+  if (v.employmentType?.length) n += v.employmentType.length;
+  if (v.experienceLevel?.length) n += v.experienceLevel.length;
+  if (v.technology?.length) n += v.technology.length;
+  if (v.minMatch) n += 1;
+  if (v.postedWithinDays) n += 1;
+  if (v.salaryMin) n += 1;
+  if (v.location) n += 1;
+  return n;
+}
+
 export function JobFiltersPanel({
   value,
   onChange,
@@ -29,6 +43,8 @@ export function JobFiltersPanel({
 }) {
   const [locInput, setLocInput] = useState(value.location ?? "");
   const [techInput, setTechInput] = useState((value.technology ?? []).join(", "));
+  const [expanded, setExpanded] = useState(true);
+  const activeCount = countActive(value);
 
   function toggle<K extends keyof FeedFilters>(key: K, item: string) {
     const arr = ((value[key] as string[] | undefined) ?? []).slice();
@@ -42,19 +58,42 @@ export function JobFiltersPanel({
     ((value[k] as string[] | undefined) ?? []).includes(v);
 
   return (
-    <section className="surface-card space-y-6 p-5 text-sm">
+    <section className="surface-card p-5 text-sm">
       <div className="flex items-center justify-between">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Filters</p>
-        {Object.keys(value).length > 0 && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="flex items-center gap-2 font-mono text-[11px] uppercase tracking-widest text-muted-foreground hover:text-foreground"
+        >
+          <span className="inline-flex h-1.5 w-1.5 rounded-full bg-primary shadow-[0_0_8px_var(--color-primary)]" aria-hidden />
+          Instrument Panel
+          {activeCount > 0 && (
+            <span className="rounded-full bg-primary/15 px-1.5 py-0.5 font-mono text-[10px] text-primary">
+              {activeCount} active
+            </span>
+          )}
+          <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", expanded && "rotate-180")} />
+        </button>
+        {activeCount > 0 && (
           <button
             onClick={() => onChange({})}
             className="inline-flex items-center gap-1 text-[11px] text-muted-foreground hover:text-foreground"
           >
-            <X className="h-3 w-3" /> Clear
+            <X className="h-3 w-3" /> Clear all
           </button>
         )}
       </div>
 
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            className="overflow-hidden"
+          >
+      <div className="space-y-6 pt-5">
       <Section title="Remote">
         <ChipGroup>
           {REMOTE_OPTS.map((o) => (
@@ -148,6 +187,10 @@ export function JobFiltersPanel({
           className="w-full rounded-md border border-border bg-elevated px-2.5 py-1.5 text-sm outline-none focus:border-primary"
         />
       </Section>
+      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }
