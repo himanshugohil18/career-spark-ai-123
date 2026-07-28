@@ -13,6 +13,7 @@ import { parseNaturalLanguage } from "./jobs/nl-search.server";
 import { buildRecommendations } from "./jobs/recommendations.server";
 import { refreshUserMatches } from "./jobs/matching.server";
 import { domainConfidence, expandQueryKeywords, titleRelevanceScore } from "./jobs/role-synonyms";
+import { computeRelevance, brainTechVocabulary, jobDedupeKey } from "./jobs/relevance";
 import { buildJobSections, buildInsights } from "./jobs/sections.server";
 
 const FiltersSchema = z.object({
@@ -49,10 +50,11 @@ export const listJobs = createServerFn({ method: "POST" })
     const rawQuery = (data.q ?? data.role ?? "").trim();
     const profile = rawQuery ? profileForExplicitSearch(baseProfile, rawQuery) : baseProfile;
     const brainFamilies = profile.families;
+    const brainTechs = brainTechVocabulary(brain);
     const expansion = rawQuery ? expandQueryKeywords(rawQuery) : null;
     const roleFamily = expansion?.family ?? null;
 
-    const overFetch = rawQuery || brainFamilies.length ? Math.min(200, pageSize * 5) : pageSize;
+    const overFetch = rawQuery || brainFamilies.length ? 400 : pageSize;
     const useMemoryPaging = !!rawQuery || brainFamilies.length > 0;
     const from = useMemoryPaging ? 0 : (page - 1) * pageSize;
     const to = useMemoryPaging ? overFetch - 1 : from + pageSize - 1;
@@ -160,22 +162,34 @@ export const listJobs = createServerFn({ method: "POST" })
         ? jobFamilyFitProfile(jobLike, profile)
         : { fit: 1, excluded: false };
       const fit = fitInfo.fit;
+      const relevance = computeRelevance(jobLike, profile, brainTechs);
       const bias = historyBias.get(row.id) ?? 0;
       // Runtime re-cap: stale cached scores from before the profile-based
       // classifier are re-bounded. Excluded domains capped to 15,
       // off-track (fit=0) capped to 22, weak (<=0.4) capped to 48.
+      // Cached scores are re-bounded by the current relevance engine so a
+      // stale high score can never resurface an off-track job. Jobs that
+      // were never matched get an on-the-fly relevance estimate so the feed
+      // is never empty and never unranked.
       const cached = matchMap.get(row.id) ?? null;
-      let match = cached;
+      let match: any = cached;
       if (cached && brainFamilies.length) {
         const raw = Number((cached as any).overall_score ?? 0);
-        const capped = fitInfo.excluded
-          ? Math.min(raw, 15)
-          : fit === 0
-            ? Math.min(raw, 22)
-            : fit <= 0.4
-              ? Math.min(raw, 48)
-              : raw;
+        const ceiling = relevance.vetoed || fitInfo.excluded
+          ? 12
+          : relevance.gate
+            ? Math.round(20 + relevance.relevance * 85)
+            : 38;
+        const capped = Math.min(raw, ceiling);
         if (capped !== raw) match = { ...(cached as any), overall_score: capped };
+      } else if (!cached && brainFamilies.length && relevance.gate) {
+        match = {
+          job_id: row.id,
+          overall_score: Math.round(25 + relevance.relevance * 70),
+          career_goal_score: Math.round(relevance.relevance * 100),
+          explanation: relevance.reason,
+          estimated: true,
+        };
       }
       return {
         ...row,
@@ -184,7 +198,10 @@ export const listJobs = createServerFn({ method: "POST" })
         titleScore,
         familyScore,
         familyFit: fit,
-        excluded: fitInfo.excluded,
+        excluded: fitInfo.excluded || relevance.vetoed,
+        relevance: relevance.relevance,
+        relevant: relevance.gate,
+        relevanceReason: relevance.reason,
         domainConfidence: domainConfidence(jobLike, profile),
         interactionBias: bias,
       };
@@ -204,11 +221,23 @@ export const listJobs = createServerFn({ method: "POST" })
         items = relaxed.length > 0 ? relaxed : items.filter((it) => !it.excluded);
       }
     } else if (brainFamilies.length) {
-      // Hard on-track filter: drop everything the brain says is excluded or
-      // off-track. Cross-track leakage (e.g. AI Platform for DevOps) never
-      // reaches the UI.
-      items = items.filter((it) => !it.excluded && (it.familyFit ?? 0) >= 0.4);
+      // Hard on-track filter: only jobs that clear the title-anchored
+      // relevance gate reach the UI. Sales, support, ML-research and other
+      // off-track postings can never leak into the feed.
+      const onTrack = items.filter((it) => !it.excluded && it.relevant);
+      items = onTrack.length
+        ? onTrack
+        : items.filter((it) => !it.excluded && (it.relevance ?? 0) >= 0.35);
     }
+
+    // Collapse duplicate postings of the same role at the same company.
+    const seenKeys = new Set<string>();
+    items = items.filter((it: any) => {
+      const key = jobDedupeKey(it.title ?? "", it.company?.name ?? null);
+      if (seenKeys.has(key)) return false;
+      seenKeys.add(key);
+      return true;
+    });
 
 
     // Default: hide sub-40 matches unless the user explicitly widened the
@@ -230,8 +259,8 @@ export const listJobs = createServerFn({ method: "POST" })
           const t = (b.titleScore ?? 0) - (a.titleScore ?? 0);
           if (t !== 0) return t;
         }
-        const scoreA = Number(a.match?.overall_score ?? 0) + (a.familyScore ?? 0) * 0.15 + (a.domainConfidence?.confidence ?? 0) * 20 + (a.interactionBias ?? 0);
-        const scoreB = Number(b.match?.overall_score ?? 0) + (b.familyScore ?? 0) * 0.15 + (b.domainConfidence?.confidence ?? 0) * 20 + (b.interactionBias ?? 0);
+        const scoreA = Number(a.match?.overall_score ?? 0) + (a.relevance ?? 0) * 30 + (a.familyScore ?? 0) * 0.1 + (a.interactionBias ?? 0);
+        const scoreB = Number(b.match?.overall_score ?? 0) + (b.relevance ?? 0) * 30 + (b.familyScore ?? 0) * 0.1 + (b.interactionBias ?? 0);
         return scoreB - scoreA;
       });
     }
