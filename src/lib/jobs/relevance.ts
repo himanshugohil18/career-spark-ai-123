@@ -87,16 +87,22 @@ export function resolveTitleRole(rawTitle: string): TitleRole {
     if (re.test(title)) { seniority = level; break; }
   }
 
+  const techNoun = TECH_ROLE_NOUN.test(title);
   let best: { family: RoleFamily | null; score: number } = { family: null, score: 0 };
   for (const fam of ROLE_FAMILIES) {
     let score = 0;
     for (const syn of fam.synonyms) if (hasPhrase(title, syn)) score = Math.max(score, 100);
     for (const tok of fam.tokens) {
       if (tok.length < 4) continue;
+      // A bare technology token ("react", "python") only implies a role family
+      // when the title also carries a technical role noun — otherwise
+      // "Incident Response Analyst - REACT" reads as a frontend job.
+      if (!techNoun && !tok.includes(" ")) continue;
       if (hasPhrase(title, tok)) score = Math.max(score, tok.includes(" ") ? 85 : 55);
     }
     if (score > best.score) best = { family: fam, score };
   }
+
 
   // A bare tech noun ("Engineer", "Developer") with no family phrase stays
   // UNRESOLVED — it must be corroborated by the posting body and by real
