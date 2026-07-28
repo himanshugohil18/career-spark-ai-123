@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Building2, ChevronDown, RefreshCw, Search, Sparkles } from "lucide-react";
@@ -40,6 +40,7 @@ export const Route = createFileRoute("/_authenticated/jobs")({
 
 function JobsFeed() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<FeedFilters>({});
   const [sort, setSort] = useState<"match" | "newest" | "salary" | "remote" | "updated">("match");
   const [searchOpen, setSearchOpen] = useState(false);
