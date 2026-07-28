@@ -840,7 +840,10 @@ function PreviewCard({ label, value, suffix, hint, accent }: {
       style={{ ["--tw-shadow-color" as any]: stroke }}
     >
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={cn("mt-2 font-display text-3xl font-semibold tabular-nums", color)}>{n}{suffix}</p>
+      <p className={cn("mt-2 font-display text-3xl font-semibold tabular-nums", color)}>
+        <SpringNumber value={value} suffix={suffix} />
+      </p>
+
       <Sparkline color={stroke} />
       <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
     </motion.div>
