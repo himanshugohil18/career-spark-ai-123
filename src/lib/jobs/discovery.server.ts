@@ -277,8 +277,8 @@ export async function runDiscovery(
 
   const providerIdRows: Array<Record<string, unknown>> = [];
   if (jobRows.length) {
-    for (let i = 0; i < jobRows.length; i += 200) {
-      const chunk = jobRows.slice(i, i + 200);
+    for (let i = 0; i < jobRows.length; i += 50) {
+      const chunk = jobRows.slice(i, i + 50);
       const { data: upserted, error: jErr } = await supabase
         .from("jobs")
         .upsert(chunk, { onConflict: "provider,source_id" })
