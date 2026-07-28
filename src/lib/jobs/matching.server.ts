@@ -168,7 +168,7 @@ export async function refreshUserMatches(
     .select("*, company:companies(id,name,slug,domain,logo_url,website,industry,size,remote_policy,tech_stack,description)")
     .eq("is_active", true)
     .order("posted_at", { ascending: false, nullsFirst: false })
-    .limit(Math.max(120, limit * 6));
+    .limit(Math.max(400, limit * 10));
 
   const results = {
     evaluated: 0,
