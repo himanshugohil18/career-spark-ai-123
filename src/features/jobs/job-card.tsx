@@ -215,7 +215,7 @@ export function JobCard({
             goToDetails();
           }}
           disabled={!hasValidId}
-          className="inline-flex h-9 items-center rounded-md border border-border bg-elevated px-3 text-[13px] text-muted-foreground hover:border-primary/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          className="sheen-on-hover inline-flex h-9 items-center rounded-md border border-border bg-elevated px-3 text-[13px] text-muted-foreground hover:border-primary/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
           View details
         </button>
