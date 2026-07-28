@@ -94,7 +94,7 @@ export function LandingPage() {
   return (
     <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
       <AmbientBackdrop />
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[110vh] opacity-90">
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[100vh] opacity-45">
         <CareerBrainCanvas />
       </div>
       <Navbar />
