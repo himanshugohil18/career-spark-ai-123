@@ -39,6 +39,11 @@ import { ComplianceSections } from "@/components/landing/compliance-sections";
 import { AgentStatusPill, type AgentState } from "@/components/ai/agent-status";
 import { AIThinking } from "@/components/ai/ai-thinking";
 import { cn } from "@/lib/utils";
+import { CareerBrainCanvas } from "@/components/motion/career-brain-canvas";
+import { ScrollPipeline } from "@/components/motion/scroll-pipeline";
+import { SpringNumber } from "@/components/motion/spring-number";
+import { Magnetic } from "@/components/motion/burst-button";
+
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
