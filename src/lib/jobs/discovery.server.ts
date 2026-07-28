@@ -136,7 +136,7 @@ export async function runDiscovery(
       const kept =
         profile && opts.strictProfileFilter
           ? filterJobsByProfile(jobs, profile, perProv, queryStats)
-          : filterForSharedPool(jobs, queries_ => queries_, perProv, queryStats, profile);
+          : filterForSharedPool(jobs, perProv, queryStats, profile);
       perProv.kept = kept.length;
       collected.push(...kept);
 
@@ -329,7 +329,6 @@ export async function runDiscovery(
  */
 function filterForSharedPool(
   jobs: NormalizedJob[],
-  _noop: (q: string[]) => string[],
   perProv: PerProviderStat,
   queryStats: Map<string, PerQueryStat>,
   profile: CandidateProfile | null,
