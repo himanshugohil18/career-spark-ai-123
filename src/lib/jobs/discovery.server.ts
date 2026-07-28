@@ -351,7 +351,9 @@ function filterForSharedPool(
     }
     const hay = `${(j.title ?? "").toLowerCase()} ${(j.description ?? "").toLowerCase().slice(0, 2000)}`;
     for (const q of queries) {
-      if (q.length >= 3 && hay.includes(q)) queryStats.get(q)?.matched++;
+      if (q.length < 3 || !hay.includes(q)) continue;
+      const stat = queryStats.get(q);
+      if (stat) stat.matched++;
     }
     out.push(j);
   }
