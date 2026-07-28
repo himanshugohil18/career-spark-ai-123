@@ -1134,3 +1134,46 @@ html {
 }
 
 
+
+/* --- 12. Motion layer: spring toasts + shimmer --------------------- */
+@keyframes toast-spring-in {
+  0% { opacity: 0; transform: translateY(-14px) scale(0.94); }
+  55% { opacity: 1; transform: translateY(3px) scale(1.02); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes toast-spring-out {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-10px) scale(0.96); }
+}
+[data-sonner-toast][data-mounted="true"] {
+  animation: toast-spring-in 0.42s cubic-bezier(0.22, 1.4, 0.36, 1) both;
+}
+[data-sonner-toast][data-removed="true"] {
+  animation: toast-spring-out 0.22s ease-in both;
+}
+
+@keyframes sheen {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(220%); }
+}
+.sheen-on-hover { position: relative; overflow: hidden; }
+.sheen-on-hover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-120%);
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in oklab, var(--color-primary) 22%, transparent) 50%,
+    transparent 80%
+  );
+  pointer-events: none;
+}
+.sheen-on-hover:hover::after { animation: sheen 0.9s ease forwards; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-sonner-toast][data-mounted="true"],
+  [data-sonner-toast][data-removed="true"],
+  .sheen-on-hover:hover::after { animation: none; }
+}

@@ -7,6 +7,7 @@ import { MatchExplain } from "./match-explain";
 import { ApplyWithAiButton } from "@/features/auto-apply/apply-with-ai-button";
 import { cn } from "@/lib/utils";
 import { openExternal, isValidExternalUrl } from "@/lib/open-external";
+import { BurstButton } from "@/components/motion/burst-button";
 
 
 export type JobCardData = {
@@ -87,9 +88,15 @@ export function JobCard({
     <motion.article
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="surface-card card-interactive group flex flex-col gap-3 p-5"
+      whileHover={{ y: -3, scale: 1.006 }}
+      transition={{ type: "spring", stiffness: 300, damping: 26 }}
+      className="surface-card card-interactive group relative flex flex-col gap-3 p-5"
     >
+      <motion.span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 rounded-[inherit] opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100"
+        style={{ background: "radial-gradient(60% 60% at 50% 0%, color-mix(in oklab, var(--color-primary) 28%, transparent), transparent 70%)" }}
+      />
       {overall >= 90 && <span className="ribbon">Top Match</span>}
       <div className="flex items-start gap-4">
         {job.match ? (
@@ -159,19 +166,20 @@ export function JobCard({
               ) : null}
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
-              <button
+              <BurstButton
+                active={Boolean(job.savedStatus)}
                 onClick={(e) => {
                   e.preventDefault();
                   onSave?.(job.id);
                 }}
-                aria-label="Save job"
+                ariaLabel="Save job"
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:text-foreground",
                   job.savedStatus && "border-primary/40 text-primary",
                 )}
               >
                 <Bookmark className={cn("h-3.5 w-3.5", job.savedStatus && "fill-current")} />
-              </button>
+              </BurstButton>
               <button
                 type="button"
                 aria-label={hasApplyUrl ? "Open original job posting" : "Application link unavailable"}
@@ -207,7 +215,7 @@ export function JobCard({
             goToDetails();
           }}
           disabled={!hasValidId}
-          className="inline-flex h-9 items-center rounded-md border border-border bg-elevated px-3 text-[13px] text-muted-foreground hover:border-primary/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          className="sheen-on-hover inline-flex h-9 items-center rounded-md border border-border bg-elevated px-3 text-[13px] text-muted-foreground hover:border-primary/40 hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
           View details
         </button>

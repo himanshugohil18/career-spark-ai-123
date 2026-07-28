@@ -7,6 +7,8 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ai/skeleton";
 import { JobCard, type JobCardData } from "@/features/jobs/job-card";
+import { Stagger, StaggerItem } from "@/components/motion/reveal";
+
 import { JobSection, type JobSectionData } from "@/features/jobs/job-section";
 import { JobFiltersPanel, type FeedFilters } from "@/features/jobs/job-filters";
 import { NLSearchBar } from "@/features/jobs/nl-search";
@@ -268,14 +270,17 @@ function JobsFeed() {
                       <Sparkles className="h-3 w-3" /> AI-ranked
                     </span>
                   </div>
-                  {items.map((job) => (
-                    <JobCard
-                      key={job.id}
-                      job={job}
-                      onSave={(id) => saveMutation.mutate(id)}
-                      onClick={onCardClick}
-                    />
-                  ))}
+                  <Stagger className="space-y-3">
+                    {items.map((job) => (
+                      <StaggerItem key={job.id}>
+                        <JobCard
+                          job={job}
+                          onSave={(id) => saveMutation.mutate(id)}
+                          onClick={onCardClick}
+                        />
+                      </StaggerItem>
+                    ))}
+                  </Stagger>
                 </>
               )}
             </div>

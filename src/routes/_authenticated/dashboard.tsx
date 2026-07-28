@@ -34,6 +34,7 @@ import { getWorkspace } from "@/lib/profile.functions";
 import { ensureInitialMatches } from "@/lib/jobs.functions";
 import { getAgentActivity } from "@/lib/career-intel.functions";
 import { computeCompleteness } from "@/lib/completeness";
+import { Reveal } from "@/components/motion/reveal";
 
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -287,8 +288,16 @@ function Dashboard() {
       )}
 
       {/* AI signals from the matching engine (real data only) */}
-      {hasResume && <DashboardWidgets />}
-      {hasResume && <ApplicationsSummary />}
+      {hasResume && (
+        <Reveal>
+          <DashboardWidgets />
+        </Reveal>
+      )}
+      {hasResume && (
+        <Reveal delay={0.05}>
+          <ApplicationsSummary />
+        </Reveal>
+      )}
 
       {/* Agents grid */}
       <section>

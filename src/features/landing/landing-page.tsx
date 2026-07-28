@@ -39,6 +39,11 @@ import { ComplianceSections } from "@/components/landing/compliance-sections";
 import { AgentStatusPill, type AgentState } from "@/components/ai/agent-status";
 import { AIThinking } from "@/components/ai/ai-thinking";
 import { cn } from "@/lib/utils";
+import { CareerBrainCanvas } from "@/components/motion/career-brain-canvas";
+import { ScrollPipeline } from "@/components/motion/scroll-pipeline";
+import { SpringNumber } from "@/components/motion/spring-number";
+import { Magnetic } from "@/components/motion/burst-button";
+
 import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
@@ -87,16 +92,21 @@ function useOAuthLandingRedirect() {
 export function LandingPage() {
   useOAuthLandingRedirect();
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
+    <div className="relative min-h-screen overflow-x-clip bg-background text-foreground">
       <AmbientBackdrop />
+      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 z-0 h-[100vh] opacity-45">
+        <CareerBrainCanvas />
+      </div>
       <Navbar />
       <main className="relative pt-16">
 
         <Hero />
         <LogoMarquee />
-        
+
         <Preview />
+        <ScrollPipeline />
         <WorkflowTimeline />
+
         <Features />
         <AgentNetwork />
         <CareerBrainViz />
@@ -469,15 +479,18 @@ function Hero() {
           transition={{ duration: 0.6, delay: 0.7 }}
           className="mt-10 flex flex-col items-center gap-3 sm:flex-row"
         >
-          <div className="group relative">
-            <span className="absolute -inset-0.5 rounded-lg bg-[image:var(--gradient-brand-glow)] opacity-60 blur transition duration-500 group-hover:opacity-100" />
-            <Button asChild variant="primary" size="xl" className="relative">
-              <Link to="/auth" search={{ mode: "signup" }}>
-                Start your Career Brain
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-            </Button>
-          </div>
+          <Magnetic strength={8}>
+            <div className="group relative">
+              <span className="absolute -inset-0.5 rounded-lg bg-[image:var(--gradient-brand-glow)] opacity-60 blur transition duration-500 group-hover:opacity-100" />
+              <Button asChild variant="primary" size="xl" className="relative">
+                <Link to="/auth" search={{ mode: "signup" }}>
+                  Start your Career Brain
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </Button>
+            </div>
+          </Magnetic>
+
           <Button asChild variant="outline" size="xl" className="backdrop-blur">
             <a href="#preview">Watch demo</a>
           </Button>
@@ -819,7 +832,6 @@ function PreviewCard({ label, value, suffix, hint, accent }: {
 }) {
   const color = accent === "primary" ? "text-primary" : accent === "accent" ? "text-accent" : "text-success";
   const stroke = accent === "primary" ? "#4F8CFF" : accent === "accent" ? "#22D3EE" : "#22C55E";
-  const n = useCountUp(value);
   return (
     <motion.div
       whileHover={{ y: -2 }}
@@ -827,7 +839,10 @@ function PreviewCard({ label, value, suffix, hint, accent }: {
       style={{ ["--tw-shadow-color" as any]: stroke }}
     >
       <p className="text-xs text-muted-foreground">{label}</p>
-      <p className={cn("mt-2 font-display text-3xl font-semibold tabular-nums", color)}>{n}{suffix}</p>
+      <p className={cn("mt-2 font-display text-3xl font-semibold tabular-nums", color)}>
+        <SpringNumber value={value} suffix={suffix} />
+      </p>
+
       <Sparkline color={stroke} />
       <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
     </motion.div>

@@ -6,6 +6,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { AIThinking } from "@/components/ai/ai-thinking";
+import { AIStream } from "@/components/motion/typewriter";
 import {
   uploadAndProcessResume,
   type UploadPhase,
@@ -252,6 +253,11 @@ export function ResumeUpload({
                 transition={{ duration: 0.45, ease }}
               />
             </div>
+            <AIStream
+              key={state.phase}
+              lines={PHASE_STEPS[state.phase]}
+              className="rounded-xl border border-border/60 bg-elevated/40 p-3"
+            />
           </motion.div>
         )}
 
