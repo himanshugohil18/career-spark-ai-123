@@ -33,7 +33,7 @@ const SORT_LABELS: Record<string, string> = {
   updated: "Recently updated",
 };
 
-export const Route = createFileRoute("/_authenticated/jobs")({
+export const Route = createFileRoute("/_authenticated/jobs/")({
   head: () => ({ meta: [{ title: "Jobs · CareerOS" }] }),
   component: JobsFeed,
 });
