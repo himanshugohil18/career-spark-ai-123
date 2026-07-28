@@ -42,13 +42,25 @@ export function MatchRing({
           className={cn("fill-none stroke-current", tone)}
           initial={{ strokeDashoffset: circumference }}
           animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+          transition={{ type: "spring", stiffness: 90, damping: 20, mass: 0.9 }}
           style={{ strokeDasharray: circumference }}
         />
       </svg>
+      <motion.span
+        aria-hidden
+        className={cn("absolute rounded-full", tone)}
+        style={{
+          width: size,
+          height: size,
+          boxShadow: "0 0 0 0 currentColor",
+        }}
+        animate={{ opacity: [0.28, 0, 0.28], scale: [0.86, 1.06, 0.86] }}
+        transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
+      />
       <span className={cn("absolute font-mono text-[11px] font-semibold tabular-nums", tone)}>
-        {Math.round(clamped)}
+        <SpringNumber value={clamped} />
       </span>
+
     </div>
   );
 }
