@@ -832,7 +832,6 @@ function PreviewCard({ label, value, suffix, hint, accent }: {
 }) {
   const color = accent === "primary" ? "text-primary" : accent === "accent" ? "text-accent" : "text-success";
   const stroke = accent === "primary" ? "#4F8CFF" : accent === "accent" ? "#22D3EE" : "#22C55E";
-  const n = useCountUp(value);
   return (
     <motion.div
       whileHover={{ y: -2 }}
