@@ -98,9 +98,10 @@ export function PipelineKanban({ workspaces }: { workspaces: PipelineWorkspace[]
       <div className="flex items-start gap-2 rounded-lg border border-border bg-elevated/50 px-3 py-2 text-xs text-muted-foreground">
         <Info className="mt-0.5 h-3.5 w-3.5 flex-none" />
         <p>
-          Drag cards between columns, or use each card's stage dropdown. Board changes are a local preview and aren't
-          saved — real stage progress is driven by the AI workflow inside each workspace.
+          Drag cards between columns, or use each card's stage dropdown — moves are saved to your workspace. AI steps
+          inside a workspace will keep advancing stages automatically.
         </p>
+
       </div>
 
       <div ref={containerRef} className="relative flex gap-3 overflow-x-auto pb-2">
