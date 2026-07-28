@@ -179,7 +179,26 @@ export async function refreshUserMatches(
 
   const candidates = rankCandidateRows((jobs ?? []) as Array<Record<string, any>>, brain, profile).slice(0, limit);
 
-  for (const row of candidates) {
+  // AI verification pass — one batched call per 25 shortlisted jobs.
+  const { aiJudgeJobs, blendScore } = await import("./ai-rerank.server");
+  const verdicts = await aiJudgeJobs(
+    brain,
+    candidates.map((row) => {
+      const company = Array.isArray(row.company) ? row.company[0] : row.company;
+      return {
+        title: String(row.title ?? ""),
+        company: company?.name ?? null,
+        description: row.description ?? null,
+        requiredSkills: row.required_skills ?? [],
+        preferredSkills: row.preferred_skills ?? [],
+        experienceLevel: row.experience_level ?? null,
+        remoteStatus: row.remote_status ?? null,
+      };
+    }),
+  );
+
+  for (let index = 0; index < candidates.length; index++) {
+    const row = candidates[index];
     const { data: existing } = await supabase
       .from("job_matches")
       .select("computed_at, brain_version")
@@ -197,6 +216,12 @@ export async function refreshUserMatches(
 
     const job = rowToNormalized(row);
     const score = await computeMatch(brain, job, { refineWithAi: false });
+    const verdict = verdicts.get(index);
+    if (verdict) {
+      score.overall = blendScore(score.overall, verdict);
+      score.aiModel = "google/gemini-3.6-flash";
+      if (verdict.reason) score.explanation = verdict.reason;
+    }
     await persistMatch(supabase, brain.userId, row.id as string, brainVersion, score);
 
     if (!existing && score.overall >= 60) {
@@ -236,6 +261,7 @@ export async function refreshUserMatches(
     results.evaluated++;
     results.upserted++;
   }
+
 
   return results;
 }
