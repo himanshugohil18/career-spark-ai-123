@@ -268,14 +268,17 @@ function JobsFeed() {
                       <Sparkles className="h-3 w-3" /> AI-ranked
                     </span>
                   </div>
-                  {items.map((job) => (
-                    <JobCard
-                      key={job.id}
-                      job={job}
-                      onSave={(id) => saveMutation.mutate(id)}
-                      onClick={onCardClick}
-                    />
-                  ))}
+                  <Stagger className="space-y-3">
+                    {items.map((job) => (
+                      <StaggerItem key={job.id}>
+                        <JobCard
+                          job={job}
+                          onSave={(id) => saveMutation.mutate(id)}
+                          onClick={onCardClick}
+                        />
+                      </StaggerItem>
+                    ))}
+                  </Stagger>
                 </>
               )}
             </div>
