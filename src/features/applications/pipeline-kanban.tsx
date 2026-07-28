@@ -1,22 +1,41 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Info } from "lucide-react";
-import { PIPELINE_COLUMNS, columnForStage } from "./pipeline-stages";
+import { setWorkspaceStage } from "@/lib/workspace.functions";
+import { PIPELINE_COLUMNS, columnForStage, type Stage } from "./pipeline-stages";
 import { PipelineColumnView } from "./pipeline-column";
 import { ConfettiBurst } from "./confetti-burst";
 import type { PipelineWorkspace } from "./pipeline-card";
 
 /**
- * Local-optimistic pipeline board. There is no generic "update workspace
- * stage" server mutation in the codebase (stage transitions are each driven
- * by their own AI-generation step in workspace-assistant.functions.ts), so
- * dragging a card here re-buckets it client-side only and is NOT persisted.
+ * Pipeline board. Dragging a card (or picking a stage from the card dropdown)
+ * optimistically re-buckets it and persists the new stage via setWorkspaceStage.
  */
 export function PipelineKanban({ workspaces }: { workspaces: PipelineWorkspace[] }) {
   const [overrides, setOverrides] = useState<Record<string, string>>({});
   const [activeColumnKey, setActiveColumnKey] = useState<string | null>(null);
   const [burst, setBurst] = useState<{ id: number; x: number; y: number } | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
+
+  const persist = useMutation({
+    mutationFn: (vars: { workspaceId: string; stage: Stage }) =>
+      setWorkspaceStage({ data: vars }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workspaces"] });
+    },
+    onError: (err: unknown, vars) => {
+      setOverrides((prev) => {
+        const next = { ...prev };
+        delete next[vars.workspaceId];
+        return next;
+      });
+      toast.error("Couldn't save that move", {
+        description: err instanceof Error ? err.message : "Please try again.",
+      });
+    },
+  });
 
   const effectiveStage = useCallback((w: PipelineWorkspace) => overrides[w.id] ?? w.current_stage ?? null, [overrides]);
 
@@ -39,10 +58,11 @@ export function PipelineKanban({ workspaces }: { workspaces: PipelineWorkspace[]
       const targetColumn = PIPELINE_COLUMNS.find((c) => c.key === columnKey);
       if (!targetColumn) return;
 
-      setOverrides((prev) => ({ ...prev, [workspaceId]: targetColumn.stages[0] }));
-      toast.success(`${workspace.job?.title ?? "Application"} moved to ${targetColumn.title}`, {
-        description: "Preview only — this board doesn't persist stage changes yet.",
-      });
+      const stage = targetColumn.stages[0];
+      setOverrides((prev) => ({ ...prev, [workspaceId]: stage }));
+      persist.mutate({ workspaceId, stage });
+      toast.success(`${workspace.job?.title ?? "Application"} moved to ${targetColumn.title}`);
+
 
       if (targetColumn.key === "ready") {
         const containerRect = containerRef.current?.getBoundingClientRect();
