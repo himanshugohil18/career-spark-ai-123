@@ -300,7 +300,6 @@ function Dashboard() {
       )}
 
       {/* Agents grid */}
-      <Reveal delay={0.08} className="contents">
       <section>
         <div className="mb-4 flex items-end justify-between">
           <div>
