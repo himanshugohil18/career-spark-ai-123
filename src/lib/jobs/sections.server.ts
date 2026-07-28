@@ -36,6 +36,7 @@ export type SectionJob = {
   company: any;
   match: any | null;
   insights: string[];
+  savedStatus?: string | null;
 };
 
 export type JobSection = {
@@ -352,6 +353,19 @@ export async function buildJobSections(
     .filter((c) => c.matchedCount >= 2)
     .sort((a, b) => b.topScore - a.topScore)
     .slice(0, 6);
+
+  // Attach the user's saved state so the bookmark button reflects reality
+  // (and toggles correctly) on every recommendation card.
+  const { data: savedRows } = await supabase
+    .from("saved_jobs")
+    .select("job_id, status")
+    .eq("user_id", userId);
+  const savedMap = new Map<string, string>(
+    ((savedRows ?? []) as any[]).map((r) => [r.job_id as string, r.status as string]),
+  );
+  for (const section of sections) {
+    for (const item of section.items) item.savedStatus = savedMap.get(item.id) ?? null;
+  }
 
   return { sections, companies };
 }
