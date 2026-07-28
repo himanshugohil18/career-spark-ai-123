@@ -1,7 +1,8 @@
 /* Offline accuracy harness for the CareerOS matching engine. */
 import { readFileSync, existsSync, writeFileSync } from "fs";
 import { computeBaselineScores } from "@/lib/jobs/scoring";
-import { buildProfileFromSnapshot, jobFamilyFitProfile } from "@/lib/jobs/role-synonyms";
+import { buildProfileFromSnapshot } from "@/lib/jobs/role-synonyms";
+import { computeRelevance, brainTechVocabulary, jobDedupeKey } from "@/lib/jobs/relevance";
 
 const jobs = JSON.parse(readFileSync("/tmp/eval/jobs.json", "utf8")) as any[];
 const users = JSON.parse(readFileSync("/tmp/eval/users.json", "utf8")) as any[];
@@ -77,27 +78,33 @@ const out: any = { users: [] };
 for (const u of users) {
   const brain = toBrain(u);
   const profile = buildProfileFromSnapshot(brain);
+  const techs = brainTechVocabulary(brain);
   const scored = jobs.map((row) => {
     const job = toJob(row);
+    const jobLike = {
+      title: row.title,
+      description: row.description ?? "",
+      requiredSkills: row.required_skills ?? [],
+      preferredSkills: row.preferred_skills ?? [],
+      companyTechStack: Array.isArray(row.company?.tech_stack) ? row.company.tech_stack : [],
+      responsibilities: row.responsibilities ?? [],
+      requirements: row.requirements ?? [],
+    };
+    const rel = computeRelevance(jobLike, profile, techs);
     const s = computeBaselineScores(brain, job);
-    const fit = jobFamilyFitProfile(
-      {
-        title: row.title,
-        description: row.description ?? "",
-        requiredSkills: row.required_skills ?? [],
-        preferredSkills: row.preferred_skills ?? [],
-        companyTechStack: Array.isArray(row.company?.tech_stack) ? row.company.tech_stack : [],
-        responsibilities: row.responsibilities ?? [],
-        requirements: row.requirements ?? [],
-      },
-      profile,
-    );
-    return { id: row.id, title: row.title, score: s.overall, fit: fit.fit, excluded: fit.excluded };
+    return { id: row.id, title: row.title, company: row.company?.name ?? "", score: s.overall, fit: rel.relevance, excluded: !rel.gate };
   });
   // Feed simulation: same filter as listJobs default (no query).
+  const seen = new Set<string>();
   const feed = scored
-    .filter((x) => !x.excluded && x.fit >= 0.4 && x.score >= 40)
-    .sort((a, b) => b.score - a.score);
+    .filter((x) => !x.excluded)
+    .sort((a, b) => b.score - a.score)
+    .filter((x) => {
+      const k = jobDedupeKey(x.title, x.company);
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
 
   const lab = labels[u.user_id] ?? {};
   const labelled = (arr: typeof feed) => arr.filter((x) => lab[x.id] !== undefined);
