@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { JobCard, type JobCardData } from "./job-card";
+import { Stagger, StaggerItem } from "@/components/motion/reveal";
 
 export type JobSectionData = {
   id: string;
@@ -39,17 +40,13 @@ export function JobSection({
           {section.reason}
         </span>
       </div>
-      <div className="grid gap-3 md:grid-cols-2">
+      <Stagger className="grid gap-3 md:grid-cols-2">
         {section.items.map((job) => (
-          <JobCard
-            key={`${section.id}:${job.id}`}
-            job={job}
-            insights={job.insights}
-            onSave={onSave}
-            onClick={onClick}
-          />
+          <StaggerItem key={`${section.id}:${job.id}`}>
+            <JobCard job={job} insights={job.insights} onSave={onSave} onClick={onClick} />
+          </StaggerItem>
         ))}
-      </div>
+      </Stagger>
     </motion.section>
   );
 }
