@@ -7,6 +7,7 @@ import { callLovableAI, extractJson } from "@/lib/ai-gateway.server";
 import { buildProfileFromSnapshot } from "@/lib/jobs/role-synonyms";
 import { computeRelevance, brainTechVocabulary, jobDedupeKey } from "@/lib/jobs/relevance";
 import { computeBaselineScores } from "@/lib/jobs/scoring";
+import { aiJudgeJobs, blendScore } from "@/lib/jobs/ai-rerank.server";
 
 const jobs = JSON.parse(readFileSync("/tmp/eval/jobs.json", "utf8")) as any[];
 const users = JSON.parse(readFileSync("/tmp/eval/users.json", "utf8")) as any[];
@@ -112,7 +113,23 @@ for (const u of users) {
     projects: (u.projects ?? []).map((p: any) => ({ name: p.name, tech: p.technologies })),
   };
 
-  const top20 = feed.slice(0, 20).map((x) => x.row);
+  // End-to-end feed: deterministic shortlist -> AI verification -> ranking.
+  const shortlist = feed.slice(0, 30);
+  const verdicts = await aiJudgeJobs(brain, shortlist.map((x) => ({
+    title: x.row.title,
+    company: x.row.company?.name ?? null,
+    description: x.row.description ?? null,
+    requiredSkills: x.row.required_skills ?? [],
+    preferredSkills: x.row.preferred_skills ?? [],
+    experienceLevel: x.row.experience_level ?? null,
+    remoteStatus: x.row.remote_status ?? null,
+  })));
+  const verified = shortlist
+    .map((x, i) => ({ row: x.row, final: blendScore(x.score, verdicts.get(i)), v: verdicts.get(i) }))
+    .filter((x) => !x.v || x.v.verdict !== "irrelevant")
+    .sort((a, b) => b.final - a.final);
+
+  const top20 = verified.slice(0, 20).map((x) => x.row);
   const rejSample = sample(rejected, 40).map((x) => x.row);
 
   const [labTop, labRej] = await Promise.all([label(candidate, top20), label(candidate, rejSample)]);
@@ -126,6 +143,7 @@ for (const u of users) {
     user: u.current_title,
     poolSize: jobs.length,
     feedSize: feed.length,
+    afterAiVerification: 0,
     judgedTop: topLabels.length,
     precisionTop20: precision,
     judgedRejected: rejLabels.length,

@@ -224,13 +224,13 @@ export function computeRelevance(
   // Required technology evidence scales inversely with title certainty: an
   // exact "DevOps Engineer" title needs little corroboration, a vague
   // "Member of Technical Staff" needs a lot.
-  const requiredTech = titleRole.strength >= 0.85 ? 0.16 : titleRole.strength >= 0.5 ? 0.28 : 0.42;
+  const requiredTech = titleRole.strength >= 0.85 ? 0.14 : titleRole.strength >= 0.5 ? 0.24 : 0.36;
   const coverage = requiredSkillCoverage(job, brainTechs);
   const gate =
     titleFit >= 0.6 &&
-    relevance >= 0.48 &&
+    relevance >= 0.44 &&
     techFit >= requiredTech &&
-    coverage >= 0.15 &&
+    coverage >= 0.1 &&
     !(titleRole.leadership && candRank <= 3);
 
   const reason = !gate
