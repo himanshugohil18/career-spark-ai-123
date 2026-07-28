@@ -458,3 +458,52 @@ function PhaseCard({ icon: Icon, label }: { icon: typeof Wand2; label: string })
     </div>
   );
 }
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{label}</dt>
+      <dd className="mt-1 text-sm capitalize text-foreground/90">{value}</dd>
+    </div>
+  );
+}
+
+function SkillChips({ skills, tone }: { skills: string[]; tone: "primary" | "muted" }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {skills.map((s) => (
+        <span
+          key={s}
+          className={
+            tone === "primary"
+              ? "rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[12px] text-primary"
+              : "rounded-full border border-border bg-elevated px-2.5 py-0.5 text-[12px] text-muted-foreground"
+          }
+        >
+          {s}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Providers hand us either HTML or plain text. Plain text keeps its line
+ * breaks so a full JD stays readable instead of collapsing into one blob.
+ */
+function JobDescription({ html }: { html: string }) {
+  const trimmed = html.trim();
+  if (!trimmed) {
+    return <p className="text-sm text-muted-foreground">This provider didn't publish a full description. Open the original posting for the complete JD.</p>;
+  }
+  const looksHtml = /<\/?(p|div|ul|ol|li|br|h[1-6]|strong|em|b|i|a)\b/i.test(trimmed);
+  if (looksHtml) {
+    return (
+      <div
+        className="prose prose-invert max-w-none text-sm leading-relaxed text-foreground/90 [&_a]:text-primary [&_li]:my-1 [&_ul]:list-disc [&_ul]:pl-5"
+        dangerouslySetInnerHTML={{ __html: trimmed }}
+      />
+    );
+  }
+  return <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">{trimmed}</p>;
+}
