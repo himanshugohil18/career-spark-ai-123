@@ -35,7 +35,7 @@ const TECH_ROLE_NOUN =
 
 /** Management titles that are not individual-contributor engineering roles. */
 const NON_IC_LEADERSHIP =
-  /\b(vp|vice president|chief|cto|cio|ceo|coo|cfo|head|director|general manager)\b/i;
+  /\b(vp|vice president|chief|cto|cio|ceo|coo|cfo|head|director|general manager|engineering manager|program manager|product manager|site lead|team lead)\b/i;
 
 const SENIORITY_PATTERNS: Array<[RegExp, JobSeniority]> = [
   [/\b(intern|internship|co-?op|trainee|apprentice)\b/i, "intern"],

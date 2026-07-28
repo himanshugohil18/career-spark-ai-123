@@ -43,8 +43,9 @@ function toJob(row: any) {
 
 const JUDGE = `You are an independent senior technical recruiter grading a job-recommendation engine.
 For each numbered job, answer: would you send this job to this candidate as a genuinely relevant opportunity they could apply to today?
-Answer 1 = relevant (same job function/role family as the candidate's background, technology overlap, seniority reachable).
-Answer 0 = not relevant (different job function, or almost no technology overlap, or far above their level).
+Grade ROLE FIT only — ignore years-of-experience requirements and location, since the candidate is early-career and applies broadly.
+Answer 1 = relevant: the job is in the SAME job function / role family as the candidate's background AND shares a meaningful part of their technology stack.
+Answer 0 = not relevant: a different job function (sales, support, management, data science, hardware, QA, mobile...), or almost no shared technology.
 Return STRICT JSON: {"labels":[{"i":0,"label":1},...]} with one entry per job.`;
 
 async function label(candidate: any, items: any[]): Promise<Map<number, number>> {
