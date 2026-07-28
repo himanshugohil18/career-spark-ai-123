@@ -91,7 +91,7 @@ export async function buildJobSections(
     )
     .eq("user_id", userId)
     .order("overall_score", { ascending: false })
-    .limit(120);
+    .limit(220);
 
   const merged: SectionJob[] = (matches ?? [])
     .filter((m: any) => m.job)
@@ -167,7 +167,7 @@ export async function buildJobSections(
   for (const s of (hiddenSaved ?? []) as any[]) used.add(s.job_id);
 
   // 1) Today's Best Matches
-  const best = take(merged, 6);
+  const best = take(merged, 9);
   if (best.length) {
     sections.push({
       id: "best",
@@ -178,8 +178,29 @@ export async function buildJobSections(
     });
   }
 
+  // 1b) India-first shelf — CareerOS is India-first, then global.
+  const INDIA_HINTS = [
+    "india", "bengaluru", "bangalore", "mumbai", "delhi", "noida", "gurgaon", "gurugram",
+    "pune", "hyderabad", "chennai", "kolkata", "ahmedabad", "jaipur", "indore", "kochi",
+    "coimbatore", "chandigarh", "vadodara", "surat",
+  ];
+  const isIndia = (j: SectionJob) => {
+    const text = `${j.location ?? ""} ${(j as any).location_country ?? ""}`.toLowerCase();
+    return INDIA_HINTS.some((h) => text.includes(h));
+  };
+  const indiaItems = take(merged.filter(isIndia), 8);
+  if (indiaItems.length) {
+    sections.push({
+      id: "india",
+      title: "Top Roles in India",
+      subtitle: "Matched openings across Indian hiring hubs",
+      reason: "India-first ranking, then global opportunities.",
+      items: indiaItems,
+    });
+  }
+
   // 2) High Confidence (>=85)
-  const high = take(merged.filter((m) => Number(m.match?.overall_score ?? 0) >= 85), 6);
+  const high = take(merged.filter((m) => Number(m.match?.overall_score ?? 0) >= 85), 8);
   if (high.length >= 2) {
     sections.push({
       id: "high",

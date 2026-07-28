@@ -128,7 +128,7 @@ export async function runDiscovery(
       const jobs = await provider.fetch(src.config ?? {}, {
         queries: profile?.roleQueries,
         locations: profile?.locations,
-        limit: 80,
+        limit: 150,
       });
       perProv.fetched = jobs.length;
       stats.fetched += jobs.length;
