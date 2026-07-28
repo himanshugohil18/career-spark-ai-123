@@ -28,6 +28,7 @@ import {
   semanticTechOverlap,
   type RoleFamily,
 } from "./role-synonyms";
+import { computeRelevance, brainTechVocabulary, jobDedupeKey } from "./relevance";
 import type { MatchScore, NormalizedJob } from "./types";
 
 const MODEL = "google/gemini-3.6-flash";
@@ -309,10 +310,7 @@ function rankCandidateRows(
   brain: CareerBrainSnapshot,
   profile: ReturnType<typeof buildProfileFromSnapshot>,
 ): Array<Record<string, any>> {
-  const brainTech = [
-    ...brain.skills.map((s) => s.name),
-    ...((brain.projects ?? []) as Array<{ technologies?: string[] }>).flatMap((p) => p?.technologies ?? []),
-  ];
+  const brainTech = brainTechVocabulary(brain);
   const scored = rows.map((row) => {
     const company = Array.isArray(row.company) ? row.company[0] : row.company;
     const jobLike = {
@@ -324,6 +322,7 @@ function rankCandidateRows(
       responsibilities: row.responsibilities ?? [],
       requirements: row.requirements ?? [],
     };
+    const rel = computeRelevance(jobLike, profile, brainTech);
     const fit = jobFamilyFitProfile(jobLike, profile);
     const confidence = domainConfidence(jobLike, profile);
     const familyTitle = profile.families.length
@@ -335,17 +334,28 @@ function rankCandidateRows(
       ...(company?.tech_stack ?? []),
     ]);
     const score =
-      (fit.excluded ? -500 : 0) +
-      fit.fit * 120 +
-      confidence.confidence * 100 +
-      familyTitle +
+      (rel.vetoed || fit.excluded ? -500 : 0) +
+      rel.relevance * 200 +
+      rel.titleFit * 100 +
+      confidence.confidence * 60 +
+      familyTitle * 0.5 +
       tech * 80 +
       (row.remote_status === "remote" ? 8 : 0);
-    return { row, score, excluded: fit.excluded };
+    return { row, score, ok: rel.gate && !fit.excluded, key: jobDedupeKey(String(row.title ?? ""), company?.name) };
   });
-  return scored
-    .filter((item) => !item.excluded || scored.every((candidate) => candidate.excluded))
-    .sort((a, b) => b.score - a.score)
+
+  const pool = scored.filter((item) => item.ok);
+  const ranked = (pool.length ? pool : scored.filter((item) => item.score > -500))
+    .sort((a, b) => b.score - a.score);
+
+  // Drop duplicate postings of the same role at the same company.
+  const seen = new Set<string>();
+  return ranked
+    .filter((item) => {
+      if (seen.has(item.key)) return false;
+      seen.add(item.key);
+      return true;
+    })
     .map((item) => item.row);
 }
 
