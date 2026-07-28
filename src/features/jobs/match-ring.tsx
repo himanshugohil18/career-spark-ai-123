@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
+import { SpringNumber } from "@/components/motion/spring-number";
 
 /**
  * Circular match score ring. Uses the design system primary gradient.
@@ -48,12 +49,8 @@ export function MatchRing({
       </svg>
       <motion.span
         aria-hidden
-        className={cn("absolute rounded-full", tone)}
-        style={{
-          width: size,
-          height: size,
-          boxShadow: "0 0 0 0 currentColor",
-        }}
+        className={cn("absolute rounded-full border border-current", tone)}
+        style={{ width: size, height: size }}
         animate={{ opacity: [0.28, 0, 0.28], scale: [0.86, 1.06, 0.86] }}
         transition={{ duration: 3.2, repeat: Infinity, ease: "easeInOut" }}
       />
