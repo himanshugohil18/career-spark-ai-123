@@ -35,7 +35,7 @@ const TECH_ROLE_NOUN =
 
 /** Management titles that are not individual-contributor engineering roles. */
 const NON_IC_LEADERSHIP =
-  /\b(vp|vice president|chief|cto|cio|ceo|coo|cfo|head of|director|general manager)\b/i;
+  /\b(vp|vice president|chief|cto|cio|ceo|coo|cfo|head|director|general manager)\b/i;
 
 const SENIORITY_PATTERNS: Array<[RegExp, JobSeniority]> = [
   [/\b(intern|internship|co-?op|trainee|apprentice)\b/i, "intern"],
@@ -143,9 +143,17 @@ export type RelevanceResult = {
 function trackFit(candidate: CandidateProfile, family: RoleFamily | null): number {
   if (!family) return 0.35;
   if (candidate.excludedFamilyIds.has(family.id)) return 0;
-  if (candidate.familyIds.has(family.id)) return 1;
+  // Families are ordered by strength of evidence in the resume. A job in the
+  // candidate's PRIMARY family scores 1.0; secondary families decay, so a
+  // web developer whose resume also shows some Docker never sees SRE roles
+  // ranked above frontend/backend ones.
+  const rankWeight = [1, 0.82, 0.68, 0.55];
   let best = 0;
-  for (const fam of candidate.families) best = Math.max(best, familyCompatibility(fam, family));
+  candidate.families.forEach((fam, i) => {
+    const w = rankWeight[i] ?? 0.5;
+    if (fam.id === family.id) best = Math.max(best, w);
+    else best = Math.max(best, familyCompatibility(fam, family) * w);
+  });
   if (best === 0 && candidate.primary && candidate.primary.track === family.track) best = 0.3;
   return best;
 }
