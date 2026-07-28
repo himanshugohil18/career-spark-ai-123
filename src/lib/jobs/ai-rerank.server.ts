@@ -15,8 +15,8 @@ import { callLovableAI, extractJson } from "@/lib/ai-gateway.server";
 import type { CareerBrainSnapshot } from "@/lib/career-brain.service";
 
 const MODEL = "google/gemini-3.6-flash";
-const BATCH_SIZE = 25;
-const TIMEOUT_MS = 12_000;
+const BATCH_SIZE = 15;
+const TIMEOUT_MS = 20_000;
 
 export type AiVerdict = {
   score: number;
@@ -106,6 +106,7 @@ export async function aiJudgeJobs(
         candidate,
         jobs: slice.map((j, idx) => jobDigest(j, idx)),
       };
+      for (let attempt = 0; attempt < 2; attempt++) {
       try {
         const raw = await withTimeout(
           callLovableAI({
@@ -120,13 +121,15 @@ export async function aiJudgeJobs(
           TIMEOUT_MS,
         );
         const parsed = BatchSchema.safeParse(JSON.parse(extractJson(raw)));
-        if (!parsed.success) return;
+        if (!parsed.success) continue;
         for (const r of parsed.data.results) {
           if (r.i < 0 || r.i >= slice.length) continue;
           out.set(offset + r.i, { score: r.score, verdict: r.verdict, reason: r.reason });
         }
+        break;
       } catch {
-        // Deterministic scores stand.
+        // Retry once, then let deterministic scores stand.
+      }
       }
     }),
   );
