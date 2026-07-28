@@ -36,6 +36,7 @@ export type SectionJob = {
   company: any;
   match: any | null;
   insights: string[];
+  savedStatus?: string | null;
 };
 
 export type JobSection = {
@@ -56,7 +57,7 @@ export type CompanyBucket = {
 };
 
 const JOB_SELECT =
-  "id,title,location,remote_status,salary_min,salary_max,salary_currency,posted_at,first_seen_at,application_url,provider,required_skills,company:companies(id,name,slug,logo_url,industry,size,remote_policy,tech_stack)";
+  "id,title,location,location_country,remote_status,salary_min,salary_max,salary_currency,posted_at,first_seen_at,application_url,provider,required_skills,company:companies(id,name,slug,logo_url,industry,size,remote_policy,tech_stack)";
 
 const HIDE_BELOW = 40; // hard floor for below-relevance jobs
 
@@ -90,7 +91,7 @@ export async function buildJobSections(
     )
     .eq("user_id", userId)
     .order("overall_score", { ascending: false })
-    .limit(120);
+    .limit(220);
 
   const merged: SectionJob[] = (matches ?? [])
     .filter((m: any) => m.job)
@@ -166,7 +167,7 @@ export async function buildJobSections(
   for (const s of (hiddenSaved ?? []) as any[]) used.add(s.job_id);
 
   // 1) Today's Best Matches
-  const best = take(merged, 6);
+  const best = take(merged, 9);
   if (best.length) {
     sections.push({
       id: "best",
@@ -177,8 +178,29 @@ export async function buildJobSections(
     });
   }
 
+  // 1b) India-first shelf — CareerOS is India-first, then global.
+  const INDIA_HINTS = [
+    "india", "bengaluru", "bangalore", "mumbai", "delhi", "noida", "gurgaon", "gurugram",
+    "pune", "hyderabad", "chennai", "kolkata", "ahmedabad", "jaipur", "indore", "kochi",
+    "coimbatore", "chandigarh", "vadodara", "surat",
+  ];
+  const isIndia = (j: SectionJob) => {
+    const text = `${j.location ?? ""} ${(j as any).location_country ?? ""}`.toLowerCase();
+    return INDIA_HINTS.some((h) => text.includes(h));
+  };
+  const indiaItems = take(merged.filter(isIndia), 8);
+  if (indiaItems.length) {
+    sections.push({
+      id: "india",
+      title: "Top Roles in India",
+      subtitle: "Matched openings across Indian hiring hubs",
+      reason: "India-first ranking, then global opportunities.",
+      items: indiaItems,
+    });
+  }
+
   // 2) High Confidence (>=85)
-  const high = take(merged.filter((m) => Number(m.match?.overall_score ?? 0) >= 85), 6);
+  const high = take(merged.filter((m) => Number(m.match?.overall_score ?? 0) >= 85), 8);
   if (high.length >= 2) {
     sections.push({
       id: "high",
@@ -352,6 +374,19 @@ export async function buildJobSections(
     .filter((c) => c.matchedCount >= 2)
     .sort((a, b) => b.topScore - a.topScore)
     .slice(0, 6);
+
+  // Attach the user's saved state so the bookmark button reflects reality
+  // (and toggles correctly) on every recommendation card.
+  const { data: savedRows } = await supabase
+    .from("saved_jobs")
+    .select("job_id, status")
+    .eq("user_id", userId);
+  const savedMap = new Map<string, string>(
+    ((savedRows ?? []) as any[]).map((r) => [r.job_id as string, r.status as string]),
+  );
+  for (const section of sections) {
+    for (const item of section.items) item.savedStatus = savedMap.get(item.id) ?? null;
+  }
 
   return { sections, companies };
 }

@@ -19,6 +19,7 @@ import {
 } from "../normalize";
 import type { NormalizedJob } from "../types";
 import type { JobProvider, ProviderFetchOptions } from "./base";
+import { expandSearchLocations } from "./locations";
 
 const UA = "Mozilla/5.0 (compatible; CareerOS/1.0; +https://careerosai.site)";
 
@@ -116,7 +117,7 @@ function createPortal(
     id,
     displayName,
     async fetch(_config, opts) {
-      const locations = opts?.locations?.length ? opts.locations.slice(0, 2) : ["India", "Remote"];
+      const locations = expandSearchLocations(opts?.locations, 6);
       const out: NormalizedJob[] = [];
       const seen = new Set<string>();
       for (const query of queriesOf(opts)) {

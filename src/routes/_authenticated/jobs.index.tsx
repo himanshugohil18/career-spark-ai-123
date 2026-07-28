@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Building2, ChevronDown, RefreshCw, Search, Sparkles } from "lucide-react";
@@ -33,13 +33,14 @@ const SORT_LABELS: Record<string, string> = {
   updated: "Recently updated",
 };
 
-export const Route = createFileRoute("/_authenticated/jobs")({
+export const Route = createFileRoute("/_authenticated/jobs/")({
   head: () => ({ meta: [{ title: "Jobs · CareerOS" }] }),
   component: JobsFeed,
 });
 
 function JobsFeed() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<FeedFilters>({});
   const [sort, setSort] = useState<"match" | "newest" | "salary" | "remote" | "updated">("match");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -121,20 +122,40 @@ function JobsFeed() {
     },
   });
 
+  // A job can be rendered from the search feed OR from a recommendation
+  // section, so resolve its saved state from whichever list holds it.
+  const isJobSaved = (jobId: string) => {
+    const inFeed = feed.data?.items.find((i) => i.id === jobId) as { savedStatus?: string | null } | undefined;
+    if (inFeed) return !!inFeed.savedStatus;
+    for (const s of sections.data?.sections ?? []) {
+      const hit = (s.items as Array<{ id: string; savedStatus?: string | null }>).find((i) => i.id === jobId);
+      if (hit) return !!hit.savedStatus;
+    }
+    return false;
+  };
+
   const saveMutation = useMutation({
-    mutationFn: (jobId: string) => {
-      const current = feed.data?.items.find((i) => i.id === jobId);
-      if (current?.savedStatus) return unsaveJob({ data: { jobId } });
-      return saveJob({ data: { jobId, status: "saved" } });
+    mutationFn: async (jobId: string) => {
+      const wasSaved = isJobSaved(jobId);
+      if (wasSaved) await unsaveJob({ data: { jobId } });
+      else await saveJob({ data: { jobId, status: "saved" } });
+      return { wasSaved };
     },
-    onSuccess: (_r, jobId) => {
-      void trackJobInteraction({ data: { jobId, kind: "saved" } }).catch(() => {});
+    onSuccess: ({ wasSaved }, jobId) => {
+      void trackJobInteraction({ data: { jobId, kind: wasSaved ? "ignored" : "saved" } }).catch(() => {});
       void queryClient.invalidateQueries({ queryKey: ["jobs-feed"] });
       void queryClient.invalidateQueries({ queryKey: ["job-sections"] });
       void queryClient.invalidateQueries({ queryKey: ["saved-jobs"] });
       void queryClient.invalidateQueries({ queryKey: ["job-detail", jobId] });
-      toast.success("Saved list updated.");
+      if (wasSaved) {
+        toast.success("Removed from your saved jobs.");
+      } else {
+        toast.success("Saved to your job library.", {
+          action: { label: "View saved", onClick: () => void navigate({ to: "/jobs/saved" }) },
+        });
+      }
     },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update saved jobs"),
   });
 
   const refreshMutation = useMutation({

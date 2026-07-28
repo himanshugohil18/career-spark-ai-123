@@ -285,12 +285,32 @@ function JobDetail() {
         otherRolesCount={data.otherRoles?.length ?? 0}
       />
 
+      {/* Job overview — the quick facts recruiters put at the top of a JD */}
       <section className="surface-card p-6">
-        <h3 className="mb-3 font-display text-lg font-semibold">Description</h3>
-        <div
-          className="prose prose-invert max-w-none text-sm text-foreground/90"
-          dangerouslySetInnerHTML={{ __html: j.description ?? "" }}
-        />
+        <h3 className="mb-4 font-display text-lg font-semibold">Job overview</h3>
+        <dl className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <Fact label="Company" value={j.company?.name ?? "—"} />
+          <Fact label="Location" value={j.location ?? "—"} />
+          <Fact label="Work mode" value={j.remote_status !== "unknown" ? String(j.remote_status) : "—"} />
+          <Fact label="Employment type" value={j.employment_type !== "unknown" ? String(j.employment_type).replace(/_/g, " ") : "—"} />
+          <Fact label="Experience level" value={j.experience_level !== "unknown" ? String(j.experience_level) : "—"} />
+          <Fact
+            label="Salary"
+            value={
+              j.salary_min || j.salary_max
+                ? `${j.salary_currency ?? "USD"} ${Math.round((j.salary_min ?? j.salary_max!) / 1000)}k${j.salary_max && j.salary_min ? `–${Math.round(j.salary_max / 1000)}k` : ""}`
+                : "Not disclosed"
+            }
+          />
+          <Fact label="Posted" value={j.posted_at ? new Date(j.posted_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"} />
+          <Fact label="Source" value={String(j.provider)} />
+          <Fact label="Industry" value={j.company?.industry ?? "—"} />
+        </dl>
+      </section>
+
+      <section className="surface-card p-6">
+        <h3 className="mb-3 font-display text-lg font-semibold">Job description</h3>
+        <JobDescription html={j.description ?? ""} />
       </section>
 
       {(j.responsibilities ?? []).length > 0 && (
@@ -310,6 +330,55 @@ function JobDetail() {
           </ul>
         </section>
       )}
+
+      {((j.required_skills ?? []).length > 0 || (j.preferred_skills ?? []).length > 0) && (
+        <section className="surface-card p-6">
+          <h3 className="mb-3 font-display text-lg font-semibold">Skills & technologies</h3>
+          {(j.required_skills ?? []).length > 0 && (
+            <div className="mb-4">
+              <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Required</p>
+              <SkillChips skills={j.required_skills!} tone="primary" />
+            </div>
+          )}
+          {(j.preferred_skills ?? []).length > 0 && (
+            <div>
+              <p className="mb-2 font-mono text-[10px] uppercase tracking-widest text-muted-foreground">Good to have</p>
+              <SkillChips skills={j.preferred_skills!} tone="muted" />
+            </div>
+          )}
+        </section>
+      )}
+
+      {(j.benefits ?? []).length > 0 && (
+        <section className="surface-card p-6">
+          <h3 className="mb-3 font-display text-lg font-semibold">Benefits & perks</h3>
+          <ul className="grid gap-1.5 text-sm text-foreground/90 sm:grid-cols-2">
+            {j.benefits!.map((b: string, i: number) => (<li key={i}>· {b}</li>))}
+          </ul>
+        </section>
+      )}
+
+      <section className="surface-card p-6">
+        <h3 className="mb-2 font-display text-lg font-semibold">How to apply</h3>
+        <p className="text-sm text-muted-foreground">
+          Apply on {j.company?.name ?? "the company site"} via {String(j.provider)}, or let the AI agent tailor your
+          resume and complete the form for you.
+        </p>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <ApplyWithAiButton
+            jobId={jobId}
+            unavailableReason={isValidExternalUrl(j.application_url) ? null : "This role has no direct application URL, so the AI agent can't complete it end-to-end."}
+          />
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => openExternal(j.application_url)}
+            disabled={!isValidExternalUrl(j.application_url)}
+          >
+            Open original posting <ExternalLink className="h-4 w-4" />
+          </Button>
+        </div>
+      </section>
 
       {(data.otherRoles?.length ?? 0) > 0 && (
         <section className="surface-card p-6">
@@ -388,4 +457,53 @@ function PhaseCard({ icon: Icon, label }: { icon: typeof Wand2; label: string })
       </span>
     </div>
   );
+}
+
+function Fact({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <dt className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">{label}</dt>
+      <dd className="mt-1 text-sm capitalize text-foreground/90">{value}</dd>
+    </div>
+  );
+}
+
+function SkillChips({ skills, tone }: { skills: string[]; tone: "primary" | "muted" }) {
+  return (
+    <div className="flex flex-wrap gap-1.5">
+      {skills.map((s) => (
+        <span
+          key={s}
+          className={
+            tone === "primary"
+              ? "rounded-full border border-primary/30 bg-primary/10 px-2.5 py-0.5 text-[12px] text-primary"
+              : "rounded-full border border-border bg-elevated px-2.5 py-0.5 text-[12px] text-muted-foreground"
+          }
+        >
+          {s}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Providers hand us either HTML or plain text. Plain text keeps its line
+ * breaks so a full JD stays readable instead of collapsing into one blob.
+ */
+function JobDescription({ html }: { html: string }) {
+  const trimmed = html.trim();
+  if (!trimmed) {
+    return <p className="text-sm text-muted-foreground">This provider didn't publish a full description. Open the original posting for the complete JD.</p>;
+  }
+  const looksHtml = /<\/?(p|div|ul|ol|li|br|h[1-6]|strong|em|b|i|a)\b/i.test(trimmed);
+  if (looksHtml) {
+    return (
+      <div
+        className="prose prose-invert max-w-none text-sm leading-relaxed text-foreground/90 [&_a]:text-primary [&_li]:my-1 [&_ul]:list-disc [&_ul]:pl-5"
+        dangerouslySetInnerHTML={{ __html: trimmed }}
+      />
+    );
+  }
+  return <p className="whitespace-pre-wrap text-sm leading-relaxed text-foreground/90">{trimmed}</p>;
 }

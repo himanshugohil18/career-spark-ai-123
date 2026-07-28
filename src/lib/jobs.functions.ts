@@ -690,7 +690,7 @@ export const kickMatchRefresh = createServerFn({ method: "POST" })
     // Fast path: score the existing real catalog first. Discovery can take
     // many seconds against public providers; users should see matches from
     // the current catalog immediately instead of waiting on network fetches.
-    const match = await refreshUserMatches(context.supabase, brain, { limit: 80 });
+    const match = await refreshUserMatches(context.supabase, brain, { limit: 120 });
     if (match.newMatches.length) {
       const { notifyNewJobMatches } = await import("./email/notify-matches.server");
       await notifyNewJobMatches(context.supabase, context.userId, match.newMatches);
@@ -712,7 +712,7 @@ export const kickMatchRefresh = createServerFn({ method: "POST" })
     const { buildProfileFromSnapshot } = await import("./jobs/role-synonyms");
     const candidateProfile = buildProfileFromSnapshot(brain);
     const discovery = await runDiscovery(supabaseAdmin, { candidateProfile });
-    const retry = await refreshUserMatches(context.supabase, brain, { limit: 80 });
+    const retry = await refreshUserMatches(context.supabase, brain, { limit: 120 });
     if (retry.newMatches.length) {
       const { notifyNewJobMatches } = await import("./email/notify-matches.server");
       await notifyNewJobMatches(context.supabase, context.userId, retry.newMatches);
