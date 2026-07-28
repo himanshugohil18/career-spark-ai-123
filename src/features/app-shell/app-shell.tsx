@@ -55,6 +55,7 @@ import {
 import { AgentStatusDot, type AgentState } from "@/components/ai/agent-status";
 import { AIStatusBar } from "@/components/ai/ai-status-bar";
 import { AmbientBackdrop } from "@/components/ui/ambient-backdrop";
+import { AuroraField } from "@/components/motion/aurora-field";
 import { globalSearch, type SearchHit } from "@/lib/search.functions";
 import { Briefcase as BriefcaseIcon, FileText as FileTextIcon, Users as UsersIcon, GraduationCap as GraduationCapIcon, MessagesSquare as MessagesSquareIcon, Building2 as Building2Icon } from "lucide-react";
 
@@ -174,6 +175,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="relative flex min-h-screen w-full bg-background text-foreground">
       <AmbientBackdrop />
+      <AuroraField className="-z-10" intensity={0.8} />
 
       {/* Sidebar */}
       <aside
@@ -372,10 +374,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         <AnimatePresence mode="wait">
           <motion.main
             key={pathname}
-            initial={{ opacity: 0, y: 6, scale: 0.995 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -4, scale: 0.998 }}
-            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, y: 10, filter: "blur(5px)" }}
+            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+            exit={{ opacity: 0, y: -6, filter: "blur(4px)" }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="min-w-0 flex-1"
           >
             {children}

@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
 import { THEME_BOOT_SCRIPT } from "@/lib/theme";
+import { RouteProgress } from "@/components/motion/route-progress";
 
 function NotFoundComponent() {
   return (
@@ -198,6 +199,7 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <RouteProgress />
       <Outlet />
       <Toaster />
     </QueryClientProvider>
