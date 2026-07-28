@@ -77,7 +77,7 @@ export function PipelineKanban({ workspaces }: { workspaces: PipelineWorkspace[]
         }
       }
     },
-    [workspaces, effectiveStage],
+    [workspaces, effectiveStage, persist],
   );
 
   const onStageSelect = useCallback(
