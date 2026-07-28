@@ -57,7 +57,7 @@ export type CompanyBucket = {
 };
 
 const JOB_SELECT =
-  "id,title,location,remote_status,salary_min,salary_max,salary_currency,posted_at,first_seen_at,application_url,provider,required_skills,company:companies(id,name,slug,logo_url,industry,size,remote_policy,tech_stack)";
+  "id,title,location,location_country,remote_status,salary_min,salary_max,salary_currency,posted_at,first_seen_at,application_url,provider,required_skills,company:companies(id,name,slug,logo_url,industry,size,remote_policy,tech_stack)";
 
 const HIDE_BELOW = 40; // hard floor for below-relevance jobs
 
