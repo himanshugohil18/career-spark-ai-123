@@ -4,10 +4,9 @@ import { Building2, GraduationCap, Sparkles, TrendingUp } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getDashboardWidgets } from "@/lib/jobs.functions";
 import { Skeleton } from "@/components/ai/skeleton";
-import { BentoTile } from "@/features/dashboard/bento";
 
 export function DashboardWidgets() {
-  const { data, isLoading, isFetching } = useQuery({
+  const { data, isLoading } = useQuery({
     queryKey: ["dashboard-widgets"],
     queryFn: () => getDashboardWidgets(),
     staleTime: 60_000,
@@ -24,7 +23,6 @@ export function DashboardWidgets() {
   if (!data?.ready) return null;
 
   return (
-    <BentoTile span={4} isFetching={isFetching} className="!p-0">
     <section>
       <div className="mb-4 flex items-end justify-between">
         <div>
@@ -72,7 +70,6 @@ export function DashboardWidgets() {
         )}
       </div>
     </section>
-    </BentoTile>
   );
 }
 
