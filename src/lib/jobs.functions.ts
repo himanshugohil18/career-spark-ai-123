@@ -690,7 +690,7 @@ export const kickMatchRefresh = createServerFn({ method: "POST" })
     // Fast path: score the existing real catalog first. Discovery can take
     // many seconds against public providers; users should see matches from
     // the current catalog immediately instead of waiting on network fetches.
-    const match = await refreshUserMatches(context.supabase, brain, { limit: 120 });
+    const match = await refreshUserMatches(context.supabase, brain, { limit: 180 });
     if (match.newMatches.length) {
       const { notifyNewJobMatches } = await import("./email/notify-matches.server");
       await notifyNewJobMatches(context.supabase, context.userId, match.newMatches);
@@ -712,7 +712,7 @@ export const kickMatchRefresh = createServerFn({ method: "POST" })
     const { buildProfileFromSnapshot } = await import("./jobs/role-synonyms");
     const candidateProfile = buildProfileFromSnapshot(brain);
     const discovery = await runDiscovery(supabaseAdmin, { candidateProfile });
-    const retry = await refreshUserMatches(context.supabase, brain, { limit: 120 });
+    const retry = await refreshUserMatches(context.supabase, brain, { limit: 180 });
     if (retry.newMatches.length) {
       const { notifyNewJobMatches } = await import("./email/notify-matches.server");
       await notifyNewJobMatches(context.supabase, context.userId, retry.newMatches);
@@ -735,7 +735,7 @@ export const ensureInitialMatches = createServerFn({ method: "POST" })
       .from("job_matches")
       .select("id", { count: "exact", head: true })
       .eq("user_id", context.userId);
-    if ((existingMatches ?? 0) >= 5) return { ready: true, ran: false, evaluated: 0 };
+    if ((existingMatches ?? 0) >= 25) return { ready: true, ran: false, evaluated: 0 };
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { count: jobsCount } = await supabaseAdmin
@@ -750,7 +750,7 @@ export const ensureInitialMatches = createServerFn({ method: "POST" })
       await runDiscovery(supabaseAdmin, { candidateProfile });
     }
 
-    const result = await refreshUserMatches(context.supabase, brain, { limit: 30 });
+    const result = await refreshUserMatches(context.supabase, brain, { limit: 90 });
     if (result.newMatches.length) {
       const { notifyNewJobMatches } = await import("./email/notify-matches.server");
       await notifyNewJobMatches(context.supabase, context.userId, result.newMatches);

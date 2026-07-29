@@ -21,6 +21,7 @@ import {
   type CandidateProfile,
   type RoleFamily,
 } from "./role-synonyms";
+import { locationAffinity } from "./location";
 
 export type SectionJob = {
   id: string;
@@ -91,7 +92,7 @@ export async function buildJobSections(
     )
     .eq("user_id", userId)
     .order("overall_score", { ascending: false })
-    .limit(220);
+    .limit(420);
 
   const merged: SectionJob[] = (matches ?? [])
     .filter((m: any) => m.job)
@@ -167,7 +168,7 @@ export async function buildJobSections(
   for (const s of (hiddenSaved ?? []) as any[]) used.add(s.job_id);
 
   // 1) Today's Best Matches
-  const best = take(merged, 9);
+  const best = take(merged, 18);
   if (best.length) {
     sections.push({
       id: "best",
@@ -188,7 +189,7 @@ export async function buildJobSections(
     const text = `${j.location ?? ""} ${(j as any).location_country ?? ""}`.toLowerCase();
     return INDIA_HINTS.some((h) => text.includes(h));
   };
-  const indiaItems = take(merged.filter(isIndia), 8);
+  const indiaItems = take(merged.filter(isIndia), 16);
   if (indiaItems.length) {
     sections.push({
       id: "india",
@@ -200,7 +201,7 @@ export async function buildJobSections(
   }
 
   // 2) High Confidence (>=85)
-  const high = take(merged.filter((m) => Number(m.match?.overall_score ?? 0) >= 85), 8);
+  const high = take(merged.filter((m) => Number(m.match?.overall_score ?? 0) >= 85), 16);
   if (high.length >= 2) {
     sections.push({
       id: "high",
@@ -245,7 +246,7 @@ export async function buildJobSections(
       const isSmall = /startup|1-10|11-50|51-100|small/.test(size) || !size;
       return score >= 75 && isSmall;
     }),
-    4,
+    10,
   );
   if (gems.length) {
     sections.push({
@@ -261,7 +262,7 @@ export async function buildJobSections(
   const bySalary = merged
     .filter((j) => j.salary_max && Number(j.match?.overall_score ?? 0) >= 60)
     .sort((a, b) => Number(b.salary_max ?? 0) - Number(a.salary_max ?? 0));
-  const salaryItems = take(bySalary, 4);
+  const salaryItems = take(bySalary, 8);
   if (salaryItems.length) {
     const target = parseSalary(brain?.identity?.preferences?.expectedSalary ?? null);
     sections.push({
@@ -278,7 +279,7 @@ export async function buildJobSections(
     merged
       .filter((j) => j.remote_status === "remote" && Number(j.match?.overall_score ?? 0) >= 55)
       .sort((a, b) => Number(b.match?.overall_score ?? 0) - Number(a.match?.overall_score ?? 0)),
-    4,
+    10,
   );
   if (remoteItems.length) {
     sections.push({
@@ -296,7 +297,7 @@ export async function buildJobSections(
     .select(JOB_SELECT)
     .eq("is_active", true)
     .order("first_seen_at", { ascending: false })
-    .limit(30);
+    .limit(90);
   const recentItems = take(
     withMatches(recent ?? [], byId, brain)
       .filter((j) => onTrack(j))
@@ -304,7 +305,7 @@ export async function buildJobSections(
         const s = Number(j.match?.overall_score ?? -1);
         return s < 0 || s >= 45;
       }),
-    5,
+    12,
   );
   if (recentItems.length) {
     sections.push({
@@ -320,8 +321,18 @@ export async function buildJobSections(
   const preferredLoc = brain?.identity?.preferences?.preferredLocation ?? brain?.identity?.location ?? null;
   if (preferredLoc) {
     const nearItems = take(
-      merged.filter((j) => (j.location ?? "").toLowerCase().includes(preferredLoc.split(",")[0]!.trim().toLowerCase())),
-      4,
+      merged
+        .filter((j) => locationAffinity({
+          jobLocation: j.location,
+          jobCountry: (j as any).location_country,
+          remoteStatus: j.remote_status,
+          preferred: [preferredLoc],
+        }) >= 0.75)
+        .sort((a, b) =>
+          locationAffinity({ jobLocation: b.location, jobCountry: (b as any).location_country, remoteStatus: b.remote_status, preferred: [preferredLoc] }) -
+          locationAffinity({ jobLocation: a.location, jobCountry: (a as any).location_country, remoteStatus: a.remote_status, preferred: [preferredLoc] }),
+        ),
+      12,
     );
     if (nearItems.length) {
       sections.push({
@@ -341,7 +352,7 @@ export async function buildJobSections(
       const { jobFamily } = jobFamilyFitProfile(jobLikeFromRow(j), profile);
       return jobFamily && relatedIds.has(jobFamily.id);
     });
-    const adj = take(adjacent, 4);
+    const adj = take(adjacent, 10);
     if (adj.length) {
       sections.push({
         id: "adjacent",

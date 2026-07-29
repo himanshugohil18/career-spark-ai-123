@@ -35,14 +35,14 @@ export const discoverJobs = createServerFn({ method: "POST" })
 export const refreshMyMatches = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) =>
-    z.object({ limit: z.number().min(1).max(200).optional() }).parse(d ?? {}),
+    z.object({ limit: z.number().min(1).max(300).optional() }).parse(d ?? {}),
   )
   .handler(async ({ data, context }) => {
     const brain = (await getCareerBrainSnapshot()) as CareerBrainSnapshot;
     if (!brain.ready) {
       throw new Error("Approve your Career Brain first, then we'll match you against jobs.");
     }
-    const result = await refreshUserMatches(context.supabase, brain, { limit: data.limit ?? 80 });
+    const result = await refreshUserMatches(context.supabase, brain, { limit: data.limit ?? 180 });
     if (result.evaluated > 0 || result.skipped > 0 || result.upserted > 0) {
       if (result.newMatches.length) {
         const { notifyNewJobMatches } = await import("./email/notify-matches.server");
@@ -63,7 +63,7 @@ export const refreshMyMatches = createServerFn({ method: "POST" })
         const { buildProfileFromSnapshot } = await import("./jobs/role-synonyms");
         const candidateProfile = buildProfileFromSnapshot(brain);
         await runDiscovery(supabaseAdmin, { candidateProfile });
-        const retry = await refreshUserMatches(context.supabase, brain, { limit: data.limit ?? 80 });
+         const retry = await refreshUserMatches(context.supabase, brain, { limit: data.limit ?? 180 });
         if (retry.newMatches.length) {
           const { notifyNewJobMatches } = await import("./email/notify-matches.server");
           await notifyNewJobMatches(context.supabase, context.userId, retry.newMatches);
