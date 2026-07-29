@@ -15,7 +15,13 @@ import { refreshUserMatches } from "./jobs/matching.server";
 import { domainConfidence, expandQueryKeywords, titleRelevanceScore } from "./jobs/role-synonyms";
 import { computeRelevance, brainTechVocabulary, jobDedupeKey } from "./jobs/relevance";
 import { buildJobSections, buildInsights } from "./jobs/sections.server";
-import { locationAffinity, preferredLocations } from "./jobs/location";
+import {
+  locationAffinity,
+  preferredLocations,
+  locationProximity,
+  isIndiaJob,
+  candidateIsIndian,
+} from "./jobs/location";
 
 const FiltersSchema = z.object({
   q: z.string().optional(),
