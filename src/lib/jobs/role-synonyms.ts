@@ -905,15 +905,132 @@ const ROLE_QUERY_STRATEGIES: Record<string, string[]> = {
     "Quality Assurance Engineer",
     "Test Automation Engineer",
   ],
+  analytics: [
+    "Data Analyst",
+    "Business Intelligence Analyst",
+    "BI Developer",
+    "Power BI Developer",
+    "Tableau Developer",
+    "Reporting Analyst",
+    "MIS Executive",
+    "Analytics Analyst",
+    "SQL Analyst",
+    "Insights Analyst",
+  ],
+  bizanalysis: [
+    "Business Analyst",
+    "IT Business Analyst",
+    "Business Systems Analyst",
+    "Functional Consultant",
+    "Product Analyst",
+    "Process Analyst",
+    "Requirements Analyst",
+    "Systems Analyst",
+  ],
+  projectmgmt: [
+    "Project Manager",
+    "IT Project Manager",
+    "Technical Project Manager",
+    "Program Manager",
+    "Delivery Manager",
+    "Scrum Master",
+    "Project Coordinator",
+    "Agile Coach",
+    "PMO Analyst",
+  ],
+  accounting: [
+    "Accountant",
+    "Senior Accountant",
+    "Accounts Executive",
+    "Accounts Payable Specialist",
+    "Accounts Receivable Specialist",
+    "Bookkeeper",
+    "Tax Accountant",
+    "Auditor",
+    "Payroll Specialist",
+    "Accounting Manager",
+  ],
+  finance: [
+    "Financial Analyst",
+    "FP&A Analyst",
+    "Finance Manager",
+    "Finance Associate",
+    "Controller",
+    "Credit Analyst",
+  ],
+  people: [
+    "HR Executive",
+    "HR Generalist",
+    "HR Business Partner",
+    "Recruiter",
+    "Technical Recruiter",
+    "Talent Acquisition Specialist",
+    "People Operations Manager",
+  ],
+  sales: [
+    "Sales Executive",
+    "Account Executive",
+    "Business Development Executive",
+    "Sales Manager",
+    "Inside Sales Representative",
+    "Sales Development Representative",
+  ],
+  marketing: [
+    "Marketing Executive",
+    "Digital Marketing Specialist",
+    "SEO Specialist",
+    "Content Marketing Manager",
+    "Performance Marketing Manager",
+    "Growth Marketing Manager",
+    "Social Media Manager",
+  ],
+  customer: [
+    "Customer Success Manager",
+    "Customer Support Specialist",
+    "Technical Support Engineer",
+    "Client Relationship Manager",
+  ],
 };
 
-const STRICT_PRIMARY_FAMILY_IDS = new Set(["devops"]);
+const STRICT_PRIMARY_FAMILY_IDS = new Set([
+  "devops", "analytics", "bizanalysis", "projectmgmt",
+  "accounting", "finance", "people", "sales", "marketing", "customer",
+]);
+
+/**
+ * For strict primaries, the ONLY additional families the candidate may see.
+ * Anything not listed here is hard-excluded, so an accountant never sees
+ * sales roles and a project manager never sees backend engineering roles.
+ */
+const FAMILY_ALLOWLIST: Record<string, string[]> = {
+  devops: ["devops"],
+  analytics: ["analytics", "data", "datascience"],
+  bizanalysis: ["bizanalysis", "analytics", "product", "projectmgmt"],
+  projectmgmt: ["projectmgmt", "product", "bizanalysis"],
+  accounting: ["accounting", "finance"],
+  finance: ["finance", "accounting"],
+  people: ["people"],
+  sales: ["sales", "marketing", "customer"],
+  marketing: ["marketing", "sales"],
+  customer: ["customer", "sales"],
+};
 
 function strictFamiliesForPrimary(primary: RoleFamily | null, scoredFamilies: RoleFamily[]): RoleFamily[] {
   if (!primary) return scoredFamilies;
-  if (STRICT_PRIMARY_FAMILY_IDS.has(primary.id)) return [primary];
-  return scoredFamilies;
+  if (!STRICT_PRIMARY_FAMILY_IDS.has(primary.id)) return scoredFamilies;
+  const allowed = FAMILY_ALLOWLIST[primary.id] ?? [primary.id];
+  const allowedSet = new Set(allowed);
+  const out = [primary, ...scoredFamilies.filter((f) => f.id !== primary.id && allowedSet.has(f.id))];
+  // Ensure the curated adjacents are present even when the resume didn't
+  // score them, so the feed isn't starved (e.g. analyst -> data roles).
+  for (const id of allowed) {
+    if (out.some((f) => f.id === id)) continue;
+    const fam = ROLE_FAMILIES.find((f) => f.id === id);
+    if (fam) out.push(fam);
+  }
+  return out.slice(0, 4);
 }
+
 
 function buildRoleQueries(families: RoleFamily[], explicitQueries: Array<string | null | undefined> = []): string[] {
   const roleQueries = new Set<string>();
