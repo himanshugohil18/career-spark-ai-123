@@ -144,11 +144,17 @@ export function JobCard({
                     <MapPin className="h-3 w-3" /> {job.location}
                   </span>
                 )}
+                {(job.locationTier === "same-city" || job.locationTier === "nearby-city") && job.locationLabel && (
+                  <span className="rounded-full border border-primary/30 bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                    {job.locationLabel}
+                  </span>
+                )}
                 {job.remote_status && job.remote_status !== "unknown" && (
                   <span className="rounded-full border border-border bg-elevated px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-widest">
                     {job.remote_status}
                   </span>
                 )}
+
                 {salary && <span className="text-foreground/70">{salary}</span>}
               </div>
 
