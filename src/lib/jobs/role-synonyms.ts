@@ -769,6 +769,22 @@ export function familiesFromBrain(input: {
     }
   }
 
+  // Non-technology resume keywords (Tally, Power BI, Scrum, BRD, ...) map to
+  // the business / analytics / operations families, which have no tech
+  // clusters at all. Without this an accountant or PM resume resolves to
+  // nothing (or, worse, to Backend because it mentions SQL).
+  const skillText = techs.map((t) => t.toLowerCase().trim()).filter(Boolean);
+  for (const fam of ROLE_FAMILIES) {
+    const signals = fam.skillSignals ?? [];
+    if (!signals.length) continue;
+    let hits = 0;
+    for (const sig of signals) {
+      if (skillText.some((s) => s === sig || s.includes(sig) || sig.includes(s))) hits++;
+    }
+    if (hits) bump(fam.id, Math.min(30, hits * 6));
+  }
+
+
   return Array.from(scores.entries())
     .sort((a, b) => b[1] - a[1])
     .map(([id]) => ROLE_FAMILIES.find((f) => f.id === id)!)
