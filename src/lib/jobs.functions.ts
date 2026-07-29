@@ -15,7 +15,12 @@ import { refreshUserMatches } from "./jobs/matching.server";
 import { domainConfidence, expandQueryKeywords, titleRelevanceScore } from "./jobs/role-synonyms";
 import { computeRelevance, brainTechVocabulary, jobDedupeKey } from "./jobs/relevance";
 import { buildJobSections, buildInsights } from "./jobs/sections.server";
-import { locationAffinity, preferredLocations } from "./jobs/location";
+import {
+  preferredLocations,
+  locationProximity,
+  isIndiaJob,
+  candidateIsIndian,
+} from "./jobs/location";
 
 const FiltersSchema = z.object({
   q: z.string().optional(),
@@ -53,6 +58,11 @@ export const listJobs = createServerFn({ method: "POST" })
     const brainFamilies = profile.families;
     const brainTechs = brainTechVocabulary(brain);
     const prefLocations = preferredLocations(brain);
+    // India-first: when the resume points at India (or has no location at
+    // all, which is the common case for our users), Indian postings are
+    // boosted ahead of equally-relevant international ones.
+    const indiaFirst = candidateIsIndian(prefLocations) || prefLocations.length === 0;
+
     const expansion = rawQuery ? expandQueryKeywords(rawQuery) : null;
     const roleFamily = expansion?.family ?? null;
 
@@ -147,6 +157,14 @@ export const listJobs = createServerFn({ method: "POST" })
     }
 
     let items = (rows ?? []).map((row: any) => {
+      const proximity = locationProximity({
+        jobLocation: row.location,
+        jobCountry: row.location_country,
+        remoteStatus: row.remote_status,
+        preferred: prefLocations,
+      });
+      const india = isIndiaJob(row.location, row.location_country);
+
       const titleScore = rawQuery ? titleRelevanceScore(row.title ?? "", rawQuery) : 0;
       const familyScore = brainFamilies.length
         ? Math.max(...brainFamilies.map((f) => familyTitleRelevance(row.title ?? "", f)))
@@ -206,14 +224,17 @@ export const listJobs = createServerFn({ method: "POST" })
         relevanceReason: relevance.reason,
         domainConfidence: domainConfidence(jobLike, profile),
         interactionBias: bias,
-        locationFit: locationAffinity({
-          jobLocation: row.location,
-          jobCountry: row.location_country,
-          remoteStatus: row.remote_status,
-          preferred: prefLocations,
-        }),
+        locationFit: proximity.score,
+        locationTier: proximity.tier,
+        locationLabel: proximity.label,
+        inIndia: india,
+        locationBoost:
+          proximity.score * 18 +
+          (proximity.tier === "same-city" ? 14 : proximity.tier === "nearby-city" ? 9 : 0) +
+          (indiaFirst && india ? 12 : 0),
       };
     });
+
 
     if (rawQuery) {
       const strict = items.filter((it) => !it.excluded && (it.domainConfidence?.confidence ?? 0) >= 0.7);
@@ -262,16 +283,21 @@ export const listJobs = createServerFn({ method: "POST" })
     }
 
     if (data.sort === "match" || !data.sort) {
+      const rank = (it: any) =>
+        Number(it.match?.overall_score ?? 0) +
+        (it.relevance ?? 0) * 30 +
+        (it.familyScore ?? 0) * 0.1 +
+        (it.interactionBias ?? 0) +
+        (it.locationBoost ?? 0);
       items.sort((a, b) => {
         if (rawQuery) {
           const t = (b.titleScore ?? 0) - (a.titleScore ?? 0);
           if (t !== 0) return t;
         }
-        const scoreA = Number(a.match?.overall_score ?? 0) + (a.relevance ?? 0) * 30 + (a.familyScore ?? 0) * 0.1 + (a.interactionBias ?? 0) + (a.locationFit ?? 0) * 12;
-        const scoreB = Number(b.match?.overall_score ?? 0) + (b.relevance ?? 0) * 30 + (b.familyScore ?? 0) * 0.1 + (b.interactionBias ?? 0) + (b.locationFit ?? 0) * 12;
-        return scoreB - scoreA;
+        return rank(b) - rank(a);
       });
     }
+
 
     let paged = items;
     let totalOut = count ?? items.length;
