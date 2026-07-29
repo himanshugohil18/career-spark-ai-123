@@ -385,7 +385,7 @@ export const TECH_GRAPH: Record<string, string[]> = {
   frontend: [
     "react", "next.js", "nextjs", "vue", "nuxt", "angular", "svelte",
     "tailwind", "css", "sass", "webpack", "vite", "redux", "zustand",
-    "react.js", "jsx", "tsx", "material ui", "mui", "chakra ui",
+    "react.js", "jsx", "tsx", "material ui", "mui", "chakra ui", "mern", "mern stack",
   ],
   web: [
     "html", "css", "javascript", "typescript", "web components",
@@ -397,10 +397,11 @@ export const TECH_GRAPH: Record<string, string[]> = {
     "go", "golang", "gin", "fiber",
     "java", "spring", "spring boot", "kotlin",
     "ruby", "rails", "rust", "actix", "c#", ".net", "node", "npm", "yarn", "pnpm",
+    "mern", "mern stack",
   ],
   databases: [
     "postgres", "postgresql", "mysql", "sqlite", "sql server",
-    "mongodb", "mongo", "mongoose", "dynamodb", "redis", "cassandra", "elasticsearch",
+    "mongodb", "mongo", "mongoose", "mern", "mern stack", "dynamodb", "redis", "cassandra", "elasticsearch",
     "clickhouse", "snowflake", "bigquery", "redshift",
   ],
   data: [
