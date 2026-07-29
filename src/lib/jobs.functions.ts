@@ -16,7 +16,6 @@ import { domainConfidence, expandQueryKeywords, titleRelevanceScore } from "./jo
 import { computeRelevance, brainTechVocabulary, jobDedupeKey } from "./jobs/relevance";
 import { buildJobSections, buildInsights } from "./jobs/sections.server";
 import {
-  locationAffinity,
   preferredLocations,
   locationProximity,
   isIndiaJob,
