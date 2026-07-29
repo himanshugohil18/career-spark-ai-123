@@ -109,7 +109,7 @@ export async function runDiscovery(
   if (error) throw new Error(`Failed to load sources: ${error.message}`);
 
   const collected: NormalizedJob[] = [];
-  const queryStats = new Map(stats.perQuery.map((q) => [q.query, q] as const));
+  const queryStats = new Map(stats.perQuery.map((q) => [q.query.toLowerCase(), q] as const));
 
   for (const src of sources ?? []) {
     const provider = getProvider(src.id);
