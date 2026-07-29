@@ -23,15 +23,28 @@ const CITY_ALIASES: Record<string, string[]> = {
 
 const COUNTRY_HINTS: Record<string, string[]> = {
   india: [
-    "india", "in", "bengaluru", "bangalore", "mumbai", "delhi", "noida", "gurgaon",
-    "gurugram", "pune", "hyderabad", "chennai", "kolkata", "ahmedabad", "jaipur",
-    "indore", "surat", "kochi", "coimbatore", "chandigarh", "vadodara",
+    "india", "bharat", "bengaluru", "bangalore", "mumbai", "bombay", "navi mumbai", "thane",
+    "delhi", "new delhi", "ncr", "noida", "gurgaon", "gurugram", "faridabad", "ghaziabad",
+    "pune", "pimpri", "hyderabad", "secunderabad", "chennai", "madras", "kolkata", "calcutta",
+    "ahmedabad", "gandhinagar", "jaipur", "indore", "bhopal", "surat", "vadodara", "rajkot",
+    "kochi", "cochin", "trivandrum", "thiruvananthapuram", "coimbatore", "madurai", "mysore",
+    "mysuru", "chandigarh", "mohali", "lucknow", "kanpur", "nagpur", "nashik", "visakhapatnam",
+    "vijayawada", "bhubaneswar", "guwahati", "dehradun", "raipur", "gujarat", "maharashtra",
+    "karnataka", "tamil nadu", "telangana", "kerala", "rajasthan", "punjab", "haryana",
+    "west bengal", "uttar pradesh", "madhya pradesh", "andhra pradesh", "odisha",
   ],
-  "united states": ["usa", "u.s.", "united states", "us", "new york", "san francisco", "seattle", "austin", "boston", "chicago"],
+  "united states": ["usa", "u.s.", "united states", "new york", "san francisco", "seattle", "austin", "boston", "chicago"],
   "united kingdom": ["uk", "united kingdom", "london", "manchester", "england"],
   germany: ["germany", "berlin", "munich", "hamburg"],
   canada: ["canada", "toronto", "vancouver", "montreal"],
 };
+
+/** Country names/abbreviations — never treated as a "city" match. */
+const COUNTRY_WORDS = new Set([
+  "india", "bharat", "usa", "us", "u.s.", "united states", "america", "uk",
+  "united kingdom", "england", "germany", "canada", "remote", "anywhere", "worldwide",
+]);
+
 
 function norm(v: string | null | undefined): string {
   return (v ?? "").toLowerCase().replace(/[^a-z\s,]/g, " ").replace(/\s+/g, " ").trim();
