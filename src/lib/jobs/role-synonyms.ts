@@ -26,6 +26,9 @@ export type RoleFamily = {
   synonyms: string[];
   /** Technology cluster ids that strongly imply this family. */
   techClusters?: string[];
+  /** Non-technology resume keywords (tools, domain skills) implying this family. */
+  skillSignals?: string[];
+
   /** Related families that are also acceptable matches. */
   related?: string[];
 };
@@ -286,6 +289,11 @@ export const ROLE_FAMILIES: RoleFamily[] = [
       "account executive", "sales manager", "sales director",
       "business development representative", "sales development representative",
     ],
+    skillSignals: [
+      "lead generation", "cold calling", "crm", "salesforce", "hubspot",
+      "negotiation", "pipeline", "quota", "b2b sales", "upselling",
+      "client acquisition", "prospecting",
+    ],
   },
   {
     id: "marketing",
@@ -299,6 +307,11 @@ export const ROLE_FAMILIES: RoleFamily[] = [
       "marketing manager", "growth manager", "content marketer",
       "brand manager", "seo specialist", "demand generation manager",
     ],
+    skillSignals: [
+      "seo", "sem", "google ads", "meta ads", "content marketing",
+      "email marketing", "copywriting", "social media", "canva",
+      "google analytics", "campaign management", "branding", "hubspot",
+    ],
   },
   {
     id: "people",
@@ -307,10 +320,17 @@ export const ROLE_FAMILIES: RoleFamily[] = [
     tokens: [
       "people operations", "human resources", "hr business partner",
       "recruiter", "talent acquisition", "recruiting",
+      "hr executive", "hr generalist", "hr manager",
     ],
     synonyms: [
       "people operations manager", "hr business partner",
       "recruiter", "technical recruiter", "talent acquisition partner",
+      "hr executive", "hr generalist", "hr manager",
+    ],
+    skillSignals: [
+      "recruitment", "sourcing", "onboarding", "payroll", "hrms",
+      "employee engagement", "performance management", "interviewing",
+      "talent acquisition", "hr policies", "naukri", "linkedin recruiter",
     ],
   },
   {
@@ -318,13 +338,20 @@ export const ROLE_FAMILIES: RoleFamily[] = [
     label: "Finance",
     track: "business",
     tokens: [
-      "finance", "accountant", "controller", "financial analyst",
-      "treasury", "fp&a",
+      "finance", "controller", "financial analyst",
+      "treasury", "fp&a", "finance analyst", "credit analyst",
+      "investment analyst", "risk analyst",
     ],
     synonyms: [
-      "financial analyst", "accountant", "controller",
-      "fp&a analyst", "finance manager",
+      "financial analyst", "controller",
+      "fp&a analyst", "finance manager", "finance associate",
     ],
+    skillSignals: [
+      "financial modeling", "forecasting", "budgeting", "valuation",
+      "variance analysis", "financial reporting", "excel", "sap",
+      "cash flow", "p&l", "fp&a",
+    ],
+    related: ["accounting"],
   },
   {
     id: "customer",
@@ -338,8 +365,116 @@ export const ROLE_FAMILIES: RoleFamily[] = [
       "customer success manager", "customer support engineer",
       "solutions engineer", "solutions architect",
     ],
+    skillSignals: [
+      "customer onboarding", "account retention", "zendesk", "freshdesk",
+      "ticketing", "churn", "customer relationship", "escalation",
+    ],
+  },
+
+  {
+    id: "analytics",
+    label: "Data & Business Analytics",
+    track: "data",
+    tokens: [
+      "data analyst", "business analyst intelligence", "business intelligence",
+      "bi analyst", "bi developer", "bi engineer", "analytics analyst",
+      "reporting analyst", "insights analyst", "mis executive", "mis analyst",
+      "power bi", "tableau developer", "sql analyst", "marketing analyst",
+      "operations analyst", "reporting specialist", "analytics specialist",
+    ],
+    synonyms: [
+      "data analyst", "senior data analyst", "junior data analyst",
+      "business intelligence analyst", "business intelligence developer",
+      "bi analyst", "bi developer", "reporting analyst", "insights analyst",
+      "analytics analyst", "mis executive", "tableau developer",
+      "power bi developer", "sql analyst",
+    ],
+    skillSignals: [
+      "power bi", "powerbi", "tableau", "looker", "excel", "advanced excel",
+      "sql", "mysql", "dax", "google analytics", "data visualization",
+      "dashboard", "reporting", "mis", "etl", "pivot table", "qlik",
+      "statistics", "data cleaning", "pandas",
+    ],
+    related: ["data", "datascience", "bizanalysis"],
+  },
+  {
+    id: "bizanalysis",
+    label: "Business Analysis",
+    track: "business",
+    tokens: [
+      "business analyst", "business systems analyst", "functional analyst",
+      "functional consultant", "requirements analyst", "process analyst",
+      "product analyst", "business process", "systems analyst",
+      "erp consultant", "crm analyst",
+    ],
+    synonyms: [
+      "business analyst", "senior business analyst", "junior business analyst",
+      "business systems analyst", "it business analyst",
+      "functional consultant", "requirements analyst", "process analyst",
+      "product analyst", "systems analyst",
+    ],
+    skillSignals: [
+      "requirement gathering", "requirements gathering", "brd", "frd",
+      "stakeholder management", "business process", "gap analysis",
+      "use case", "uml", "user stories", "process mapping", "visio",
+      "jira", "confluence", "sql", "excel", "wireframe", "documentation",
+    ],
+    related: ["analytics", "product", "projectmgmt"],
+  },
+  {
+    id: "projectmgmt",
+    label: "Project & Program Management",
+    track: "operations",
+    tokens: [
+      "project manager", "program manager", "project management",
+      "delivery manager", "scrum master", "agile coach", "project coordinator",
+      "project lead", "pmo", "technical program manager", "delivery lead",
+      "implementation manager", "release manager",
+    ],
+    synonyms: [
+      "project manager", "senior project manager", "it project manager",
+      "technical project manager", "program manager",
+      "technical program manager", "delivery manager", "delivery lead",
+      "scrum master", "agile coach", "project coordinator", "pmo analyst",
+      "implementation manager",
+    ],
+    skillSignals: [
+      "agile", "scrum", "kanban", "jira", "confluence", "pmp", "prince2",
+      "sprint planning", "roadmap", "risk management", "budgeting",
+      "stakeholder management", "resource planning", "ms project",
+      "waterfall", "gantt", "sdlc", "release planning",
+    ],
+    related: ["product", "bizanalysis"],
+  },
+  {
+    id: "accounting",
+    label: "Accounting & Audit",
+    track: "business",
+    tokens: [
+      "accountant", "accounts executive", "accounts payable",
+      "accounts receivable", "bookkeeper", "bookkeeping", "auditor",
+      "audit associate", "taxation", "tax analyst", "chartered accountant",
+      "account assistant", "accounts manager", "payroll", "billing specialist",
+      "general ledger", "ap ar",
+    ],
+    synonyms: [
+      "accountant", "senior accountant", "junior accountant",
+      "staff accountant", "accounts executive", "accounts payable specialist",
+      "accounts receivable specialist", "bookkeeper", "auditor",
+      "audit associate", "tax accountant", "payroll specialist",
+      "accounting manager", "chartered accountant",
+    ],
+    skillSignals: [
+      "tally", "tally erp", "gst", "tds", "bookkeeping", "quickbooks",
+      "zoho books", "sap fico", "taxation", "journal entries",
+      "bank reconciliation", "reconciliation", "financial reporting",
+      "accounts payable", "accounts receivable", "payroll", "invoicing",
+      "balance sheet", "excel", "busy", "ledger",
+    ],
+    related: ["finance"],
   },
 ];
+
 
 /**
  * Semantic technology clusters. A skill/tech string is looked up here to
@@ -463,25 +598,36 @@ const ENG_SIGNAL =
 const GENERIC_NON_DEVOPS_ENGINEERING_SIGNAL =
   /\b(software\s+engineer|software\s+developer|backend\s+engineer|front[- ]?end\s+engineer|full[- ]?stack\s+engineer|web\s+developer|application\s+engineer|product\s+engineer|mobile\s+engineer|ios\s+engineer|android\s+engineer|data\s+engineer|qa\s+engineer|test\s+engineer|tax\s+experience|tax\s+engineer|gtm\s+systems|sales\s+engineer|solutions\s+engineer)\b/i;
 
+const BIZ_ROLE_SIGNAL =
+  /\b(business\s+analyst|business\s+systems\s+analyst|functional\s+consultant|project\s+manager|program\s+manager|delivery\s+manager|scrum\s+master|project\s+coordinator|accountant|accounts\s+(executive|payable|receivable|manager)|bookkeep|auditor|taxation|payroll|hr\s+|human\s+resources|recruiter|talent\s+acquisition)\b/i;
+const ANALYST_SIGNAL =
+  /\b(data\s+analyst|business\s+intelligence|bi\s+analyst|bi\s+developer|reporting\s+analyst|insights\s+analyst|mis\s+(executive|analyst))\b/i;
+
 const DISQUALIFIERS: Record<string, RegExp> = {
-  devops: new RegExp(`${ML_SIGNAL.source}|${GENERIC_NON_DEVOPS_ENGINEERING_SIGNAL.source}`, "i"),
-  backend: ML_SIGNAL,
-  frontend: ML_SIGNAL,
-  fullstack: ML_SIGNAL,
+  devops: new RegExp(`${ML_SIGNAL.source}|${GENERIC_NON_DEVOPS_ENGINEERING_SIGNAL.source}|${BIZ_ROLE_SIGNAL.source}`, "i"),
+  backend: new RegExp(`${ML_SIGNAL.source}|${BIZ_ROLE_SIGNAL.source}`, "i"),
+  frontend: new RegExp(`${ML_SIGNAL.source}|${BIZ_ROLE_SIGNAL.source}`, "i"),
+  fullstack: new RegExp(`${ML_SIGNAL.source}|${BIZ_ROLE_SIGNAL.source}`, "i"),
   mobile: ML_SIGNAL,
-  data: ML_SIGNAL, // "data engineer" shouldn't swallow ML roles either
+  data: new RegExp(`${ML_SIGNAL.source}|${BIZ_ROLE_SIGNAL.source}|${ANALYST_SIGNAL.source}`, "i"),
   security: ML_SIGNAL,
   qa: ML_SIGNAL,
   // Business/ops families must not swallow engineering titles.
   sales: ENG_SIGNAL,
   marketing: ENG_SIGNAL,
-  people: ENG_SIGNAL,
-  finance: ENG_SIGNAL,
+  people: new RegExp(`${ENG_SIGNAL.source}|\\b(project\\s+manager|business\\s+analyst)\\b`, "i"),
+  finance: new RegExp(`${ENG_SIGNAL.source}|\\b(accountant|bookkeep|auditor|payroll)\\b`, "i"),
   customer: ENG_SIGNAL,
   // ML shouldn't be picked when the title is clearly non-engineering.
-  ml: NON_ENG_SIGNAL,
-  datascience: NON_ENG_SIGNAL,
+  ml: new RegExp(`${NON_ENG_SIGNAL.source}|${BIZ_ROLE_SIGNAL.source}|${ANALYST_SIGNAL.source}`, "i"),
+  datascience: new RegExp(`${NON_ENG_SIGNAL.source}|${BIZ_ROLE_SIGNAL.source}|${ANALYST_SIGNAL.source}`, "i"),
+  // New non-engineering families: never claim clearly engineering titles.
+  analytics: /\b(software\s+engineer|developer|devops|sre|backend|frontend|full\s*stack|machine\s+learning\s+engineer|data\s+engineer|security\s+engineer)\b/i,
+  bizanalysis: /\b(software\s+engineer|developer|devops|sre|backend|frontend|full\s*stack|data\s+engineer|data\s+analyst|security\s+engineer)\b/i,
+  projectmgmt: /\b(software\s+engineer|developer|devops|sre|backend|frontend|full\s*stack|data\s+engineer)\b/i,
+  accounting: new RegExp(`${ENG_SIGNAL.source}`, "i"),
 };
+
 
 function familyDisqualified(family: RoleFamily, title: string): boolean {
   const rx = DISQUALIFIERS[family.id];
@@ -623,6 +769,22 @@ export function familiesFromBrain(input: {
     }
   }
 
+  // Non-technology resume keywords (Tally, Power BI, Scrum, BRD, ...) map to
+  // the business / analytics / operations families, which have no tech
+  // clusters at all. Without this an accountant or PM resume resolves to
+  // nothing (or, worse, to Backend because it mentions SQL).
+  const skillText = techs.map((t) => t.toLowerCase().trim()).filter(Boolean);
+  for (const fam of ROLE_FAMILIES) {
+    const signals = fam.skillSignals ?? [];
+    if (!signals.length) continue;
+    let hits = 0;
+    for (const sig of signals) {
+      if (skillText.some((s) => s === sig || s.includes(sig) || sig.includes(s))) hits++;
+    }
+    if (hits) bump(fam.id, Math.min(30, hits * 6));
+  }
+
+
   return Array.from(scores.entries())
     .sort((a, b) => b[1] - a[1])
     .map(([id]) => ROLE_FAMILIES.find((f) => f.id === id)!)
@@ -743,15 +905,132 @@ const ROLE_QUERY_STRATEGIES: Record<string, string[]> = {
     "Quality Assurance Engineer",
     "Test Automation Engineer",
   ],
+  analytics: [
+    "Data Analyst",
+    "Business Intelligence Analyst",
+    "BI Developer",
+    "Power BI Developer",
+    "Tableau Developer",
+    "Reporting Analyst",
+    "MIS Executive",
+    "Analytics Analyst",
+    "SQL Analyst",
+    "Insights Analyst",
+  ],
+  bizanalysis: [
+    "Business Analyst",
+    "IT Business Analyst",
+    "Business Systems Analyst",
+    "Functional Consultant",
+    "Product Analyst",
+    "Process Analyst",
+    "Requirements Analyst",
+    "Systems Analyst",
+  ],
+  projectmgmt: [
+    "Project Manager",
+    "IT Project Manager",
+    "Technical Project Manager",
+    "Program Manager",
+    "Delivery Manager",
+    "Scrum Master",
+    "Project Coordinator",
+    "Agile Coach",
+    "PMO Analyst",
+  ],
+  accounting: [
+    "Accountant",
+    "Senior Accountant",
+    "Accounts Executive",
+    "Accounts Payable Specialist",
+    "Accounts Receivable Specialist",
+    "Bookkeeper",
+    "Tax Accountant",
+    "Auditor",
+    "Payroll Specialist",
+    "Accounting Manager",
+  ],
+  finance: [
+    "Financial Analyst",
+    "FP&A Analyst",
+    "Finance Manager",
+    "Finance Associate",
+    "Controller",
+    "Credit Analyst",
+  ],
+  people: [
+    "HR Executive",
+    "HR Generalist",
+    "HR Business Partner",
+    "Recruiter",
+    "Technical Recruiter",
+    "Talent Acquisition Specialist",
+    "People Operations Manager",
+  ],
+  sales: [
+    "Sales Executive",
+    "Account Executive",
+    "Business Development Executive",
+    "Sales Manager",
+    "Inside Sales Representative",
+    "Sales Development Representative",
+  ],
+  marketing: [
+    "Marketing Executive",
+    "Digital Marketing Specialist",
+    "SEO Specialist",
+    "Content Marketing Manager",
+    "Performance Marketing Manager",
+    "Growth Marketing Manager",
+    "Social Media Manager",
+  ],
+  customer: [
+    "Customer Success Manager",
+    "Customer Support Specialist",
+    "Technical Support Engineer",
+    "Client Relationship Manager",
+  ],
 };
 
-const STRICT_PRIMARY_FAMILY_IDS = new Set(["devops"]);
+const STRICT_PRIMARY_FAMILY_IDS = new Set([
+  "devops", "analytics", "bizanalysis", "projectmgmt",
+  "accounting", "finance", "people", "sales", "marketing", "customer",
+]);
+
+/**
+ * For strict primaries, the ONLY additional families the candidate may see.
+ * Anything not listed here is hard-excluded, so an accountant never sees
+ * sales roles and a project manager never sees backend engineering roles.
+ */
+const FAMILY_ALLOWLIST: Record<string, string[]> = {
+  devops: ["devops"],
+  analytics: ["analytics", "data", "datascience"],
+  bizanalysis: ["bizanalysis", "analytics", "product", "projectmgmt"],
+  projectmgmt: ["projectmgmt", "product", "bizanalysis"],
+  accounting: ["accounting", "finance"],
+  finance: ["finance", "accounting"],
+  people: ["people"],
+  sales: ["sales", "marketing", "customer"],
+  marketing: ["marketing", "sales"],
+  customer: ["customer", "sales"],
+};
 
 function strictFamiliesForPrimary(primary: RoleFamily | null, scoredFamilies: RoleFamily[]): RoleFamily[] {
   if (!primary) return scoredFamilies;
-  if (STRICT_PRIMARY_FAMILY_IDS.has(primary.id)) return [primary];
-  return scoredFamilies;
+  if (!STRICT_PRIMARY_FAMILY_IDS.has(primary.id)) return scoredFamilies;
+  const allowed = FAMILY_ALLOWLIST[primary.id] ?? [primary.id];
+  const allowedSet = new Set(allowed);
+  const out = [primary, ...scoredFamilies.filter((f) => f.id !== primary.id && allowedSet.has(f.id))];
+  // Ensure the curated adjacents are present even when the resume didn't
+  // score them, so the feed isn't starved (e.g. analyst -> data roles).
+  for (const id of allowed) {
+    if (out.some((f) => f.id === id)) continue;
+    const fam = ROLE_FAMILIES.find((f) => f.id === id);
+    if (fam) out.push(fam);
+  }
+  return out.slice(0, 4);
 }
+
 
 function buildRoleQueries(families: RoleFamily[], explicitQueries: Array<string | null | undefined> = []): string[] {
   const roleQueries = new Set<string>();

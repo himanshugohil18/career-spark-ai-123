@@ -167,6 +167,37 @@ function trackFit(candidate: CandidateProfile, family: RoleFamily | null): numbe
   return best;
 }
 
+/** Families whose candidates are judged on technology evidence. */
+const TECHNICAL_FAMILY_IDS = new Set([
+  "devops", "frontend", "backend", "fullstack", "mobile",
+  "data", "ml", "datascience", "security", "qa",
+]);
+
+/** Titles that are unambiguously engineering IC roles. */
+const ENGINEERING_TITLE =
+  /\b(software engineer|software developer|backend|front[- ]?end|full[- ]?stack|devops|sre|site reliability|platform engineer|infrastructure engineer|machine learning engineer|data engineer|security engineer|mobile engineer|ios engineer|android engineer|qa engineer|sdet)\b/i;
+
+/**
+ * Domain-keyword evidence for NON-technical candidates: what share of the
+ * candidate's resume keywords the posting actually mentions. Replaces the
+ * tech-cluster overlap, which is meaningless for an accountant or a PM.
+ */
+function domainKeywordFit(job: JobLike, keywords: string[]): number {
+  const hay = [
+    job.title ?? "",
+    job.description ?? "",
+    ...(job.requiredSkills ?? []),
+    ...(job.preferredSkills ?? []),
+    ...(job.responsibilities ?? []),
+    ...(job.requirements ?? []),
+  ].join(" ").toLowerCase().slice(0, 8000);
+  const terms = Array.from(new Set(keywords.map((k) => k.toLowerCase().trim()).filter((k) => k.length >= 3)));
+  if (!terms.length || !hay) return 0;
+  let hit = 0;
+  for (const t of terms) if (hay.includes(t)) hit++;
+  return Math.min(1, hit / Math.min(terms.length, 10));
+}
+
 export function computeRelevance(
   job: JobLike,
   profile: CandidateProfile,
@@ -174,15 +205,19 @@ export function computeRelevance(
 ): RelevanceResult {
   const titleRole = resolveTitleRole(job.title ?? "");
   const bodyFamily = classifyJob(job);
+  const isTechnicalCandidate =
+    !profile.primary || TECHNICAL_FAMILY_IDS.has(profile.primary.id);
 
   const jobTechs = [
     ...(job.requiredSkills ?? []),
     ...(job.preferredSkills ?? []),
     ...(job.companyTechStack ?? []),
   ].filter(Boolean);
-  const techFit = jobTechs.length
-    ? semanticTechOverlap(brainTechs, jobTechs)
-    : semanticTechOverlap(brainTechs, extractTechTokens(job));
+  const techFit = isTechnicalCandidate
+    ? jobTechs.length
+      ? semanticTechOverlap(brainTechs, jobTechs)
+      : semanticTechOverlap(brainTechs, extractTechTokens(job))
+    : domainKeywordFit(job, brainTechs);
 
   const base: Omit<RelevanceResult, "relevance" | "gate" | "vetoed" | "reason"> = {
     titleFit: 0,
@@ -192,22 +227,34 @@ export function computeRelevance(
     titleFamily: titleRole.family,
   };
 
-  // 1. Hard vetoes.
-  if (titleRole.nonTechnical) {
+  // 1. Hard vetoes — direction depends on the candidate's own career track.
+  if (isTechnicalCandidate && titleRole.nonTechnical) {
     return { ...base, relevance: 0, gate: false, vetoed: true, reason: "Non-technical role" };
   }
   if (!profile.families.length) {
     // No career brain yet — everything technical is equally plausible.
     return { ...base, titleFit: 0.5, relevance: 0.5, gate: true, vetoed: false, reason: "No career profile yet" };
   }
+  if (!isTechnicalCandidate && ENGINEERING_TITLE.test(job.title ?? "")) {
+    return { ...base, relevance: 0, gate: false, vetoed: true, reason: "Engineering role, not a match for this profile" };
+  }
   if (titleRole.family && profile.excludedFamilyIds.has(titleRole.family.id)) {
     return { ...base, relevance: 0, gate: false, vetoed: true, reason: `Different career track: ${titleRole.family.label}` };
   }
-  if (profile.primary?.track !== "product" && PRODUCT_BUSINESS_TITLE.test(job.title ?? "")) {
+  if (
+    isTechnicalCandidate &&
+    profile.primary?.track !== "product" &&
+    PRODUCT_BUSINESS_TITLE.test(job.title ?? "")
+  ) {
     return { ...base, relevance: 0, gate: false, vetoed: true, reason: "Product/business role, not an engineering match" };
   }
   if (!titleRole.family && bodyFamily && profile.excludedFamilyIds.has(bodyFamily.id)) {
     return { ...base, relevance: 0, gate: false, vetoed: true, reason: `Different career track: ${bodyFamily.label}` };
+  }
+  // A non-technical candidate must land on a title we actually recognised as
+  // being in their allowed families — otherwise the feed fills with noise.
+  if (!isTechnicalCandidate && !titleRole.family && !(bodyFamily && profile.familyIds.has(bodyFamily.id))) {
+    return { ...base, relevance: 0, gate: false, vetoed: false, reason: "Unrecognised role for this profile" };
   }
 
   // 2. Title fit (dominant signal).
@@ -233,29 +280,35 @@ export function computeRelevance(
     Math.min(1, titleFit * 0.55 + techFit * 0.32 + seniorityFit * 0.13),
   );
 
-  // 5. Gate — a job must be on-track AND show real technology evidence.
-  // Required technology evidence scales inversely with title certainty: an
-  // exact "DevOps Engineer" title needs little corroboration, a vague
-  // "Member of Technical Staff" needs a lot.
-  const requiredTech = titleRole.strength >= 0.85 ? 0.14 : titleRole.strength >= 0.5 ? 0.24 : 0.36;
-  const coverage = requiredSkillCoverage(job, brainTechs);
+  // 5. Gate — a job must be on-track AND show real evidence.
+  // For technical candidates that evidence is technology overlap; for
+  // business / analytics / operations candidates it is domain-keyword overlap.
+  const requiredTech = isTechnicalCandidate
+    ? titleRole.strength >= 0.85 ? 0.14 : titleRole.strength >= 0.5 ? 0.24 : 0.36
+    : titleRole.strength >= 0.85 ? 0.1 : 0.18;
+  const coverage = isTechnicalCandidate ? requiredSkillCoverage(job, brainTechs) : 1;
+  // Leadership titles are normal for PM / manager tracks — only penalise
+  // them when the candidate is an individual contributor engineer.
+  const leadershipBlocked =
+    isTechnicalCandidate && titleRole.leadership && candRank <= 3;
   const gate =
     titleFit >= 0.6 &&
     relevance >= 0.44 &&
     techFit >= requiredTech &&
     coverage >= 0.1 &&
-    !(titleRole.leadership && candRank <= 3);
+    !leadershipBlocked;
 
   const reason = !gate
     ? titleFit < 0.55
       ? `Off-track role${titleRole.family ? `: ${titleRole.family.label}` : ""}`
-      : titleRole.leadership && candRank <= 3
+      : leadershipBlocked
         ? "Leadership role beyond current experience"
-        : "Weak technology overlap"
-    : `${titleRole.family?.label ?? bodyFamily?.label ?? "Technical"} role · ${Math.round(techFit * 100)}% tech overlap`;
+        : isTechnicalCandidate ? "Weak technology overlap" : "Weak domain overlap"
+    : `${titleRole.family?.label ?? bodyFamily?.label ?? "Technical"} role · ${Math.round(techFit * 100)}% ${isTechnicalCandidate ? "tech" : "domain"} overlap`;
 
   return { ...base, titleFit, seniorityFit, relevance, gate, vetoed: false, reason };
 }
+
 
 /**
  * Fraction of the job's explicitly required skills the candidate can already
