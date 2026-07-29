@@ -598,25 +598,36 @@ const ENG_SIGNAL =
 const GENERIC_NON_DEVOPS_ENGINEERING_SIGNAL =
   /\b(software\s+engineer|software\s+developer|backend\s+engineer|front[- ]?end\s+engineer|full[- ]?stack\s+engineer|web\s+developer|application\s+engineer|product\s+engineer|mobile\s+engineer|ios\s+engineer|android\s+engineer|data\s+engineer|qa\s+engineer|test\s+engineer|tax\s+experience|tax\s+engineer|gtm\s+systems|sales\s+engineer|solutions\s+engineer)\b/i;
 
+const BIZ_ROLE_SIGNAL =
+  /\b(business\s+analyst|business\s+systems\s+analyst|functional\s+consultant|project\s+manager|program\s+manager|delivery\s+manager|scrum\s+master|project\s+coordinator|accountant|accounts\s+(executive|payable|receivable|manager)|bookkeep|auditor|taxation|payroll|hr\s+|human\s+resources|recruiter|talent\s+acquisition)\b/i;
+const ANALYST_SIGNAL =
+  /\b(data\s+analyst|business\s+intelligence|bi\s+analyst|bi\s+developer|reporting\s+analyst|insights\s+analyst|mis\s+(executive|analyst))\b/i;
+
 const DISQUALIFIERS: Record<string, RegExp> = {
-  devops: new RegExp(`${ML_SIGNAL.source}|${GENERIC_NON_DEVOPS_ENGINEERING_SIGNAL.source}`, "i"),
-  backend: ML_SIGNAL,
-  frontend: ML_SIGNAL,
-  fullstack: ML_SIGNAL,
+  devops: new RegExp(`${ML_SIGNAL.source}|${GENERIC_NON_DEVOPS_ENGINEERING_SIGNAL.source}|${BIZ_ROLE_SIGNAL.source}`, "i"),
+  backend: new RegExp(`${ML_SIGNAL.source}|${BIZ_ROLE_SIGNAL.source}`, "i"),
+  frontend: new RegExp(`${ML_SIGNAL.source}|${BIZ_ROLE_SIGNAL.source}`, "i"),
+  fullstack: new RegExp(`${ML_SIGNAL.source}|${BIZ_ROLE_SIGNAL.source}`, "i"),
   mobile: ML_SIGNAL,
-  data: ML_SIGNAL, // "data engineer" shouldn't swallow ML roles either
+  data: new RegExp(`${ML_SIGNAL.source}|${BIZ_ROLE_SIGNAL.source}|${ANALYST_SIGNAL.source}`, "i"),
   security: ML_SIGNAL,
   qa: ML_SIGNAL,
   // Business/ops families must not swallow engineering titles.
   sales: ENG_SIGNAL,
   marketing: ENG_SIGNAL,
-  people: ENG_SIGNAL,
-  finance: ENG_SIGNAL,
+  people: new RegExp(`${ENG_SIGNAL.source}|\\b(project\\s+manager|business\\s+analyst)\\b`, "i"),
+  finance: new RegExp(`${ENG_SIGNAL.source}|\\b(accountant|bookkeep|auditor|payroll)\\b`, "i"),
   customer: ENG_SIGNAL,
   // ML shouldn't be picked when the title is clearly non-engineering.
-  ml: NON_ENG_SIGNAL,
-  datascience: NON_ENG_SIGNAL,
+  ml: new RegExp(`${NON_ENG_SIGNAL.source}|${BIZ_ROLE_SIGNAL.source}|${ANALYST_SIGNAL.source}`, "i"),
+  datascience: new RegExp(`${NON_ENG_SIGNAL.source}|${BIZ_ROLE_SIGNAL.source}|${ANALYST_SIGNAL.source}`, "i"),
+  // New non-engineering families: never claim clearly engineering titles.
+  analytics: /\b(software\s+engineer|developer|devops|sre|backend|frontend|full\s*stack|machine\s+learning\s+engineer|data\s+engineer|security\s+engineer)\b/i,
+  bizanalysis: /\b(software\s+engineer|developer|devops|sre|backend|frontend|full\s*stack|data\s+engineer|data\s+analyst|security\s+engineer)\b/i,
+  projectmgmt: /\b(software\s+engineer|developer|devops|sre|backend|frontend|full\s*stack|data\s+engineer)\b/i,
+  accounting: new RegExp(`${ENG_SIGNAL.source}`, "i"),
 };
+
 
 function familyDisqualified(family: RoleFamily, title: string): boolean {
   const rx = DISQUALIFIERS[family.id];
