@@ -289,6 +289,11 @@ export const ROLE_FAMILIES: RoleFamily[] = [
       "account executive", "sales manager", "sales director",
       "business development representative", "sales development representative",
     ],
+    skillSignals: [
+      "lead generation", "cold calling", "crm", "salesforce", "hubspot",
+      "negotiation", "pipeline", "quota", "b2b sales", "upselling",
+      "client acquisition", "prospecting",
+    ],
   },
   {
     id: "marketing",
@@ -302,6 +307,11 @@ export const ROLE_FAMILIES: RoleFamily[] = [
       "marketing manager", "growth manager", "content marketer",
       "brand manager", "seo specialist", "demand generation manager",
     ],
+    skillSignals: [
+      "seo", "sem", "google ads", "meta ads", "content marketing",
+      "email marketing", "copywriting", "social media", "canva",
+      "google analytics", "campaign management", "branding", "hubspot",
+    ],
   },
   {
     id: "people",
@@ -310,10 +320,17 @@ export const ROLE_FAMILIES: RoleFamily[] = [
     tokens: [
       "people operations", "human resources", "hr business partner",
       "recruiter", "talent acquisition", "recruiting",
+      "hr executive", "hr generalist", "hr manager",
     ],
     synonyms: [
       "people operations manager", "hr business partner",
       "recruiter", "technical recruiter", "talent acquisition partner",
+      "hr executive", "hr generalist", "hr manager",
+    ],
+    skillSignals: [
+      "recruitment", "sourcing", "onboarding", "payroll", "hrms",
+      "employee engagement", "performance management", "interviewing",
+      "talent acquisition", "hr policies", "naukri", "linkedin recruiter",
     ],
   },
   {
@@ -321,13 +338,20 @@ export const ROLE_FAMILIES: RoleFamily[] = [
     label: "Finance",
     track: "business",
     tokens: [
-      "finance", "accountant", "controller", "financial analyst",
-      "treasury", "fp&a",
+      "finance", "controller", "financial analyst",
+      "treasury", "fp&a", "finance analyst", "credit analyst",
+      "investment analyst", "risk analyst",
     ],
     synonyms: [
-      "financial analyst", "accountant", "controller",
-      "fp&a analyst", "finance manager",
+      "financial analyst", "controller",
+      "fp&a analyst", "finance manager", "finance associate",
     ],
+    skillSignals: [
+      "financial modeling", "forecasting", "budgeting", "valuation",
+      "variance analysis", "financial reporting", "excel", "sap",
+      "cash flow", "p&l", "fp&a",
+    ],
+    related: ["accounting"],
   },
   {
     id: "customer",
@@ -341,7 +365,12 @@ export const ROLE_FAMILIES: RoleFamily[] = [
       "customer success manager", "customer support engineer",
       "solutions engineer", "solutions architect",
     ],
+    skillSignals: [
+      "customer onboarding", "account retention", "zendesk", "freshdesk",
+      "ticketing", "churn", "customer relationship", "escalation",
+    ],
   },
+
   {
     id: "analytics",
     label: "Data & Business Analytics",
