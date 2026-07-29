@@ -37,6 +37,10 @@ export type JobCardData = {
     explanation?: string | null;
   } | null;
   savedStatus?: string | null;
+  /** Location proximity, computed server-side against the resume location. */
+  locationTier?: "same-city" | "nearby-city" | "same-country" | "remote" | "far" | null;
+  locationLabel?: string | null;
+
 };
 
 function formatSalary(job: JobCardData): string | null {
