@@ -59,6 +59,11 @@ export const listJobs = createServerFn({ method: "POST" })
     const brainFamilies = profile.families;
     const brainTechs = brainTechVocabulary(brain);
     const prefLocations = preferredLocations(brain);
+    // India-first: when the resume points at India (or has no location at
+    // all, which is the common case for our users), Indian postings are
+    // boosted ahead of equally-relevant international ones.
+    const indiaFirst = candidateIsIndian(prefLocations) || prefLocations.length === 0;
+
     const expansion = rawQuery ? expandQueryKeywords(rawQuery) : null;
     const roleFamily = expansion?.family ?? null;
 
