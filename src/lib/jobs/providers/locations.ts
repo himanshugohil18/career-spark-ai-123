@@ -10,6 +10,7 @@
 const INDIA_METROS = [
   "India",
   "Bengaluru",
+  "Bangalore",
   "Hyderabad",
   "Pune",
   "Mumbai",
@@ -18,6 +19,17 @@ const INDIA_METROS = [
   "Ahmedabad",
   "Noida",
   "Gurgaon",
+  "Gurugram",
+  "Kolkata",
+  "Jaipur",
+  "Indore",
+  "Surat",
+  "Vadodara",
+  "Kochi",
+  "Coimbatore",
+  "Chandigarh",
+  "Nagpur",
+  "Remote India",
 ];
 
 const GLOBAL_MARKETS = [

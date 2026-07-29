@@ -27,14 +27,15 @@ type MarketplaceSpec = {
 };
 
 const USER_AGENT = "Mozilla/5.0 (compatible; CareerOS/1.0; +https://careerosproject.lovable.app)";
+const TECH_TITLE_PATTERN = /\b(engineer|engineering|developer|devops|sre|platform|cloud|infrastructure|kubernetes|terraform|linux|frontend|front[- ]?end|backend|back[- ]?end|full[- ]?stack|fullstack|mern|mean|react|next\.?js|node\.?js|javascript|typescript|python|java|golang|software|web|ui\s+(engineer|developer)|machine\s*learning|\bml\b|\bai\b|ai\/ml|ml\/ai|generative\s+ai|genai|agentic\s+ai|llm|rag|nlp|computer\s+vision|data\s+(engineer|scientist)|analytics\s+engineer|qa\s+engineer|sdet|security\s+engineer|mobile\s+(engineer|developer)|android|ios|flutter|react\s+native)\b/i;
 
 function createMarketplaceProvider(spec: MarketplaceSpec): JobProvider {
   return {
     id: spec.id,
     displayName: spec.displayName,
     async fetch(_config, opts?: ProviderFetchOptions) {
-      const queries = (opts?.queries?.length ? opts.queries : ["DevOps Engineer"]).slice(0, 10);
-      const locations = expandSearchLocations(opts?.locations, 6);
+      const queries = (opts?.queries?.length ? opts.queries : ["Software Engineer"]).slice(0, 16);
+      const locations = expandSearchLocations(opts?.locations, 10);
       const out: NormalizedJob[] = [];
       const seen = new Set<string>();
       for (const query of queries) {
@@ -65,8 +66,10 @@ function createMarketplaceProvider(spec: MarketplaceSpec): JobProvider {
 export const linkedInJobsProvider = createMarketplaceProvider({
   id: "linkedin",
   displayName: "LinkedIn Jobs",
-  buildUrls: (query, locations) => locations.map((l) =>
-    `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodeURIComponent(query)}&location=${encodeURIComponent(l)}&start=0`,
+  buildUrls: (query, locations) => locations.flatMap((l) =>
+    [0, 25, 50].map((start) =>
+      `https://www.linkedin.com/jobs-guest/jobs/api/seeMoreJobPostings/search?keywords=${encodeURIComponent(query)}&location=${encodeURIComponent(l)}&start=${start}`,
+    ),
   ),
   parse: parseLinkedIn,
 });
@@ -164,6 +167,87 @@ export const glassdoorProvider = createMarketplaceProvider({
   parse: (html, query) => parseJsonBackedMarketplace(html, query, "glassdoor", "Glassdoor"),
 });
 
+export const internshalaProvider = createMarketplaceProvider({
+  id: "internshala",
+  displayName: "Internshala",
+  buildUrls: (query, locations) => locations.map((l) =>
+    `https://internshala.com/jobs/${slugify(query)}-jobs-in-${slugify(l)}`,
+  ),
+  parse: (html, query) => parseJsonBackedMarketplace(html, query, "internshala", "Internshala"),
+});
+
+export const talentProvider = createMarketplaceProvider({
+  id: "talent",
+  displayName: "Talent.com",
+  buildUrls: (query, locations) => locations.map((l) =>
+    `https://www.talent.com/jobs?k=${encodeURIComponent(query)}&l=${encodeURIComponent(l)}`,
+  ),
+  parse: (html, query) => parseJsonBackedMarketplace(html, query, "talent", "Talent.com"),
+});
+
+export const zipRecruiterProvider = createMarketplaceProvider({
+  id: "ziprecruiter",
+  displayName: "ZipRecruiter",
+  buildUrls: (query, locations) => locations.map((l) =>
+    `https://www.ziprecruiter.com/jobs-search?search=${encodeURIComponent(query)}&location=${encodeURIComponent(l)}`,
+  ),
+  parse: (html, query) => parseJsonBackedMarketplace(html, query, "ziprecruiter", "ZipRecruiter"),
+});
+
+export const diceProvider = createMarketplaceProvider({
+  id: "dice",
+  displayName: "Dice",
+  buildUrls: (query, locations) => locations.map((l) =>
+    `https://www.dice.com/jobs?q=${encodeURIComponent(query)}&location=${encodeURIComponent(l)}`,
+  ),
+  parse: (html, query) => parseJsonBackedMarketplace(html, query, "dice", "Dice"),
+});
+
+export const builtinProvider = createMarketplaceProvider({
+  id: "builtin",
+  displayName: "Built In",
+  buildUrls: (query) => [
+    `https://builtin.com/jobs/remote/dev-engineering?search=${encodeURIComponent(query)}`,
+  ],
+  parse: (html, query) => parseJsonBackedMarketplace(html, query, "builtin", "Built In"),
+});
+
+export const remoteCoProvider = createMarketplaceProvider({
+  id: "remoteco",
+  displayName: "Remote.co",
+  buildUrls: (query) => [`https://remote.co/remote-jobs/search/?search_keywords=${encodeURIComponent(query)}`],
+  parse: (html, query) => parseJsonBackedMarketplace(html, query, "remoteco", "Remote.co"),
+});
+
+export const remoteLeadsProvider = createMarketplaceProvider({
+  id: "remoteleads",
+  displayName: "RemoteLeads",
+  buildUrls: (query) => [`https://remoteleads.io/remote-${slugify(query)}-jobs`],
+  parse: (html, query) => parseJsonBackedMarketplace(html, query, "remoteleads", "RemoteLeads"),
+});
+
+export const levelsFyiProvider = createMarketplaceProvider({
+  id: "levelsfyi",
+  displayName: "Levels.fyi Jobs",
+  buildUrls: (query, locations) => locations.map((l) =>
+    `https://www.levels.fyi/jobs/?searchText=${encodeURIComponent(query)}&location=${encodeURIComponent(l)}`,
+  ),
+  parse: (html, query) => parseJsonBackedMarketplace(html, query, "levelsfyi", "Levels.fyi"),
+});
+
+export const flexJobsProvider = createMarketplaceProvider({
+  id: "flexjobs",
+  displayName: "FlexJobs",
+  buildUrls: (query) => [`https://www.flexjobs.com/search?search=${encodeURIComponent(query)}`],
+  parse: (html, query) => parseJsonBackedMarketplace(html, query, "flexjobs", "FlexJobs"),
+});
+
+export const upworkProvider = createMarketplaceProvider({
+  id: "upwork",
+  displayName: "Upwork Tech Jobs",
+  buildUrls: (query) => [`https://www.upwork.com/freelance-jobs/${slugify(query)}/`],
+  parse: (html, query) => parseJsonBackedMarketplace(html, query, "upwork", "Upwork"),
+});
 
 
 function parseLinkedIn(html: string, query: string): NormalizedJob[] {
@@ -237,7 +321,7 @@ function collectJobsFromJson(value: unknown, out: NormalizedJob[], ctx: { provid
   const title = stringFrom(obj.title ?? obj.jobTitle ?? obj.designation ?? obj.position ?? obj.name);
   const company = stringFrom(obj.companyName ?? obj.company_name ?? obj.hiringOrganization ?? (obj.company as Record<string, unknown> | undefined)?.name) ?? ctx.fallbackCompany;
   const url = absolutize(stringFrom(obj.url ?? obj.jobUrl ?? obj.applyUrl ?? obj.redirectUrl ?? obj.jdUrl), ctx.provider);
-  if (title && /engineer|devops|sre|platform|cloud|infrastructure|kubernetes|terraform|linux/i.test(title) && url) {
+  if (title && TECH_TITLE_PATTERN.test(title) && url) {
     const description = stringFrom(obj.description ?? obj.jobDescription ?? obj.summary) ?? `${title} at ${company}. Discovered from ${ctx.fallbackCompany} query: ${ctx.query}.`;
     out.push(mapMarketplaceJob({
       provider: ctx.provider,
@@ -259,7 +343,7 @@ function parseAnchors(html: string, query: string, provider: string, fallbackCom
   const anchors = html.matchAll(/<a\b[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/gi);
   for (const [full, href, labelHtml] of anchors) {
     const title = clean(labelHtml);
-    if (!title || title.length < 8 || !/engineer|devops|sre|platform|cloud|infrastructure|kubernetes|terraform|linux/i.test(title)) continue;
+    if (!title || title.length < 8 || !TECH_TITLE_PATTERN.test(title)) continue;
     const url = absolutize(decodeEntities(href), provider);
     if (!url || /javascript:|#/.test(url)) continue;
     const aria = clean(extract(full, /aria-label="([^"]+)"/i));
@@ -370,6 +454,16 @@ function absolutize(url: string | null | undefined, provider: string): string | 
     timesjobs: "https://www.timesjobs.com",
     simplyhired: "https://www.simplyhired.com",
     glassdoor: "https://www.glassdoor.co.in",
+    internshala: "https://internshala.com",
+    talent: "https://www.talent.com",
+    ziprecruiter: "https://www.ziprecruiter.com",
+    dice: "https://www.dice.com",
+    builtin: "https://builtin.com",
+    remoteco: "https://remote.co",
+    remoteleads: "https://remoteleads.io",
+    levelsfyi: "https://www.levels.fyi",
+    flexjobs: "https://www.flexjobs.com",
+    upwork: "https://www.upwork.com",
   };
   return `${host[provider] ?? ""}${url.startsWith("/") ? url : `/${url}`}`;
 }

@@ -37,6 +37,10 @@ const TECH_ROLE_NOUN =
 const NON_IC_LEADERSHIP =
   /\b(vp|vice president|chief|cto|cio|ceo|coo|cfo|head|director|general manager|engineering manager|program manager|product manager|site lead|team lead)\b/i;
 
+/** Product/business titles can mention AI but are not AI/ML engineering jobs. */
+const PRODUCT_BUSINESS_TITLE =
+  /\b(product manager|product management|program manager|project manager|business analyst|strategy|operations manager|growth manager|product owner)\b/i;
+
 const SENIORITY_PATTERNS: Array<[RegExp, JobSeniority]> = [
   [/\b(intern|internship|co-?op|trainee|apprentice)\b/i, "intern"],
   [/\b(graduate|entry[- ]level|fresher|new grad)\b/i, "entry"],
@@ -199,6 +203,9 @@ export function computeRelevance(
   if (titleRole.family && profile.excludedFamilyIds.has(titleRole.family.id)) {
     return { ...base, relevance: 0, gate: false, vetoed: true, reason: `Different career track: ${titleRole.family.label}` };
   }
+  if (profile.primary?.track !== "product" && PRODUCT_BUSINESS_TITLE.test(job.title ?? "")) {
+    return { ...base, relevance: 0, gate: false, vetoed: true, reason: "Product/business role, not an engineering match" };
+  }
   if (!titleRole.family && bodyFamily && profile.excludedFamilyIds.has(bodyFamily.id)) {
     return { ...base, relevance: 0, gate: false, vetoed: true, reason: `Different career track: ${bodyFamily.label}` };
   }
@@ -258,13 +265,16 @@ export function computeRelevance(
 function requiredSkillCoverage(job: JobLike, brainTechs: string[]): number {
   const req = (job.requiredSkills ?? []).filter(Boolean);
   if (req.length < 4) return 1;
+  const brainText = brainTechs.join(" ").toLowerCase();
+  const reqText = req.join(" ").toLowerCase();
+  if (/\bmern\b|mern stack/.test(brainText) && /mongodb|mongo|express|react|node/.test(reqText)) return 1;
   let hit = 0;
   for (const skill of req) if (semanticTechOverlap([skill], brainTechs) >= 0.5) hit++;
   return hit / req.length;
 }
 
 const TECH_TOKEN_RE =
-  /\b(aws|azure|gcp|kubernetes|k8s|docker|terraform|ansible|jenkins|argo ?cd|gitops|helm|linux|python|bash|go|golang|java|node|react|typescript|javascript|postgres|mysql|redis|kafka|prometheus|grafana|ci\/cd|cicd|devops|sre|serverless|lambda|ec2|s3|eks|ecs|rds|iam|vpc|cloudformation|pulumi|datadog|splunk|nginx|django|flask|spring|rails)\b/g;
+  /\b(aws|azure|gcp|kubernetes|k8s|docker|terraform|ansible|jenkins|argo ?cd|gitops|helm|linux|python|bash|go|golang|java|node|nodejs|express|nestjs|react|next\.?js|vue|angular|svelte|html|css|tailwind|typescript|javascript|mongodb|mongo|postgres|mysql|redis|kafka|prometheus|grafana|ci\/cd|cicd|devops|sre|serverless|lambda|ec2|s3|eks|ecs|rds|iam|vpc|cloudformation|pulumi|datadog|splunk|nginx|django|flask|fastapi|spring|rails|pytorch|tensorflow|llm|langchain|rag|nlp|hugging ?face|scikit|sklearn|pandas|numpy)\b/g;
 
 function extractTechTokens(job: JobLike): string[] {
   const hay = [

@@ -105,7 +105,7 @@ async function getText(url: string): Promise<string | null> {
 
 function queriesOf(opts?: ProviderFetchOptions): string[] {
   const q = opts?.queries?.filter(Boolean) ?? [];
-  return (q.length ? q : ["software engineer"]).slice(0, 8);
+  return (q.length ? q : ["software engineer"]).slice(0, 16);
 }
 
 function createPortal(
@@ -117,7 +117,7 @@ function createPortal(
     id,
     displayName,
     async fetch(_config, opts) {
-      const locations = expandSearchLocations(opts?.locations, 6);
+      const locations = expandSearchLocations(opts?.locations, 10);
       const out: NormalizedJob[] = [];
       const seen = new Set<string>();
       for (const query of queriesOf(opts)) {
@@ -127,7 +127,7 @@ function createPortal(
           if (!key || seen.has(key)) continue;
           seen.add(key);
           out.push(job);
-          if (opts?.limit && out.length >= opts.limit * 3) return out;
+          if (opts?.limit && out.length >= opts.limit * 4) return out;
         }
       }
       return out;

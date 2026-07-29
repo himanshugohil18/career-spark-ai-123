@@ -109,7 +109,7 @@ export async function runDiscovery(
   if (error) throw new Error(`Failed to load sources: ${error.message}`);
 
   const collected: NormalizedJob[] = [];
-  const queryStats = new Map(stats.perQuery.map((q) => [q.query, q] as const));
+  const queryStats = new Map(stats.perQuery.map((q) => [q.query.toLowerCase(), q] as const));
 
   for (const src of sources ?? []) {
     const provider = getProvider(src.id);
@@ -128,7 +128,7 @@ export async function runDiscovery(
       const jobs = await provider.fetch(src.config ?? {}, {
         queries: profile?.roleQueries,
         locations: profile?.locations,
-        limit: 150,
+        limit: 260,
       });
       perProv.fetched = jobs.length;
       stats.fetched += jobs.length;
