@@ -217,14 +217,17 @@ export const listJobs = createServerFn({ method: "POST" })
         relevanceReason: relevance.reason,
         domainConfidence: domainConfidence(jobLike, profile),
         interactionBias: bias,
-        locationFit: locationAffinity({
-          jobLocation: row.location,
-          jobCountry: row.location_country,
-          remoteStatus: row.remote_status,
-          preferred: prefLocations,
-        }),
+        locationFit: proximity.score,
+        locationTier: proximity.tier,
+        locationLabel: proximity.label,
+        inIndia: india,
+        locationBoost:
+          proximity.score * 18 +
+          (proximity.tier === "same-city" ? 14 : proximity.tier === "nearby-city" ? 9 : 0) +
+          (indiaFirst && india ? 12 : 0),
       };
     });
+
 
     if (rawQuery) {
       const strict = items.filter((it) => !it.excluded && (it.domainConfidence?.confidence ?? 0) >= 0.7);
