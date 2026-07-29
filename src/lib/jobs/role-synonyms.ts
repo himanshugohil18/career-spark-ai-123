@@ -26,6 +26,9 @@ export type RoleFamily = {
   synonyms: string[];
   /** Technology cluster ids that strongly imply this family. */
   techClusters?: string[];
+  /** Non-technology resume keywords (tools, domain skills) implying this family. */
+  skillSignals?: string[];
+
   /** Related families that are also acceptable matches. */
   related?: string[];
 };
