@@ -183,7 +183,10 @@ export function locationProximity(input: LocationAffinityInput): ProximityResult
   const remote = (input.remoteStatus ?? "").toLowerCase();
   const base = locationAffinity(input);
 
-  const prefTerms = prefs.flatMap((p) => tokens(p)).filter((t) => t.length >= 3);
+  const prefTerms = prefs
+    .flatMap((p) => tokens(p))
+    .filter((t) => t.length >= 3 && !COUNTRY_WORDS.has(t));
+
 
   for (const term of prefTerms.flatMap(expand)) {
     if (term.length >= 3 && jobText.includes(term)) {
