@@ -265,6 +265,9 @@ export function computeRelevance(
 function requiredSkillCoverage(job: JobLike, brainTechs: string[]): number {
   const req = (job.requiredSkills ?? []).filter(Boolean);
   if (req.length < 4) return 1;
+  const brainText = brainTechs.join(" ").toLowerCase();
+  const reqText = req.join(" ").toLowerCase();
+  if (/\bmern\b|mern stack/.test(brainText) && /mongodb|mongo|express|react|node/.test(reqText)) return 1;
   let hit = 0;
   for (const skill of req) if (semanticTechOverlap([skill], brainTechs) >= 0.5) hit++;
   return hit / req.length;
