@@ -339,7 +339,110 @@ export const ROLE_FAMILIES: RoleFamily[] = [
       "solutions engineer", "solutions architect",
     ],
   },
+  {
+    id: "analytics",
+    label: "Data & Business Analytics",
+    track: "data",
+    tokens: [
+      "data analyst", "business analyst intelligence", "business intelligence",
+      "bi analyst", "bi developer", "bi engineer", "analytics analyst",
+      "reporting analyst", "insights analyst", "mis executive", "mis analyst",
+      "power bi", "tableau developer", "sql analyst", "marketing analyst",
+      "operations analyst", "reporting specialist", "analytics specialist",
+    ],
+    synonyms: [
+      "data analyst", "senior data analyst", "junior data analyst",
+      "business intelligence analyst", "business intelligence developer",
+      "bi analyst", "bi developer", "reporting analyst", "insights analyst",
+      "analytics analyst", "mis executive", "tableau developer",
+      "power bi developer", "sql analyst",
+    ],
+    skillSignals: [
+      "power bi", "powerbi", "tableau", "looker", "excel", "advanced excel",
+      "sql", "mysql", "dax", "google analytics", "data visualization",
+      "dashboard", "reporting", "mis", "etl", "pivot table", "qlik",
+      "statistics", "data cleaning", "pandas",
+    ],
+    related: ["data", "datascience", "bizanalysis"],
+  },
+  {
+    id: "bizanalysis",
+    label: "Business Analysis",
+    track: "business",
+    tokens: [
+      "business analyst", "business systems analyst", "functional analyst",
+      "functional consultant", "requirements analyst", "process analyst",
+      "product analyst", "business process", "systems analyst",
+      "erp consultant", "crm analyst",
+    ],
+    synonyms: [
+      "business analyst", "senior business analyst", "junior business analyst",
+      "business systems analyst", "it business analyst",
+      "functional consultant", "requirements analyst", "process analyst",
+      "product analyst", "systems analyst",
+    ],
+    skillSignals: [
+      "requirement gathering", "requirements gathering", "brd", "frd",
+      "stakeholder management", "business process", "gap analysis",
+      "use case", "uml", "user stories", "process mapping", "visio",
+      "jira", "confluence", "sql", "excel", "wireframe", "documentation",
+    ],
+    related: ["analytics", "product", "projectmgmt"],
+  },
+  {
+    id: "projectmgmt",
+    label: "Project & Program Management",
+    track: "operations",
+    tokens: [
+      "project manager", "program manager", "project management",
+      "delivery manager", "scrum master", "agile coach", "project coordinator",
+      "project lead", "pmo", "technical program manager", "delivery lead",
+      "implementation manager", "release manager",
+    ],
+    synonyms: [
+      "project manager", "senior project manager", "it project manager",
+      "technical project manager", "program manager",
+      "technical program manager", "delivery manager", "delivery lead",
+      "scrum master", "agile coach", "project coordinator", "pmo analyst",
+      "implementation manager",
+    ],
+    skillSignals: [
+      "agile", "scrum", "kanban", "jira", "confluence", "pmp", "prince2",
+      "sprint planning", "roadmap", "risk management", "budgeting",
+      "stakeholder management", "resource planning", "ms project",
+      "waterfall", "gantt", "sdlc", "release planning",
+    ],
+    related: ["product", "bizanalysis"],
+  },
+  {
+    id: "accounting",
+    label: "Accounting & Audit",
+    track: "business",
+    tokens: [
+      "accountant", "accounts executive", "accounts payable",
+      "accounts receivable", "bookkeeper", "bookkeeping", "auditor",
+      "audit associate", "taxation", "tax analyst", "chartered accountant",
+      "account assistant", "accounts manager", "payroll", "billing specialist",
+      "general ledger", "ap ar",
+    ],
+    synonyms: [
+      "accountant", "senior accountant", "junior accountant",
+      "staff accountant", "accounts executive", "accounts payable specialist",
+      "accounts receivable specialist", "bookkeeper", "auditor",
+      "audit associate", "tax accountant", "payroll specialist",
+      "accounting manager", "chartered accountant",
+    ],
+    skillSignals: [
+      "tally", "tally erp", "gst", "tds", "bookkeeping", "quickbooks",
+      "zoho books", "sap fico", "taxation", "journal entries",
+      "bank reconciliation", "reconciliation", "financial reporting",
+      "accounts payable", "accounts receivable", "payroll", "invoicing",
+      "balance sheet", "excel", "busy", "ledger",
+    ],
+    related: ["finance"],
+  },
 ];
+
 
 /**
  * Semantic technology clusters. A skill/tech string is looked up here to
