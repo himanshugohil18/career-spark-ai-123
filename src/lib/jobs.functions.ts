@@ -158,6 +158,14 @@ export const listJobs = createServerFn({ method: "POST" })
     }
 
     let items = (rows ?? []).map((row: any) => {
+      const proximity = locationProximity({
+        jobLocation: row.location,
+        jobCountry: row.location_country,
+        remoteStatus: row.remote_status,
+        preferred: prefLocations,
+      });
+      const india = isIndiaJob(row.location, row.location_country);
+
       const titleScore = rawQuery ? titleRelevanceScore(row.title ?? "", rawQuery) : 0;
       const familyScore = brainFamilies.length
         ? Math.max(...brainFamilies.map((f) => familyTitleRelevance(row.title ?? "", f)))
