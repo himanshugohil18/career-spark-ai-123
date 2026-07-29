@@ -284,16 +284,21 @@ export const listJobs = createServerFn({ method: "POST" })
     }
 
     if (data.sort === "match" || !data.sort) {
+      const rank = (it: any) =>
+        Number(it.match?.overall_score ?? 0) +
+        (it.relevance ?? 0) * 30 +
+        (it.familyScore ?? 0) * 0.1 +
+        (it.interactionBias ?? 0) +
+        (it.locationBoost ?? 0);
       items.sort((a, b) => {
         if (rawQuery) {
           const t = (b.titleScore ?? 0) - (a.titleScore ?? 0);
           if (t !== 0) return t;
         }
-        const scoreA = Number(a.match?.overall_score ?? 0) + (a.relevance ?? 0) * 30 + (a.familyScore ?? 0) * 0.1 + (a.interactionBias ?? 0) + (a.locationFit ?? 0) * 12;
-        const scoreB = Number(b.match?.overall_score ?? 0) + (b.relevance ?? 0) * 30 + (b.familyScore ?? 0) * 0.1 + (b.interactionBias ?? 0) + (b.locationFit ?? 0) * 12;
-        return scoreB - scoreA;
+        return rank(b) - rank(a);
       });
     }
+
 
     let paged = items;
     let totalOut = count ?? items.length;
