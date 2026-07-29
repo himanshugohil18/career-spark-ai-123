@@ -90,11 +90,14 @@ export function locationAffinity(input: LocationAffinityInput): number {
   if (!jobText) return 0.5;
 
   for (const pref of prefs) {
-    for (const term of tokens(pref).flatMap(expand)) {
+    // Country words ("India") must not count as a city hit, otherwise every
+    // Indian job looks like it's in the user's own city.
+    for (const term of tokens(pref).filter((t) => !COUNTRY_WORDS.has(t)).flatMap(expand)) {
       if (term.length < 3) continue;
       if (jobText.includes(term)) return remote === "hybrid" ? 0.96 : 1;
     }
   }
+
 
   const jobCountry = countryOf(jobText) ?? (norm(input.jobCountry ?? "") || null);
   const prefCountry = prefs.map(countryOf).find(Boolean) ?? null;
