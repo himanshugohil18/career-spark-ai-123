@@ -13,7 +13,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { getCareerBrainSnapshotFor } from "./career-brain.service";
+import { getCareerBrainSnapshotFor } from "./career-brain-logic.server";
 import {
   runCombinedAnalysis,
   runCompanyIntel,
