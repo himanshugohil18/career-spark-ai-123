@@ -12,7 +12,7 @@
  * the service-role admin client (webhook flow). Keep this file server-only.
  */
 
-import { getCareerBrainSnapshotFor } from "@/lib/career-brain.service";
+import { getCareerBrainSnapshotFor } from "@/lib/career-brain-logic.server";
 import { researchCompany } from "./company-intel.server";
 import { generateApplicationAnswers } from "./answers.server";
 import { pickBestResume } from "./resume-select.server";

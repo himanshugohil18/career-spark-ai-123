@@ -12,20 +12,21 @@ export function useCrossModuleSync() {
   const qc = useQueryClient();
 
   useEffect(() => {
-    let userId: string | null = null;
+    let cancelled = false;
     let channel: ReturnType<typeof supabase.channel> | null = null;
 
     (async () => {
       const { data } = await supabase.auth.getUser();
-      userId = data.user?.id ?? null;
+      const userId = data.user?.id ?? null;
       if (!userId) return;
+      if (cancelled) return;
 
       const invalidate = (keys: string[]) => {
         for (const k of keys) void qc.invalidateQueries({ queryKey: [k] });
       };
 
       channel = supabase
-        .channel(`cross-module-${userId}`)
+        .channel(`cross-module-${userId}-${crypto.randomUUID()}`)
         .on(
           "postgres_changes",
           { event: "*", schema: "public", table: "job_matches", filter: `user_id=eq.${userId}` },
@@ -60,6 +61,7 @@ export function useCrossModuleSync() {
     })();
 
     return () => {
+      cancelled = true;
       if (channel) void supabase.removeChannel(channel);
     };
   }, [qc]);

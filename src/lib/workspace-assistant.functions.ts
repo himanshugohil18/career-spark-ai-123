@@ -10,7 +10,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { strToU8, zipSync } from "fflate";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { getCareerBrainSnapshotFor } from "./career-brain.service";
+import { getCareerBrainSnapshotFor } from "./career-brain-logic.server";
 import type { WorkspaceJob } from "./workspace/analysis.server";
 import {
   generateOptimizedResume,
