@@ -42,7 +42,7 @@ function MePage() {
   const { data: avatarSigned } = useQuery({
     queryKey: ["avatar-signed", avatarPath],
     queryFn: () => {
-      if (!avatarPath) return Promise.resolve({ url: null });
+      if (!avatarPath) throw new Error("Avatar path is unavailable");
       return getAvatarUrl({ data: { path: avatarPath } });
     },
     enabled: Boolean(avatarPath),
