@@ -63,7 +63,18 @@ function MePage() {
     return (parts[0]?.[0] ?? "?") + (parts[1]?.[0] ?? "");
   }, [data?.profile?.full_name]);
 
+  const groupedSkills = useMemo(() => {
+    const m = new Map<string, NonNullable<typeof data>["skills"]>();
+    for (const s of data?.skills ?? []) {
+      const list = m.get(s.category) ?? [];
+      list.push(s);
+      m.set(s.category, list);
+    }
+    return Array.from(m.entries());
+  }, [data?.skills]);
+
   if (isLoading || !data) {
+
     return (
       <div className="mx-auto w-full max-w-5xl space-y-6 p-6 md:p-10">
         <Skeleton className="h-44 rounded-2xl" />
@@ -102,15 +113,6 @@ function MePage() {
     { label: "Achievements", value: `${data.achievements.length}` },
   ];
 
-  const groupedSkills = useMemo(() => {
-    const m = new Map<string, typeof data.skills>();
-    for (const s of data.skills) {
-      const list = m.get(s.category) ?? [];
-      list.push(s);
-      m.set(s.category, list);
-    }
-    return Array.from(m.entries());
-  }, [data.skills]);
 
   const journey = [...data.experiences]
     .sort((a, b) => (b.start_date ?? "").localeCompare(a.start_date ?? ""));
