@@ -48,7 +48,9 @@ async function runParse(
     .eq("id", resumeId)
     .eq("user_id", userId)
     .single();
-  if (resumeErr || !resume) throw new Error("Resume not found");
+  if (resumeErr || !resume) {
+    throw new Error(resumeErr?.message ?? "Resume not found");
+  }
 
   await supabase
     .from("resumes")
@@ -186,7 +188,9 @@ export async function getParsedResumeFor(
       .eq("id", data.resumeId)
       .eq("user_id", context.userId)
       .single();
-    if (error || !resume) throw new Error("Resume not found");
+    if (error || !resume) {
+      throw new Error(error?.message ?? "Resume not found");
+    }
     return {
       resumeId: resume.id,
       fileName: resume.file_name,
@@ -538,7 +542,9 @@ export async function approveResumeFor(
       .eq("id", resumeId)
       .eq("user_id", userId)
       .single();
-    if (resumeErr || !resume) throw new Error("Resume not found");
+    if (resumeErr || !resume) {
+      throw new Error(resumeErr?.message ?? "Resume not found");
+    }
     const aiOriginal = resume.parsed_json as unknown as ParsedResume | null;
 
     const { brainVersion, counts, completeness } = await applyApprovedResume(
@@ -574,7 +580,9 @@ export async function setActiveResumeFor(
       .eq("id", data.resumeId)
       .eq("user_id", userId)
       .single();
-    if (error || !resume) throw new Error("Resume not found");
+    if (error || !resume) {
+      throw new Error(error?.message ?? "Resume not found");
+    }
     if (!resume.parsed_json) throw new Error("This resume has no parsed data. Retry parsing first.");
 
     // Re-run the same writer used at approval so the Career Brain / DNA /
@@ -658,12 +666,13 @@ export async function getNextResumeVersionFor(
   context: { supabase: any; userId: string },
 ) {
     const { supabase, userId } = context;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("resumes")
       .select("version")
       .eq("user_id", userId)
       .order("version", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (error) throw new Error(error.message);
     return { nextVersion: (data?.version ?? 0) + 1 };
 }

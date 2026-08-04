@@ -126,6 +126,26 @@ async function buildSnapshot(
       supabase.from("achievements").select("*").eq("user_id", userId).order("sort_order"),
     ]);
 
+    const failures = [
+      ["profile", profile.error],
+      ["resumes", resumes.error],
+      ["career brain", brain.error],
+      ["career DNA", dna.error],
+      ["career health", health.error],
+      ["skills", skills.error],
+      ["experience", experiences.error],
+      ["projects", projects.error],
+      ["education", education.error],
+      ["certifications", certifications.error],
+      ["languages", languages.error],
+      ["achievements", achievements.error],
+    ] as const;
+    const failure = failures.find(([, error]) => Boolean(error));
+    if (failure) {
+      const [resource, error] = failure;
+      throw new Error(`Could not load ${resource}: ${error?.message ?? "Unknown database error"}`);
+    }
+
     const p = profile.data as Record<string, unknown> | null;
     const b = brain.data as Record<string, unknown> | null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
