@@ -17,11 +17,13 @@ const KEY = "careeros_boot_v1";
  * authenticated workspace per browser session. ~1s total.
  */
 export function WorkspaceBoot({ children }: { children: ReactNode }) {
-  const [booting, setBooting] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return sessionStorage.getItem(KEY) !== "1";
-  });
+  const [booting, setBooting] = useState(false);
   const [step, setStep] = useState(0);
+
+  // Decide after hydration so server and client HTML always match.
+  useEffect(() => {
+    if (sessionStorage.getItem(KEY) !== "1") setBooting(true);
+  }, []);
 
   useEffect(() => {
     if (!booting) return;

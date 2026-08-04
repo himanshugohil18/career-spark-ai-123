@@ -1022,11 +1022,12 @@ function AgentNetwork() {
             return (
               <g key={i}>
                 <line x1="0" y1="0" x2={x} y2={y} stroke="url(#net-line)" strokeWidth="0.8" />
-                <motion.circle
-                  cx="0" cy="0" r="2" fill="#22D3EE"
-                  animate={{ cx: [0, x], cy: [0, y], opacity: [0, 1, 0] }}
+                <motion.g
+                  animate={{ x: [0, x], y: [0, y], opacity: [0, 1, 0] }}
                   transition={{ duration: 3, repeat: Infinity, delay: i * 0.4, ease: "easeInOut" }}
-                />
+                >
+                  <circle cx="0" cy="0" r="2" fill="#22D3EE" />
+                </motion.g>
               </g>
             );
           })}
