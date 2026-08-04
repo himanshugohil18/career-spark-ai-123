@@ -113,15 +113,6 @@ function MePage() {
     { label: "Achievements", value: `${data.achievements.length}` },
   ];
 
-  const groupedSkills = useMemo(() => {
-    const m = new Map<string, typeof data.skills>();
-    for (const s of data.skills) {
-      const list = m.get(s.category) ?? [];
-      list.push(s);
-      m.set(s.category, list);
-    }
-    return Array.from(m.entries());
-  }, [data.skills]);
 
   const journey = [...data.experiences]
     .sort((a, b) => (b.start_date ?? "").localeCompare(a.start_date ?? ""));
