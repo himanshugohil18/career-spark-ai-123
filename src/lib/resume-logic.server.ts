@@ -45,6 +45,7 @@ async function runParse(
     .from("resumes")
     .select("*")
     .eq("id", resumeId)
+    .eq("user_id", arguments[3] ?? "")
     .single();
   if (resumeErr || !resume) throw new Error("Resume not found");
 
