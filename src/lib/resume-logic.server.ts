@@ -38,6 +38,7 @@ async function bytesToBase64(bytes: Uint8Array): Promise<string> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function runParse(
   supabase: any,
+  userId: string,
   resumeId: string,
   extractedText: string | undefined,
 ): Promise<ParsedResume> {
@@ -45,7 +46,7 @@ async function runParse(
     .from("resumes")
     .select("*")
     .eq("id", resumeId)
-    .eq("user_id", arguments[3] ?? "")
+    .eq("user_id", userId)
     .single();
   if (resumeErr || !resume) throw new Error("Resume not found");
 
@@ -142,7 +143,7 @@ export async function processResumeFor(
 ) {
     const { supabase } = context;
     try {
-      const parsed = await runParse(supabase, data.resumeId, data.extractedText);
+      const parsed = await runParse(supabase, context.userId, data.resumeId, data.extractedText);
       return { ok: true, resumeId: data.resumeId, overallConfidence: parsed.overallConfidence };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
@@ -161,7 +162,7 @@ export async function retryParseFor(
 ) {
     const { supabase } = context;
     try {
-      const parsed = await runParse(supabase, data.resumeId, undefined);
+      const parsed = await runParse(supabase, context.userId, data.resumeId, undefined);
       return { ok: true, overallConfidence: parsed.overallConfidence };
     } catch (err) {
       const message = err instanceof Error ? err.message : "Unknown error";
