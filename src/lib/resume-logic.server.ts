@@ -1,6 +1,4 @@
-import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { callLovableAI, extractJson } from "./ai-gateway.server";
 import {
   AI_MODEL,
@@ -13,7 +11,7 @@ import {
 import { repairParsedResume } from "./resume-repair.server";
 import type { Json } from "@/integrations/supabase/types";
 
-const ProcessResumeInput = z.object({
+export const ProcessResumeInput = z.object({
   resumeId: z.string().uuid(),
   extractedText: z.string().optional(),
 });
@@ -137,10 +135,10 @@ async function runParse(
   return parsed;
 }
 
-export const processResume = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => ProcessResumeInput.parse(data))
-  .handler(async ({ data, context }) => {
+export async function processResumeFor(
+  data: z.infer<typeof ProcessResumeInput>,
+  context: { supabase: any; userId: string },
+) {
     const { supabase } = context;
     try {
       const parsed = await runParse(supabase, data.resumeId, data.extractedText);
@@ -153,13 +151,13 @@ export const processResume = createServerFn({ method: "POST" })
         .eq("id", data.resumeId);
       throw new Error(message);
     }
-  });
+}
 
 /** Retry the parse for an existing resume — no re-upload required. */
-export const retryParse = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ resumeId: z.string().uuid() }).parse(data))
-  .handler(async ({ data, context }) => {
+export async function retryParseFor(
+  data: { resumeId: string },
+  context: { supabase: any; userId: string },
+) {
     const { supabase } = context;
     try {
       const parsed = await runParse(supabase, data.resumeId, undefined);
@@ -172,18 +170,19 @@ export const retryParse = createServerFn({ method: "POST" })
         .eq("id", data.resumeId);
       throw new Error(message);
     }
-  });
+}
 
 /** Load a parsed but not-yet-approved resume for the review screen. */
-export const getParsedResume = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ resumeId: z.string().uuid() }).parse(data))
-  .handler(async ({ data, context }) => {
+export async function getParsedResumeFor(
+  data: { resumeId: string },
+  context: { supabase: any; userId: string },
+) {
     const { supabase } = context;
     const { data: resume, error } = await supabase
       .from("resumes")
       .select("*")
       .eq("id", data.resumeId)
+      .eq("user_id", context.userId)
       .single();
     if (error || !resume) throw new Error("Resume not found");
     return {
@@ -197,7 +196,7 @@ export const getParsedResume = createServerFn({ method: "GET" })
       approvedAt: resume.approved_at,
       parsed: (resume.parsed_json as unknown as ParsedResume | null) ?? null,
     };
-  });
+}
 
 /**
  * Persist the user-approved parse into the normalized tables and generate
@@ -207,7 +206,7 @@ export const getParsedResume = createServerFn({ method: "GET" })
  * the raw AI extraction for provenance), and `user_verified=false`. Later
  * edits via updateEntity flip `user_verified` to true.
  */
-const ApproveInput = z.object({
+export const ApproveInput = z.object({
   resumeId: z.string().uuid(),
   edited: ParsedResumeSchema,
 });
@@ -524,10 +523,10 @@ async function applyApprovedResume(
   };
 }
 
-export const approveResume = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => ApproveInput.parse(data))
-  .handler(async ({ data, context }) => {
+export async function approveResumeFor(
+  data: z.infer<typeof ApproveInput>,
+  context: { supabase: any; userId: string },
+) {
     const { supabase, userId } = context;
     const { resumeId, edited } = data;
 
@@ -535,6 +534,7 @@ export const approveResume = createServerFn({ method: "POST" })
       .from("resumes")
       .select("parsed_json")
       .eq("id", resumeId)
+      .eq("user_id", userId)
       .single();
     if (resumeErr || !resume) throw new Error("Resume not found");
     const aiOriginal = resume.parsed_json as unknown as ParsedResume | null;
@@ -554,22 +554,23 @@ export const approveResume = createServerFn({ method: "POST" })
     // visit via `ensureInitialMatches` — inline execution here would exceed
     // the Cloudflare Worker memory budget.
     return { ok: true, brainVersion, activation: null };
-  });
+}
 
 
 /**
  * Switch the active resume to a previously-approved version. Rehydrates
  * the Career Brain from that resume's stored parsed_json.
  */
-export const setActiveResume = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ resumeId: z.string().uuid() }).parse(data))
-  .handler(async ({ data, context }) => {
+export async function setActiveResumeFor(
+  data: { resumeId: string },
+  context: { supabase: any; userId: string },
+) {
     const { supabase, userId } = context;
     const { data: resume, error } = await supabase
       .from("resumes")
       .select("*")
       .eq("id", data.resumeId)
+      .eq("user_id", userId)
       .single();
     if (error || !resume) throw new Error("Resume not found");
     if (!resume.parsed_json) throw new Error("This resume has no parsed data. Retry parsing first.");
@@ -593,16 +594,16 @@ export const setActiveResume = createServerFn({ method: "POST" })
       needsReapprove: !resume.approved_at,
       overallConfidence: edited.overallConfidence,
     };
-  });
+}
 
 /**
  * Regenerate the Career Brain / DNA / Health from the currently active
  * resume without requiring re-upload. Useful after the user manually edits
  * normalized fields, or to migrate an older resume onto the newest schema.
  */
-export const regenerateCareerBrain = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+export async function regenerateCareerBrainFor(
+  context: { supabase: any; userId: string },
+) {
     const { supabase, userId } = context;
     const { data: resume, error } = await supabase
       .from("resumes")
@@ -624,30 +625,36 @@ export const regenerateCareerBrain = createServerFn({ method: "POST" })
       aiOriginal,
     );
     return { ok: true, brainVersion };
-  });
+}
 
 
-export const deleteResume = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => z.object({ resumeId: z.string().uuid() }).parse(data))
-  .handler(async ({ data, context }) => {
-    const { supabase } = context;
+export async function deleteResumeFor(
+  data: { resumeId: string },
+  context: { supabase: any; userId: string },
+) {
+    const { supabase, userId } = context;
     const { data: resume } = await supabase
       .from("resumes")
       .select("file_path")
       .eq("id", data.resumeId)
+      .eq("user_id", userId)
       .single();
     if (resume?.file_path) {
       await supabase.storage.from("resumes").remove([resume.file_path]);
     }
-    await supabase.from("resumes").delete().eq("id", data.resumeId);
+    const { error } = await supabase
+      .from("resumes")
+      .delete()
+      .eq("id", data.resumeId)
+      .eq("user_id", userId);
+    if (error) throw new Error(error.message);
     return { ok: true };
-  });
+}
 
 /** Next version number for a user's next uploaded resume. */
-export const getNextResumeVersion = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+export async function getNextResumeVersionFor(
+  context: { supabase: any; userId: string },
+) {
     const { supabase, userId } = context;
     const { data } = await supabase
       .from("resumes")
@@ -657,4 +664,4 @@ export const getNextResumeVersion = createServerFn({ method: "GET" })
       .limit(1)
       .maybeSingle();
     return { nextVersion: (data?.version ?? 0) + 1 };
-  });
+}

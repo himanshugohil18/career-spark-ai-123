@@ -41,7 +41,10 @@ function MePage() {
   const avatarPath = data?.profile?.avatar_url ?? null;
   const { data: avatarSigned } = useQuery({
     queryKey: ["avatar-signed", avatarPath],
-    queryFn: () => getAvatarUrl({ data: { path: avatarPath! } }),
+    queryFn: () => {
+      if (!avatarPath) return Promise.resolve({ url: null });
+      return getAvatarUrl({ data: { path: avatarPath } });
+    },
     enabled: Boolean(avatarPath),
     staleTime: 5 * 60 * 1000,
   });
