@@ -1177,3 +1177,74 @@ html {
   [data-sonner-toast][data-removed="true"],
   .sheen-on-hover:hover::after { animation: none; }
 }
+
+/* ------------------------------------------------------------------
+ * Landing "Aurora" scope — light, airy marketing surface for the
+ * homepage only. Token-scoped so the app shell (dark/premium) is
+ * untouched. Never hardcode colors in landing components; use these.
+ * ------------------------------------------------------------------ */
+.landing-light {
+  --background: #FFFFFF;
+  --surface-2: #F5F8FF;
+  --card: #FFFFFF;
+  --card-foreground: #0B1220;
+  --elevated: #FFFFFF;
+  --popover: #FFFFFF;
+  --popover-foreground: #0B1220;
+
+  --foreground: #0B1220;
+  --muted: #F1F5FF;
+  --muted-foreground: #5B6478;
+  --muted-foreground-subtle: #8A93A6;
+
+  --primary: #2F5CFF;
+  --primary-foreground: #FFFFFF;
+  --primary-hover: #1E45DB;
+  --secondary: #F1F5FF;
+  --secondary-foreground: #0B1220;
+  --accent: #7C5CFF;
+  --accent-foreground: #FFFFFF;
+
+  --border: #E7EAF3;
+  --border-strong: #D5DBEA;
+  --input: #D5DBEA;
+  --ring: #2F5CFF;
+
+  --gradient-primary: linear-gradient(135deg, #2F5CFF 0%, #5B7BFF 100%);
+  --gradient-brand-glow: linear-gradient(90deg, #2F5CFF 0%, #7C5CFF 55%, #F2779A 100%);
+  --gradient-hero:
+    radial-gradient(1100px 520px at 50% -12%, rgba(47, 92, 255, 0.16) 0%, transparent 62%),
+    linear-gradient(180deg, #EFF5FF 0%, #FFFFFF 55%);
+  --shadow-glow: 0 0 0 0 transparent;
+  --shadow-soft: 0 1px 2px rgba(11, 18, 32, 0.05);
+  --shadow-card: 0 6px 18px -10px rgba(11, 18, 32, 0.16);
+  --shadow-elevated: 0 2px 6px rgba(11, 18, 32, 0.05), 0 28px 60px -34px rgba(11, 18, 32, 0.28);
+  --shadow-focus-brand: 0 0 0 3px rgba(47, 92, 255, 0.2);
+
+  color-scheme: light;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: "Montserrat", "Inter", ui-sans-serif, system-ui, sans-serif;
+}
+.landing-light .font-display,
+.landing-light h1,
+.landing-light h2,
+.landing-light h3 {
+  font-family: "Montserrat", "Google Sans Display", ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+}
+.landing-light .text-gradient-brand {
+  background: var(--gradient-brand-glow);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.landing-grid-lines {
+  background-image:
+    linear-gradient(to right, rgba(11, 18, 32, 0.045) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(11, 18, 32, 0.045) 1px, transparent 1px);
+  background-size: 56px 56px;
+  -webkit-mask-image: radial-gradient(70% 60% at 50% 30%, #000 0%, transparent 100%);
+  mask-image: radial-gradient(70% 60% at 50% 30%, #000 0%, transparent 100%);
+}
