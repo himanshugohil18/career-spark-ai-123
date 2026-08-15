@@ -129,7 +129,7 @@ function Band({
       className={cn(
         "relative w-full px-5 py-24 md:px-8 md:py-28",
         tint === "blue" && "bg-secondary",
-        tint === "mint" && "bg-[color-mix(in_oklab,var(--color-accent)_7%,var(--color-background))]",
+        tint === "mint" && "bg-[var(--tint-mint)]",
         className,
       )}
     >
@@ -350,9 +350,9 @@ function PipelineMock() {
                           className={cn(
                             "rounded-md px-2 py-0.5 text-[11px] font-medium",
                             c.tone === "offer"
-                              ? "bg-[color-mix(in_oklab,var(--color-success)_16%,transparent)] text-[color:var(--color-success)]"
+                              ? "bg-[#E7F8EF] text-[#15803D]"
                               : c.tone === "live"
-                                ? "bg-[color-mix(in_oklab,var(--color-primary)_12%,transparent)] text-primary"
+                                ? "bg-[#E8EEFF] text-primary"
                                 : "bg-secondary text-muted-foreground",
                           )}
                         >
