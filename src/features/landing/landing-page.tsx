@@ -31,6 +31,11 @@ import { Logo } from "@/components/landing/logo";
 import { ComplianceSections } from "@/components/landing/compliance-sections";
 import { useSession } from "@/hooks/use-session";
 import { cn } from "@/lib/utils";
+import heroBg from "@/assets/hero-bg.mp4.asset.json";
+import showCandidate from "@/assets/show-candidate.jpg";
+import showInterview from "@/assets/show-interview.jpg";
+import showResume from "@/assets/show-resume.jpg";
+
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -62,6 +67,8 @@ export function LandingPage() {
       <main className="relative">
         <Hero />
         <SourceLogos />
+        <Showcase />
+
         <Results />
         <Testimonials />
         <Features />
@@ -205,12 +212,26 @@ function PrimaryCta({ className }: { className?: string }) {
 function Hero() {
   return (
     <section className="relative overflow-hidden px-5 pb-16 pt-32 md:px-8 md:pt-40">
+      {/* live ambient background video */}
+      <video
+        aria-hidden
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        poster={showResume}
+        className="pointer-events-none absolute inset-0 -z-30 h-full w-full object-cover opacity-45 motion-reduce:hidden"
+      >
+        <source src={heroBg.url} type="video/mp4" />
+      </video>
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-20"
-        style={{ background: "var(--gradient-hero)" }}
+        style={{ background: "var(--gradient-hero)", opacity: 0.86 }}
       />
       <div aria-hidden className="landing-grid-lines pointer-events-none absolute inset-0 -z-10" />
+
 
       <div className="mx-auto flex w-full max-w-[1160px] flex-col items-center text-center">
         <Reveal>
@@ -400,6 +421,66 @@ function SourceLogos() {
     </Band>
   );
 }
+
+// -----------------------------------------------------------------------------
+// Showcase (imagery)
+// -----------------------------------------------------------------------------
+
+const SHOWCASE = [
+  {
+    src: showResume,
+    alt: "Resume on a desk being analysed by CareerOS AI",
+    title: "Upload once",
+    copy: "Your resume becomes a structured career brain in seconds.",
+  },
+  {
+    src: showCandidate,
+    alt: "Candidate reviewing AI-matched jobs on a laptop",
+    title: "Matched, not spammed",
+    copy: "Title-verified roles across India and remote, ranked by real fit.",
+  },
+  {
+    src: showInterview,
+    alt: "Online interview happening on a laptop",
+    title: "Land the interview",
+    copy: "AI prep, tailored answers and application tracking end to end.",
+  },
+];
+
+function Showcase() {
+  return (
+    <Band>
+      <Heading
+        eyebrow="Inside CareerOS"
+        title={<>From resume to interview, in one flow</>}
+        description="A real career engine — not a job board. Here is what your week looks like with CareerOS."
+      />
+      <div className="grid gap-6 md:grid-cols-3">
+        {SHOWCASE.map((s, i) => (
+          <Reveal key={s.title} delay={i * 0.08}>
+            <figure className="group overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-soft)]">
+              <div className="aspect-[4/3] overflow-hidden">
+                <img
+                  src={s.src}
+                  alt={s.alt}
+                  loading="lazy"
+                  width={1200}
+                  height={900}
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                />
+              </div>
+              <figcaption className="p-5">
+                <p className="font-display text-[17px] font-semibold text-foreground">{s.title}</p>
+                <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted-foreground">{s.copy}</p>
+              </figcaption>
+            </figure>
+          </Reveal>
+        ))}
+      </div>
+    </Band>
+  );
+}
+
 
 // -----------------------------------------------------------------------------
 // Results
