@@ -423,6 +423,66 @@ function SourceLogos() {
 }
 
 // -----------------------------------------------------------------------------
+// Showcase (imagery)
+// -----------------------------------------------------------------------------
+
+const SHOWCASE = [
+  {
+    src: showResume,
+    alt: "Resume on a desk being analysed by CareerOS AI",
+    title: "Upload once",
+    copy: "Your resume becomes a structured career brain in seconds.",
+  },
+  {
+    src: showCandidate,
+    alt: "Candidate reviewing AI-matched jobs on a laptop",
+    title: "Matched, not spammed",
+    copy: "Title-verified roles across India and remote, ranked by real fit.",
+  },
+  {
+    src: showInterview,
+    alt: "Online interview happening on a laptop",
+    title: "Land the interview",
+    copy: "AI prep, tailored answers and application tracking end to end.",
+  },
+];
+
+function Showcase() {
+  return (
+    <Band>
+      <Heading
+        eyebrow="Inside CareerOS"
+        title={<>From resume to interview, in one flow</>}
+        description="A real career engine — not a job board. Here is what your week looks like with CareerOS."
+      />
+      <div className="grid gap-6 md:grid-cols-3">
+        {SHOWCASE.map((s, i) => (
+          <Reveal key={s.title} delay={i * 0.08}>
+            <figure className="group overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-soft)]">
+              <div className="aspect-[4/3] overflow-hidden">
+                <img
+                  src={s.src}
+                  alt={s.alt}
+                  loading="lazy"
+                  width={1200}
+                  height={900}
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.04]"
+                />
+              </div>
+              <figcaption className="p-5">
+                <p className="font-display text-[17px] font-semibold text-foreground">{s.title}</p>
+                <p className="mt-1.5 text-[13.5px] leading-relaxed text-muted-foreground">{s.copy}</p>
+              </figcaption>
+            </figure>
+          </Reveal>
+        ))}
+      </div>
+    </Band>
+  );
+}
+
+
+// -----------------------------------------------------------------------------
 // Results
 // -----------------------------------------------------------------------------
 
