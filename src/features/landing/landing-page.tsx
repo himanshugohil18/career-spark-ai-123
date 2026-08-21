@@ -31,6 +31,11 @@ import { Logo } from "@/components/landing/logo";
 import { ComplianceSections } from "@/components/landing/compliance-sections";
 import { useSession } from "@/hooks/use-session";
 import { cn } from "@/lib/utils";
+import heroBg from "@/assets/hero-bg.mp4.asset.json";
+import showCandidate from "@/assets/show-candidate.jpg";
+import showInterview from "@/assets/show-interview.jpg";
+import showResume from "@/assets/show-resume.jpg";
+
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
@@ -62,6 +67,8 @@ export function LandingPage() {
       <main className="relative">
         <Hero />
         <SourceLogos />
+        <Showcase />
+
         <Results />
         <Testimonials />
         <Features />
@@ -205,12 +212,26 @@ function PrimaryCta({ className }: { className?: string }) {
 function Hero() {
   return (
     <section className="relative overflow-hidden px-5 pb-16 pt-32 md:px-8 md:pt-40">
+      {/* live ambient background video */}
+      <video
+        aria-hidden
+        autoPlay
+        muted
+        loop
+        playsInline
+        preload="auto"
+        poster={showResume}
+        className="pointer-events-none absolute inset-0 -z-30 h-full w-full object-cover opacity-45 motion-reduce:hidden"
+      >
+        <source src={heroBg.url} type="video/mp4" />
+      </video>
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-20"
-        style={{ background: "var(--gradient-hero)" }}
+        style={{ background: "var(--gradient-hero)", opacity: 0.86 }}
       />
       <div aria-hidden className="landing-grid-lines pointer-events-none absolute inset-0 -z-10" />
+
 
       <div className="mx-auto flex w-full max-w-[1160px] flex-col items-center text-center">
         <Reveal>
