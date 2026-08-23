@@ -29,6 +29,8 @@ import {
 import { PillNavbar } from "@/components/landing/pill-navbar";
 import { Logo } from "@/components/landing/logo";
 import { ComplianceSections } from "@/components/landing/compliance-sections";
+import { CinematicVideo } from "@/components/landing/cinematic-video";
+
 import { useSession } from "@/hooks/use-session";
 import { cn } from "@/lib/utils";
 import heroBg from "@/assets/hero-bg.mp4.asset.json";
@@ -66,8 +68,10 @@ export function LandingPage() {
       <PillNavbar />
       <main className="relative">
         <Hero />
+        <CinematicVideo />
         <SourceLogos />
         <Showcase />
+
 
         <Results />
         <Testimonials />
