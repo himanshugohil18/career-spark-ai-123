@@ -1110,10 +1110,18 @@ export const getFeedPulse = createServerFn({ method: "GET" })
     const profile = brain.ready ? buildProfileFromSnapshot(brain) : null;
     const domains = (profile?.families ?? []).map((f: any) => f.label).slice(0, 4);
 
-    const { count: providerCount } = await context.supabase
-      .from("job_sources")
-      .select("id", { count: "exact", head: true })
-      .eq("enabled", true);
+    // job_sources is admin-only, so derive live source coverage from the
+    // catalog itself: distinct providers seen in the last 7 days.
+    const { data: recentProviders } = await context.supabase
+      .from("jobs")
+      .select("provider")
+      .eq("is_active", true)
+      .gte("last_verified_at", weekAgo)
+      .limit(1000);
+    const providerCount = new Set(
+      (recentProviders ?? []).map((r: any) => String(r.provider ?? "")).filter(Boolean),
+    ).size;
+
 
     const strongMatches = (matchAgg.data ?? []).length;
     const insight = !brain.ready
