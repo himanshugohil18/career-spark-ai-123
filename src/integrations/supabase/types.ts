@@ -1862,33 +1862,66 @@ export type Database = {
       }
       job_sources: {
         Row: {
+          avg_response_ms: number | null
           config: Json
+          consecutive_failures: number
           created_at: string
+          disabled_reason: string | null
           display_name: string
           enabled: boolean
+          failure_count: number
+          health_status: string
           id: string
+          last_attempt_at: string | null
           last_error: string | null
+          last_fetched_count: number
           last_run_at: string | null
+          last_success_at: string | null
+          last_verified_count: number
+          source_type: string
+          tier: number
           updated_at: string
         }
         Insert: {
+          avg_response_ms?: number | null
           config?: Json
+          consecutive_failures?: number
           created_at?: string
+          disabled_reason?: string | null
           display_name: string
           enabled?: boolean
+          failure_count?: number
+          health_status?: string
           id: string
+          last_attempt_at?: string | null
           last_error?: string | null
+          last_fetched_count?: number
           last_run_at?: string | null
+          last_success_at?: string | null
+          last_verified_count?: number
+          source_type?: string
+          tier?: number
           updated_at?: string
         }
         Update: {
+          avg_response_ms?: number | null
           config?: Json
+          consecutive_failures?: number
           created_at?: string
+          disabled_reason?: string | null
           display_name?: string
           enabled?: boolean
+          failure_count?: number
+          health_status?: string
           id?: string
+          last_attempt_at?: string | null
           last_error?: string | null
+          last_fetched_count?: number
           last_run_at?: string | null
+          last_success_at?: string | null
+          last_verified_count?: number
+          source_type?: string
+          tier?: number
           updated_at?: string
         }
         Relationships: []
