@@ -15,8 +15,13 @@ function safeEqual(a: string, b: string): boolean {
 }
 
 export function isAuthorizedCronRequest(request: Request): boolean {
-  const secret = process.env.AUTO_APPLY_WORKER_SECRET ?? "";
-  if (!secret) return false;
+  // Either the worker secret (manual/worker calls) or the scheduler secret
+  // (pg_cron jobs) authorizes a cron endpoint.
+  const secrets = [
+    process.env.AUTO_APPLY_WORKER_SECRET ?? "",
+    process.env.CRON_JOBS_SECRET ?? "",
+  ].filter((s) => s.length > 0);
+  if (secrets.length === 0) return false;
 
   const auth = request.headers.get("authorization") ?? "";
   const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : "";
@@ -26,5 +31,5 @@ export function isAuthorizedCronRequest(request: Request): boolean {
     request.headers.get("apikey") ?? "",
   ];
 
-  return candidates.some((c) => c.length > 0 && safeEqual(c, secret));
+  return candidates.some((c) => c.length > 0 && secrets.some((s) => safeEqual(c, s)));
 }

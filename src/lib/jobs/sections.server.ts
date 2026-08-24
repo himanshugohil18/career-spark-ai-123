@@ -12,6 +12,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { jobDedupeKey } from "./relevance";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CareerBrainSnapshot } from "@/lib/career-brain.service";
 import {
@@ -132,7 +133,24 @@ export async function buildJobSections(
     .filter((j) => onTrack(j) && Number(j.match?.overall_score ?? 0) >= HIDE_BELOW);
 
 
-  const byId = new Map(merged.map((j) => [j.id, j]));
+  // Cross-provider duplicate collapse: the same role syndicated to several
+  // boards has different (provider, source_id) rows but one canonical
+  // company+title identity. Keep the most recently verified copy.
+  const canonical = new Map<string, SectionJob>();
+  for (const j of merged) {
+    const key = jobDedupeKey(j.title ?? "", (j as any).company?.name ?? null);
+    const prev = canonical.get(key);
+    if (
+      !prev ||
+      Date.parse((j as any).last_verified_at ?? (j as any).last_seen_at ?? 0) >
+        Date.parse((prev as any).last_verified_at ?? (prev as any).last_seen_at ?? 0)
+    ) {
+      canonical.set(key, j);
+    }
+  }
+  const deduped = [...canonical.values()];
+
+  const byId = new Map(deduped.map((j) => [j.id, j]));
   // Diversity: no job appears in more than one section.
   const used = new Set<string>();
   const take = (candidates: SectionJob[], n: number) => {
@@ -168,7 +186,7 @@ export async function buildJobSections(
   for (const s of (hiddenSaved ?? []) as any[]) used.add(s.job_id);
 
   // 1) Today's Best Matches
-  const best = take(merged, 18);
+  const best = take(deduped, 18);
   if (best.length) {
     sections.push({
       id: "best",
@@ -189,7 +207,7 @@ export async function buildJobSections(
     const text = `${j.location ?? ""} ${(j as any).location_country ?? ""}`.toLowerCase();
     return INDIA_HINTS.some((h) => text.includes(h));
   };
-  const indiaItems = take(merged.filter(isIndia), 16);
+  const indiaItems = take(deduped.filter(isIndia), 16);
   if (indiaItems.length) {
     sections.push({
       id: "india",
@@ -201,7 +219,7 @@ export async function buildJobSections(
   }
 
   // 2) High Confidence (>=85)
-  const high = take(merged.filter((m) => Number(m.match?.overall_score ?? 0) >= 85), 16);
+  const high = take(deduped.filter((m) => Number(m.match?.overall_score ?? 0) >= 85), 16);
   if (high.length >= 2) {
     sections.push({
       id: "high",
@@ -224,7 +242,7 @@ export async function buildJobSections(
   }
   if (dreamCompanyIds.size) {
     const dreamItems = take(
-      merged.filter((j) => j.company?.id && dreamCompanyIds.has(j.company.id)),
+      deduped.filter((j) => j.company?.id && dreamCompanyIds.has(j.company.id)),
       4,
     );
     if (dreamItems.length) {
@@ -240,7 +258,7 @@ export async function buildJobSections(
 
   // 4) Hidden Gem — strong match (>=75) at a small/unknown company
   const gems = take(
-    merged.filter((j) => {
+    deduped.filter((j) => {
       const score = Number(j.match?.overall_score ?? 0);
       const size = (j.company?.size ?? "").toString().toLowerCase();
       const isSmall = /startup|1-10|11-50|51-100|small/.test(size) || !size;
@@ -259,7 +277,7 @@ export async function buildJobSections(
   }
 
   // 5) Highest Salary among on-track matches
-  const bySalary = merged
+  const bySalary = deduped
     .filter((j) => j.salary_max && Number(j.match?.overall_score ?? 0) >= 60)
     .sort((a, b) => Number(b.salary_max ?? 0) - Number(a.salary_max ?? 0));
   const salaryItems = take(bySalary, 8);
@@ -276,7 +294,7 @@ export async function buildJobSections(
 
   // 6) Best Remote Roles
   const remoteItems = take(
-    merged
+    deduped
       .filter((j) => j.remote_status === "remote" && Number(j.match?.overall_score ?? 0) >= 55)
       .sort((a, b) => Number(b.match?.overall_score ?? 0) - Number(a.match?.overall_score ?? 0)),
     10,
@@ -321,7 +339,7 @@ export async function buildJobSections(
   const preferredLoc = brain?.identity?.preferences?.preferredLocation ?? brain?.identity?.location ?? null;
   if (preferredLoc) {
     const nearItems = take(
-      merged
+      deduped
         .filter((j) => locationAffinity({
           jobLocation: j.location,
           jobCountry: (j as any).location_country,
@@ -348,7 +366,7 @@ export async function buildJobSections(
   // 9) Adjacent role families — help discovery outside the tight family.
   if (brainFamilies[0]?.related?.length) {
     const relatedIds = new Set(brainFamilies[0].related);
-    const adjacent = merged.filter((j) => {
+    const adjacent = deduped.filter((j) => {
       const { jobFamily } = jobFamilyFitProfile(jobLikeFromRow(j), profile);
       return jobFamily && relatedIds.has(jobFamily.id);
     });
@@ -366,7 +384,7 @@ export async function buildJobSections(
 
   // Companies you may like — 2+ matched roles from same company
   const bucketMap = new Map<string, CompanyBucket>();
-  for (const m of merged) {
+  for (const m of deduped) {
     const c = m.company;
     if (!c?.id) continue;
     const cur = bucketMap.get(c.id) ?? {

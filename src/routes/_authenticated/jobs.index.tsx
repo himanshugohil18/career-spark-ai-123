@@ -167,9 +167,13 @@ function JobsFeed() {
   });
 
   const refreshMutation = useMutation({
-    mutationFn: () => kickMatchRefresh(),
+    mutationFn: () => kickMatchRefresh({ data: { force: true } }),
     onSuccess: (r) => {
-      toast.success(`AI evaluated ${r.evaluated} jobs · ${r.skipped} skipped.`);
+      toast.success(
+        r.crawled
+          ? `Re-verified ${r.fetched} listings with live sources · ${r.evaluated} scored for you.`
+          : `AI evaluated ${r.evaluated} jobs · ${r.skipped} skipped.`,
+      );
       void queryClient.invalidateQueries({ queryKey: ["jobs-feed-pulse"] });
       void queryClient.invalidateQueries({ queryKey: ["jobs-feed"] });
       void queryClient.invalidateQueries({ queryKey: ["job-sections"] });
