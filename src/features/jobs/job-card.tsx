@@ -8,6 +8,7 @@ import { ApplyWithAiButton } from "@/features/auto-apply/apply-with-ai-button";
 import { cn } from "@/lib/utils";
 import { openExternal, isValidExternalUrl } from "@/lib/open-external";
 import { BurstButton } from "@/components/motion/burst-button";
+import { jobFreshness, FRESHNESS_STYLES } from "@/lib/jobs/freshness";
 
 
 export type JobCardData = {
@@ -40,7 +41,12 @@ export type JobCardData = {
   /** Location proximity, computed server-side against the resume location. */
   locationTier?: "same-city" | "nearby-city" | "same-country" | "remote" | "far" | null;
   locationLabel?: string | null;
-
+  /** Freshness telemetry — see src/lib/jobs/freshness.ts */
+  first_seen_at?: string | null;
+  last_seen_at?: string | null;
+  last_verified_at?: string | null;
+  expires_at?: string | null;
+  stale_reason?: string | null;
 };
 
 function formatSalary(job: JobCardData): string | null {
@@ -65,6 +71,8 @@ export function JobCard({
 }) {
   const navigate = useNavigate();
   const salary = formatSalary(job);
+  const freshness = jobFreshness(job);
+  const freshStyle = FRESHNESS_STYLES[freshness.tier];
   const overall = Number(job.match?.overall_score ?? 0);
   const hasValidId = typeof job.id === "string" && job.id.length > 0;
   const hasApplyUrl = isValidExternalUrl(job.application_url);
@@ -160,6 +168,18 @@ export function JobCard({
                 )}
 
                 {salary && <span className="text-foreground/70">{salary}</span>}
+                <span
+                  className={
+                    "rounded-full border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-widest " +
+                    freshStyle.className
+                  }
+                  title={`${freshness.verifiedLabel} from ${job.provider}`}
+                >
+                  {freshStyle.label}
+                </span>
+                <span className="text-[11px] text-muted-foreground/80">
+                  {freshness.postedLabel ?? freshness.verifiedLabel} · {job.provider}
+                </span>
               </div>
 
               {job.match?.strengths?.length ? (
