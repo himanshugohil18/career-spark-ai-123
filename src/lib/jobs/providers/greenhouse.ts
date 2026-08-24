@@ -37,13 +37,13 @@ export const greenhouseProvider: JobProvider = {
   async fetch(config: ProviderConfig) {
     // Registry defaults + any ops-configured extras (see ats-companies.ts).
     const boards = mergeBoards(config.boards, GREENHOUSE_BOARDS);
-    const out: NormalizedJob[] = [];
-    for (const board of boards) {
+    return inBatches(boards, 8, async (board) => {
+      const out: NormalizedJob[] = [];
       try {
         const res = await fetch(
           `https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(board)}/jobs?content=true`,
         );
-        if (!res.ok) continue;
+        if (!res.ok) return out;
         const data = (await res.json()) as { jobs?: GhJob[] };
         for (const j of data.jobs ?? []) {
           out.push(mapJob(board, j));
