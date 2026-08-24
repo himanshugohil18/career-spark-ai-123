@@ -1137,7 +1137,7 @@ export const getFeedPulse = createServerFn({ method: "GET" })
       newThisWeek: newThisWeek.count ?? 0,
       strongMatches,
       lastVerifiedAt: (latest.data as any)?.last_verified_at ?? null,
-      activeSources: providerCount ?? 0,
+      activeSources: providerCount,
       domains,
       insight,
       displayName:
