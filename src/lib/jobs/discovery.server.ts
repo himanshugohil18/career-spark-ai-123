@@ -75,6 +75,21 @@ export type DiscoveryStats = {
  * New tier-3 (experimental) sources land disabled and must be enabled by an
  * admin; tier 1-2 land enabled.
  */
+/**
+ * A source is auto-disabled when it is experimental (tier 3) and keeps
+ * failing, or when it has NEVER once produced a usable crawl regardless of
+ * tier — a permanently blocked endpoint is dead weight, not "awaiting
+ * maintenance" forever.
+ */
+function shouldAutoDisable(
+  failures: number,
+  tier: number,
+  lastSuccessAt: string | null | undefined,
+): boolean {
+  if (failures < AUTO_DISABLE_AFTER_FAILURES) return false;
+  return tier === 3 || !lastSuccessAt;
+}
+
 export async function syncSourceRegistry(supabase: SupabaseClient): Promise<string[]> {
   const { data: existing, error } = await supabase.from("job_sources").select("id");
   if (error) return [];
@@ -230,11 +245,10 @@ export async function runDiscovery(
           last_verified_count: perProv.kept,
           avg_response_ms: priorAvg > 0 ? Math.round(priorAvg * 0.7 + elapsed * 0.3) : elapsed,
           health_status: healthFromFailures(failures, succeeded || !!(src as any).last_success_at),
-          enabled: failures >= AUTO_DISABLE_AFTER_FAILURES && meta.tier === 3 ? false : src.enabled,
-          disabled_reason:
-            failures >= AUTO_DISABLE_AFTER_FAILURES && meta.tier === 3
-              ? "Auto-disabled after repeated empty or failed crawls"
-              : null,
+          enabled: shouldAutoDisable(failures, meta.tier, (src as any).last_success_at) ? false : src.enabled,
+          disabled_reason: shouldAutoDisable(failures, meta.tier, (src as any).last_success_at)
+            ? "Auto-disabled after repeated empty or failed crawls"
+            : null,
           config: {
             ...config,
             lastDiscovery: {
@@ -267,11 +281,10 @@ export async function runDiscovery(
           failure_count: Number((src as any).failure_count ?? 0) + 1,
           last_fetched_count: 0,
           health_status: healthFromFailures(failures, !!(src as any).last_success_at),
-          enabled: failures >= AUTO_DISABLE_AFTER_FAILURES && meta.tier === 3 ? false : src.enabled,
-          disabled_reason:
-            failures >= AUTO_DISABLE_AFTER_FAILURES && meta.tier === 3
-              ? `Auto-disabled after ${failures} consecutive failures`
-              : null,
+          enabled: shouldAutoDisable(failures, meta.tier, (src as any).last_success_at) ? false : src.enabled,
+          disabled_reason: shouldAutoDisable(failures, meta.tier, (src as any).last_success_at)
+            ? `Auto-disabled after ${failures} consecutive failures`
+            : null,
           config: { ...config, lastDiscovery: { error: message.slice(0, 500), queries: profile?.roleQueries ?? [] } },
         })
         .eq("id", src.id);
