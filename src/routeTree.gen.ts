@@ -29,6 +29,7 @@ import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAgentRouteImport } from './routes/_authenticated/agent'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedResumesIndexRouteImport } from './routes/_authenticated/resumes.index'
 import { Route as AuthenticatedJobsIndexRouteImport } from './routes/_authenticated/jobs.index'
 import { Route as AuthenticatedApplicationsIndexRouteImport } from './routes/_authenticated/applications.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
@@ -156,6 +157,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedResumesIndexRoute =
+  AuthenticatedResumesIndexRouteImport.update({
+    id: '/resumes/',
+    path: '/resumes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedJobsIndexRoute = AuthenticatedJobsIndexRouteImport.update({
   id: '/jobs/',
   path: '/jobs/',
@@ -347,6 +354,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/applications/': typeof AuthenticatedApplicationsIndexRoute
   '/jobs/': typeof AuthenticatedJobsIndexRoute
+  '/resumes/': typeof AuthenticatedResumesIndexRoute
   '/applications/$workspaceId/agent': typeof AuthenticatedApplicationsWorkspaceIdAgentRoute
   '/jobs/collections/$collectionId': typeof AuthenticatedJobsCollectionsCollectionIdRoute
   '/api/public/hooks/auto-apply-events': typeof ApiPublicHooksAutoApplyEventsRoute
@@ -394,6 +402,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/applications': typeof AuthenticatedApplicationsIndexRoute
   '/jobs': typeof AuthenticatedJobsIndexRoute
+  '/resumes': typeof AuthenticatedResumesIndexRoute
   '/applications/$workspaceId/agent': typeof AuthenticatedApplicationsWorkspaceIdAgentRoute
   '/jobs/collections/$collectionId': typeof AuthenticatedJobsCollectionsCollectionIdRoute
   '/api/public/hooks/auto-apply-events': typeof ApiPublicHooksAutoApplyEventsRoute
@@ -444,6 +453,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/applications/': typeof AuthenticatedApplicationsIndexRoute
   '/_authenticated/jobs/': typeof AuthenticatedJobsIndexRoute
+  '/_authenticated/resumes/': typeof AuthenticatedResumesIndexRoute
   '/_authenticated/applications/$workspaceId/agent': typeof AuthenticatedApplicationsWorkspaceIdAgentRoute
   '/_authenticated/jobs/collections/$collectionId': typeof AuthenticatedJobsCollectionsCollectionIdRoute
   '/api/public/hooks/auto-apply-events': typeof ApiPublicHooksAutoApplyEventsRoute
@@ -494,6 +504,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/applications/'
     | '/jobs/'
+    | '/resumes/'
     | '/applications/$workspaceId/agent'
     | '/jobs/collections/$collectionId'
     | '/api/public/hooks/auto-apply-events'
@@ -541,6 +552,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/applications'
     | '/jobs'
+    | '/resumes'
     | '/applications/$workspaceId/agent'
     | '/jobs/collections/$collectionId'
     | '/api/public/hooks/auto-apply-events'
@@ -590,6 +602,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/'
     | '/_authenticated/applications/'
     | '/_authenticated/jobs/'
+    | '/_authenticated/resumes/'
     | '/_authenticated/applications/$workspaceId/agent'
     | '/_authenticated/jobs/collections/$collectionId'
     | '/api/public/hooks/auto-apply-events'
@@ -762,6 +775,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/resumes/': {
+      id: '/_authenticated/resumes/'
+      path: '/resumes'
+      fullPath: '/resumes/'
+      preLoaderRoute: typeof AuthenticatedResumesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/jobs/': {
@@ -1033,6 +1053,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedResumeReviewResumeIdRoute: typeof AuthenticatedResumeReviewResumeIdRoute
   AuthenticatedApplicationsIndexRoute: typeof AuthenticatedApplicationsIndexRoute
   AuthenticatedJobsIndexRoute: typeof AuthenticatedJobsIndexRoute
+  AuthenticatedResumesIndexRoute: typeof AuthenticatedResumesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1058,6 +1079,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedResumeReviewResumeIdRoute,
   AuthenticatedApplicationsIndexRoute: AuthenticatedApplicationsIndexRoute,
   AuthenticatedJobsIndexRoute: AuthenticatedJobsIndexRoute,
+  AuthenticatedResumesIndexRoute: AuthenticatedResumesIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
