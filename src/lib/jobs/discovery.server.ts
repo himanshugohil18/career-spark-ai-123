@@ -67,6 +67,41 @@ export type DiscoveryStats = {
   skipped: { provider: string; reason: string }[];
 };
 
+/**
+ * Source registry sync — a provider added in code is registered in
+ * `job_sources` automatically on the next crawl, so adding a source never
+ * needs a manual database insert. Existing rows keep their ops state
+ * (enabled / config / health); only tier + source_type are refreshed.
+ * New tier-3 (experimental) sources land disabled and must be enabled by an
+ * admin; tier 1-2 land enabled.
+ */
+export async function syncSourceRegistry(supabase: SupabaseClient): Promise<string[]> {
+  const { data: existing, error } = await supabase.from("job_sources").select("id");
+  if (error) return [];
+  const known = new Set((existing ?? []).map((r: any) => String(r.id)));
+  const added: string[] = [];
+  const rows = listProviderIds()
+    .filter((id) => id !== "custom")
+    .map((id) => ({ id, meta: providerMeta(id) }))
+    .filter(({ id }) => !known.has(id))
+    .map(({ id, meta }) => {
+      added.push(id);
+      return {
+        id,
+        display_name: meta.name,
+        enabled: meta.tier <= 2,
+        tier: meta.tier,
+        source_type: meta.sourceType,
+        health_status: "unknown",
+        config: {},
+      };
+    });
+  if (rows.length > 0) {
+    await supabase.from("job_sources").upsert(rows, { onConflict: "id" });
+  }
+  return added;
+}
+
 export async function runDiscovery(
   supabase: SupabaseClient,
   opts: {
