@@ -140,6 +140,9 @@ export async function runDiscovery(
     skipped: [],
   };
 
+  // Register any provider that exists in code but not yet in the table.
+  await syncSourceRegistry(supabase);
+
   // Load enabled providers from job_sources.
   let query = supabase
     .from("job_sources")
