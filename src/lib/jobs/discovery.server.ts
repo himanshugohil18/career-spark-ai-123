@@ -21,7 +21,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { computeFingerprint } from "./fingerprint";
-import { getProvider } from "./providers/registry";
+import { getProvider, listProviderIds } from "./providers/registry";
 import {
   AUTO_DISABLE_AFTER_FAILURES,
   healthFromFailures,
