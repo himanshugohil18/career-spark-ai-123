@@ -18,6 +18,7 @@ import {
   semanticTechOverlap,
 } from "./role-synonyms";
 import { computeRelevance, brainTechVocabulary } from "./relevance";
+import { candidateSeniority, seniorityAlignment } from "@/lib/career-profile";
 import type { NormalizedJob } from "./types";
 
 
