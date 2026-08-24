@@ -264,7 +264,36 @@ export const weworkremotelyProvider = createPortal("weworkremotely", "We Work Re
         remote: true,
       });
     })
-    .filter((j): j is NormalizedJob => !!j);
+    .filter((j): j is NormalizedJob => !!j)
+    .filter((j) => !token || j.title.toLowerCase().includes(token));
+});
+
+/* ------------------------------------------------------------ WorkingNomads */
+
+export const workingnomadsProvider = createPortal("workingnomads", "Working Nomads", async (query) => {
+  const rows = await getJson<Array<Record<string, unknown>>>(
+    "https://www.workingnomads.com/api/exposed_jobs/",
+  );
+  const token = (query.toLowerCase().split(" ")[0] ?? "").trim();
+  return (Array.isArray(rows) ? rows : [])
+    .map((j) =>
+      toNormalized("workingnomads", {
+        title: String(j.title ?? ""),
+        company: String(j.company_name ?? "Working Nomads"),
+        location: (j.location as string) ?? "Remote",
+        url: String(j.url ?? ""),
+        description: (j.description as string) ?? null,
+        postedAt: (j.pub_date as string) ?? null,
+        sourceId: String(j.url ?? ""),
+        remote: true,
+      }),
+    )
+    .filter((j) => j.title && j.applicationUrl)
+    .filter((j) => {
+      if (!token) return true;
+      const hay = `${j.title} ${j.requiredSkills.join(" ")}`.toLowerCase();
+      return hay.includes(token);
+    });
 });
 
 function decode(s: string): string {
