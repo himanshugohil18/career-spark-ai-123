@@ -1186,9 +1186,13 @@ export const getFeedPulse = createServerFn({ method: "GET" })
       .eq("is_active", true)
       .gte("last_verified_at", freshCutoff)
       .limit(2000);
-    const providerCount = new Set(
+    const activeProviderIds = new Set(
       (recentProviders ?? []).map((r: any) => String(r.provider ?? "")).filter(Boolean),
-    ).size;
+    );
+    const providerCount = activeProviderIds.size;
+    // Only Tier 1/2 sources count as "trusted": official company ATS boards and
+    // documented public APIs. Experimental parsers are reported separately.
+    const trustedSourceCount = [...activeProviderIds].filter((id) => providerTier(id) <= 2).length;
 
     const live = liveCount.count ?? 0;
     const stored = storedCount.count ?? 0;
