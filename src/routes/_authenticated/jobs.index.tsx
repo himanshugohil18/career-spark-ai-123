@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Building2, ChevronDown, RefreshCw, Search, Sparkles } from "lucide-react";
+import { Building2, ChevronDown, Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ai/skeleton";
@@ -13,8 +13,10 @@ import { JobSection, type JobSectionData } from "@/features/jobs/job-section";
 import { JobFiltersPanel, type FeedFilters } from "@/features/jobs/job-filters";
 import { NLSearchBar } from "@/features/jobs/nl-search";
 import { EmptyFeed } from "@/features/jobs/empty-feed";
+import { FeedPulse, type FeedPulseData } from "@/features/jobs/feed-pulse";
 import {
   ensureInitialMatches,
+  getFeedPulse,
   getJobSections,
   kickMatchRefresh,
   listJobs,
@@ -56,6 +58,12 @@ function JobsFeed() {
     () => ({ ...filters, sort, page: 1, pageSize: 20 }),
     [filters, sort],
   );
+
+  const pulse = useQuery({
+    queryKey: ["jobs-feed-pulse"],
+    queryFn: () => getFeedPulse(),
+    staleTime: 60_000,
+  });
 
   const sections = useQuery({
     queryKey: ["job-sections"],
@@ -162,6 +170,7 @@ function JobsFeed() {
     mutationFn: () => kickMatchRefresh(),
     onSuccess: (r) => {
       toast.success(`AI evaluated ${r.evaluated} jobs · ${r.skipped} skipped.`);
+      void queryClient.invalidateQueries({ queryKey: ["jobs-feed-pulse"] });
       void queryClient.invalidateQueries({ queryKey: ["jobs-feed"] });
       void queryClient.invalidateQueries({ queryKey: ["job-sections"] });
     },
@@ -184,18 +193,12 @@ function JobsFeed() {
 
   return (
     <div className="mx-auto w-full max-w-7xl space-y-8 p-6 md:p-10">
-      <header>
-        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-          AI Recommendation Center
-        </p>
-        <h1 className="mt-1 font-display text-3xl font-semibold">
-          Opportunities matched to your Career Brain
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Every role is scored across skills, experience, tech, career goal, salary, and location.
-          Ranked live by AI.
-        </p>
-      </header>
+      <FeedPulse
+        data={pulse.data as FeedPulseData | undefined}
+        loading={pulse.isLoading}
+        onRefresh={() => refreshMutation.mutate()}
+        refreshing={refreshMutation.isPending}
+      />
 
       {/* Command bar */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
@@ -209,17 +212,9 @@ function JobsFeed() {
           {showSearchResults ? "Hide search" : "Search & filter jobs"}
           <ChevronDown className={"h-4 w-4 transition-transform " + (searchOpen ? "rotate-180" : "")} />
         </Button>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => refreshMutation.mutate()}
-            disabled={refreshMutation.isPending || !hasBrain}
-          >
-            <RefreshCw className={refreshMutation.isPending ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
-            Refresh matches
-          </Button>
-        </div>
+        <p className="text-xs text-muted-foreground">
+          Freshness-first: every listing shows when we last verified it with the source.
+        </p>
       </div>
 
       {/* Search panel */}
