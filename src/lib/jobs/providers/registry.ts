@@ -41,6 +41,7 @@ import {
   jobicyProvider,
   remotiveProvider,
   weworkremotelyProvider,
+  workingnomadsProvider,
 } from "./portals";
 
 const REGISTRY: Record<string, JobProvider> = {
