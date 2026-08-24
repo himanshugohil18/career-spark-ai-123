@@ -7,6 +7,7 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { STALE_AFTER_DAYS } from "./jobs/freshness";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getCareerBrainSnapshot, type CareerBrainSnapshot } from "./career-brain.service";
 import { parseNaturalLanguage } from "./jobs/nl-search.server";
@@ -14,6 +15,7 @@ import { buildRecommendations } from "./jobs/recommendations.server";
 import { refreshUserMatches } from "./jobs/matching.server";
 import { domainConfidence, expandQueryKeywords, titleRelevanceScore } from "./jobs/role-synonyms";
 import { computeRelevance, brainTechVocabulary, jobDedupeKey } from "./jobs/relevance";
+import { jobFreshness } from "./jobs/freshness";
 import { buildJobSections, buildInsights } from "./jobs/sections.server";
 import {
   preferredLocations,
@@ -227,6 +229,18 @@ export const listJobs = createServerFn({ method: "POST" })
         relevanceReason: relevance.reason,
         domainConfidence: domainConfidence(jobLike, profile),
         interactionBias: bias,
+        freshnessTier: jobFreshness(row as any).tier,
+        // Freshness never outranks relevance, but between two comparable
+        // roles the recently re-verified one wins, and unverified/expired
+        // listings are pushed down.
+        freshnessBoost:
+          jobFreshness(row as any).tier === "fresh"
+            ? 8
+            : jobFreshness(row as any).tier === "recent"
+              ? 4
+              : jobFreshness(row as any).tier === "aging"
+                ? 0
+                : -25,
         locationFit: proximity.score,
         locationTier: proximity.tier,
         locationLabel: proximity.label,
@@ -291,7 +305,8 @@ export const listJobs = createServerFn({ method: "POST" })
         (it.relevance ?? 0) * 30 +
         (it.familyScore ?? 0) * 0.1 +
         (it.interactionBias ?? 0) +
-        (it.locationBoost ?? 0);
+        (it.locationBoost ?? 0) +
+        (it.freshnessBoost ?? 0);
       items.sort((a, b) => {
         if (rawQuery) {
           const t = (b.titleScore ?? 0) - (a.titleScore ?? 0);
@@ -712,41 +727,55 @@ export const getDashboardJobStats = createServerFn({ method: "GET" })
  */
 export const kickMatchRefresh = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((d: unknown) =>
+    z.object({ force: z.boolean().optional() }).optional().parse(d ?? {}),
+  )
+  .handler(async ({ data, context }) => {
     const brain = (await getCareerBrainSnapshot()) as CareerBrainSnapshot;
-    if (!brain.ready) return { discovery: null, evaluated: 0, upserted: 0, skipped: 0, seeded: 0 };
+    if (!brain.ready) {
+      return { discovery: null, evaluated: 0, upserted: 0, skipped: 0, seeded: 0, crawled: false, fetched: 0, verified: 0 };
+    }
 
-    // Fast path: score the existing real catalog first. Discovery can take
-    // many seconds against public providers; users should see matches from
-    // the current catalog immediately instead of waiting on network fetches.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { buildProfileFromSnapshot } = await import("./jobs/role-synonyms");
+    const candidateProfile = buildProfileFromSnapshot(brain);
+
+    // How fresh is the shared catalog right now? A refresh must re-verify
+    // listings with their providers, not just re-score stored rows.
+    const { data: freshest } = await supabaseAdmin
+      .from("jobs")
+      .select("last_verified_at")
+      .eq("is_active", true)
+      .order("last_verified_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    const lastVerifiedMs = freshest?.last_verified_at ? Date.parse(freshest.last_verified_at as string) : 0;
+    const staleCatalog = !lastVerifiedMs || Date.now() - lastVerifiedMs > 6 * 60 * 60 * 1000;
+
+    let discovery: Awaited<ReturnType<typeof import("./jobs/discovery.server").runDiscovery>> | null = null;
+    if (data?.force || staleCatalog) {
+      const { runDiscovery } = await import("./jobs/discovery.server");
+      try {
+        discovery = await runDiscovery(supabaseAdmin, { candidateProfile });
+      } catch (err) {
+        console.error("[jobs] discovery during refresh failed:", err);
+      }
+    }
+
     const match = await refreshUserMatches(context.supabase, brain, { limit: 180 });
     if (match.newMatches.length) {
       const { notifyNewJobMatches } = await import("./email/notify-matches.server");
       await notifyNewJobMatches(context.supabase, context.userId, match.newMatches);
     }
-    if (match.evaluated > 0 || match.skipped > 0 || match.upserted > 0) {
-      return { discovery: null, seeded: 0, ...match };
-    }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { count: jobsCount } = await supabaseAdmin
-      .from("jobs")
-      .select("id", { count: "exact", head: true })
-      .eq("is_active", true);
-    if ((jobsCount ?? 0) > 0) {
-      return { discovery: null, seeded: 0, ...match };
-    }
-
-    const { runDiscovery } = await import("./jobs/discovery.server");
-    const { buildProfileFromSnapshot } = await import("./jobs/role-synonyms");
-    const candidateProfile = buildProfileFromSnapshot(brain);
-    const discovery = await runDiscovery(supabaseAdmin, { candidateProfile });
-    const retry = await refreshUserMatches(context.supabase, brain, { limit: 180 });
-    if (retry.newMatches.length) {
-      const { notifyNewJobMatches } = await import("./email/notify-matches.server");
-      await notifyNewJobMatches(context.supabase, context.userId, retry.newMatches);
-    }
-    return { discovery, seeded: 0, ...retry };
+    return {
+      discovery,
+      seeded: 0,
+      crawled: !!discovery,
+      fetched: discovery?.fetched ?? 0,
+      verified: discovery ? discovery.inserted : 0,
+      ...match,
+    };
   });
 
 /**
@@ -1079,8 +1108,16 @@ export const getFeedPulse = createServerFn({ method: "GET" })
     const nowMs = Date.now();
     const dayAgo = new Date(nowMs - 86_400_000).toISOString();
     const weekAgo = new Date(nowMs - 7 * 86_400_000).toISOString();
+    // A job only counts as "live" when it is active AND was re-confirmed with
+    // its source inside the freshness window (see src/lib/jobs/freshness.ts).
+    const freshCutoff = new Date(nowMs - STALE_AFTER_DAYS * 86_400_000).toISOString();
 
-    const [totalActive, newToday, newThisWeek, latest, brainRaw, matchAgg] = await Promise.all([
+    const [liveCount, storedCount, newToday, newThisWeek, latest, brainRaw, matchAgg] = await Promise.all([
+      context.supabase
+        .from("jobs")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true)
+        .gte("last_verified_at", freshCutoff),
       context.supabase.from("jobs").select("id", { count: "exact", head: true }).eq("is_active", true),
       context.supabase
         .from("jobs")
@@ -1114,28 +1151,33 @@ export const getFeedPulse = createServerFn({ method: "GET" })
     const domains = (profile?.families ?? []).map((f: any) => f.label).slice(0, 4);
 
     // job_sources is admin-only, so derive live source coverage from the
-    // catalog itself: distinct providers seen in the last 7 days.
+    // catalog itself: distinct providers verified inside the fresh window.
     const { data: recentProviders } = await context.supabase
       .from("jobs")
       .select("provider")
       .eq("is_active", true)
-      .gte("last_verified_at", weekAgo)
-      .limit(1000);
+      .gte("last_verified_at", freshCutoff)
+      .limit(2000);
     const providerCount = new Set(
       (recentProviders ?? []).map((r: any) => String(r.provider ?? "")).filter(Boolean),
     ).size;
 
-
+    const live = liveCount.count ?? 0;
+    const stored = storedCount.count ?? 0;
     const strongMatches = (matchAgg.data ?? []).length;
     const insight = !brain.ready
       ? "Upload and approve a resume to activate live matching."
       : strongMatches > 0
         ? `We're tracking ${strongMatches} strong match${strongMatches === 1 ? "" : "es"}${domains.length ? ` across your ${domains.slice(0, 2).join(" and ")} experience` : ""}.`
-        : `Scanning ${totalActive.count ?? 0} live roles${domains.length ? ` for ${domains[0]} opportunities` : ""}.`;
+        : `Scanning ${live} verified live role${live === 1 ? "" : "s"}${domains.length ? ` for ${domains[0]} opportunities` : ""}.`;
 
     return {
       ready: Boolean(brain.ready),
-      totalActive: totalActive.count ?? 0,
+      /** Active AND verified with the source within the freshness window. */
+      totalActive: live,
+      /** Active rows we hold, including ones awaiting re-verification. */
+      storedTotal: stored,
+      unverified: Math.max(0, stored - live),
       newToday: newToday.count ?? 0,
       newThisWeek: newThisWeek.count ?? 0,
       strongMatches,
@@ -1143,7 +1185,6 @@ export const getFeedPulse = createServerFn({ method: "GET" })
       activeSources: providerCount,
       domains,
       insight,
-      displayName:
-        (brain.identity?.fullName ?? "").split(/\s+/)[0] || "there",
+      displayName: (brain.identity?.fullName ?? "").split(/\s+/)[0] || "there",
     };
   });

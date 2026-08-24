@@ -242,9 +242,31 @@ export async function runDiscovery(
   }
 
   // 2) Bulk upsert jobs on (provider, source_id) conflict.
+  //
+  // PostgREST upserts overwrite every supplied column, so read the existing
+  // provenance first: first_seen_at must stay the TRUE first-discovery date
+  // and verification_count must accumulate across crawls.
   const nowIso = new Date().toISOString();
+  const existingProvenance = new Map<string, { first_seen_at: string; verification_count: number }>();
+  {
+    const keys = [...byFingerprint.values()].map((j) => j.sourceId);
+    for (let i = 0; i < keys.length; i += 300) {
+      const chunk = keys.slice(i, i + 300);
+      const { data: prior } = await supabase
+        .from("jobs")
+        .select("provider, source_id, first_seen_at, verification_count")
+        .in("source_id", chunk);
+      for (const row of prior ?? []) {
+        existingProvenance.set(`${row.provider}::${row.source_id}`, {
+          first_seen_at: row.first_seen_at as string,
+          verification_count: Number(row.verification_count ?? 0),
+        });
+      }
+    }
+  }
   const jobRows: Array<Record<string, unknown>> = [];
   for (const [fp, job] of byFingerprint) {
+    const prior = existingProvenance.get(`${job.provider}::${job.sourceId}`);
     jobRows.push({
       title: job.title,
       company_id: slugToId.get(job.company.slug) ?? null,
@@ -269,8 +291,10 @@ export async function runDiscovery(
       expires_at: job.expiresAt,
       fingerprint: fp,
       raw_payload: job.rawPayload ?? null,
-      first_seen_at: nowIso,
+      // Never overwrite the original discovery date on re-crawl.
+      first_seen_at: prior?.first_seen_at ?? nowIso,
       last_seen_at: nowIso,
+      verification_count: (prior?.verification_count ?? 0) + 1,
       // The source returned this listing in the current crawl, so it is
       // verified as of now. Any previous stale flag is cleared.
       last_verified_at: nowIso,
