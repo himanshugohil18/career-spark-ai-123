@@ -18,6 +18,7 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedTrackerRouteImport } from './routes/_authenticated/tracker'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
 import { Route as AuthenticatedOutreachRouteImport } from './routes/_authenticated/outreach'
@@ -104,6 +105,11 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedTrackerRoute = AuthenticatedTrackerRouteImport.update({
+  id: '/tracker',
+  path: '/tracker',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
@@ -358,6 +364,7 @@ export interface FileRoutesByFullPath {
   '/outreach': typeof AuthenticatedOutreachRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/tracker': typeof AuthenticatedTrackerRoute
   '/admin/ai': typeof AuthenticatedAdminAiRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/auto-apply': typeof AuthenticatedAdminAutoApplyRoute
@@ -409,6 +416,7 @@ export interface FileRoutesByTo {
   '/outreach': typeof AuthenticatedOutreachRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/tracker': typeof AuthenticatedTrackerRoute
   '/admin/ai': typeof AuthenticatedAdminAiRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/auto-apply': typeof AuthenticatedAdminAutoApplyRoute
@@ -463,6 +471,7 @@ export interface FileRoutesById {
   '/_authenticated/outreach': typeof AuthenticatedOutreachRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/tracker': typeof AuthenticatedTrackerRoute
   '/_authenticated/admin/ai': typeof AuthenticatedAdminAiRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/_authenticated/admin/auto-apply': typeof AuthenticatedAdminAutoApplyRoute
@@ -517,6 +526,7 @@ export interface FileRouteTypes {
     | '/outreach'
     | '/profile'
     | '/settings'
+    | '/tracker'
     | '/admin/ai'
     | '/admin/analytics'
     | '/admin/auto-apply'
@@ -568,6 +578,7 @@ export interface FileRouteTypes {
     | '/outreach'
     | '/profile'
     | '/settings'
+    | '/tracker'
     | '/admin/ai'
     | '/admin/analytics'
     | '/admin/auto-apply'
@@ -621,6 +632,7 @@ export interface FileRouteTypes {
     | '/_authenticated/outreach'
     | '/_authenticated/profile'
     | '/_authenticated/settings'
+    | '/_authenticated/tracker'
     | '/_authenticated/admin/ai'
     | '/_authenticated/admin/analytics'
     | '/_authenticated/admin/auto-apply'
@@ -736,6 +748,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/tracker': {
+      id: '/_authenticated/tracker'
+      path: '/tracker'
+      fullPath: '/tracker'
+      preLoaderRoute: typeof AuthenticatedTrackerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
@@ -1105,6 +1124,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOutreachRoute: typeof AuthenticatedOutreachRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedTrackerRoute: typeof AuthenticatedTrackerRoute
   AuthenticatedApplicationsWorkspaceIdRoute: typeof AuthenticatedApplicationsWorkspaceIdRouteWithChildren
   AuthenticatedInvoicePaymentIdRoute: typeof AuthenticatedInvoicePaymentIdRoute
   AuthenticatedJobsJobIdRoute: typeof AuthenticatedJobsJobIdRoute
@@ -1131,6 +1151,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOutreachRoute: AuthenticatedOutreachRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedTrackerRoute: AuthenticatedTrackerRoute,
   AuthenticatedApplicationsWorkspaceIdRoute:
     AuthenticatedApplicationsWorkspaceIdRouteWithChildren,
   AuthenticatedInvoicePaymentIdRoute: AuthenticatedInvoicePaymentIdRoute,
