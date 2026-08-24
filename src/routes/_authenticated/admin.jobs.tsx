@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { getJobsOverview } from "@/lib/admin.functions";
 import { Briefcase, CheckCircle2, XCircle, Copy } from "lucide-react";
 import { StatCard, Panel } from "@/features/admin/ui";
+import { TIER_LABELS, providerMeta } from "@/lib/jobs/provider-registry";
 
 export const Route = createFileRoute("/_authenticated/admin/jobs")({
   component: AdminJobs,
@@ -24,15 +25,21 @@ function AdminJobs() {
         <StatCard label="Duplicates (sample)" value={d?.totals.duplicatesInSample ?? "—"} icon={Copy} />
       </section>
 
-      <Panel title="Jobs per provider">
+      <Panel title="Provider health & reliability tiers">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-elevated text-left text-[11px] uppercase tracking-wider text-muted-foreground">
               <tr>
                 <th className="px-3 py-2">Provider</th>
+                <th className="px-3 py-2">Tier / source type</th>
+                <th className="px-3 py-2">Health</th>
                 <th className="px-3 py-2">Enabled</th>
                 <th className="px-3 py-2">Jobs</th>
-                <th className="px-3 py-2">Last sync</th>
+                <th className="px-3 py-2">Fetched / verified</th>
+                <th className="px-3 py-2">Fails</th>
+                <th className="px-3 py-2">Avg ms</th>
+                <th className="px-3 py-2">Last success</th>
+                <th className="px-3 py-2">Last attempt</th>
                 <th className="px-3 py-2">Last error</th>
               </tr>
             </thead>
@@ -40,8 +47,47 @@ function AdminJobs() {
               {(d?.sources ?? []).map((s: any) => (
                 <tr key={s.id} className="border-t border-border">
                   <td className="px-3 py-2">
-                    <p className="font-medium">{s.display_name}</p>
-                    <p className="font-mono text-[10px] text-muted-foreground">{s.id}</p>
+                    <p className="font-medium">{providerMeta(s.id).name}</p>
+                    <p
+                      className="font-mono text-[10px] text-muted-foreground"
+                      title={providerMeta(s.id).integrationNote}
+                    >
+                      {s.id}
+                    </p>
+                  </td>
+                  <td className="px-3 py-2 text-[11px]">
+                    <span
+                      className={
+                        "rounded-full border px-2 py-0.5 font-mono text-[10px] uppercase tracking-wider " +
+                        (providerMeta(s.id).tier === 1
+                          ? "border-emerald-500/35 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                          : providerMeta(s.id).tier === 2
+                            ? "border-primary/30 bg-primary/10 text-primary"
+                            : "border-amber-500/35 bg-amber-500/10 text-amber-600 dark:text-amber-400")
+                      }
+                      title={TIER_LABELS[providerMeta(s.id).tier]}
+                    >
+                      T{providerMeta(s.id).tier}
+                    </span>
+                    <span className="ml-2 text-muted-foreground">{providerMeta(s.id).sourceType}</span>
+                  </td>
+                  <td className="px-3 py-2 text-[11px]">
+                    <span
+                      className={
+                        s.health_status === "healthy"
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : s.health_status === "degraded"
+                            ? "text-amber-600 dark:text-amber-400"
+                            : s.health_status === "unhealthy"
+                              ? "text-destructive"
+                              : "text-muted-foreground"
+                      }
+                    >
+                      {s.health_status ?? "unknown"}
+                    </span>
+                    {s.disabled_reason ? (
+                      <p className="text-[10px] text-muted-foreground">{s.disabled_reason}</p>
+                    ) : null}
                   </td>
                   <td className="px-3 py-2">
                     {s.enabled ? (
@@ -51,14 +97,31 @@ function AdminJobs() {
                     )}
                   </td>
                   <td className="px-3 py-2 font-mono">{d?.perProvider[s.id] ?? 0}</td>
+                  <td className="px-3 py-2 font-mono text-[11px]">
+                    {s.last_fetched_count ?? 0} / {s.last_verified_count ?? 0}
+                  </td>
+                  <td className="px-3 py-2 font-mono text-[11px]">
+                    {s.consecutive_failures ?? 0}
+                    <span className="text-muted-foreground"> / {s.failure_count ?? 0}</span>
+                  </td>
                   <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
-                    {s.last_run_at ? new Date(s.last_run_at).toLocaleString() : "—"}
+                    {s.avg_response_ms ?? "—"}
+                  </td>
+                  <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
+                    {s.last_success_at ? new Date(s.last_success_at).toLocaleString() : "never"}
+                  </td>
+                  <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">
+                    {s.last_attempt_at
+                      ? new Date(s.last_attempt_at).toLocaleString()
+                      : s.last_run_at
+                        ? new Date(s.last_run_at).toLocaleString()
+                        : "—"}
                   </td>
                   <td className="px-3 py-2 text-[11px] text-destructive">{s.last_error ?? "—"}</td>
                 </tr>
               ))}
               {q.isLoading && (
-                <tr><td colSpan={5} className="px-3 py-6 text-center text-muted-foreground">Loading…</td></tr>
+                <tr><td colSpan={11} className="px-3 py-6 text-center text-muted-foreground">Loading…</td></tr>
               )}
             </tbody>
           </table>

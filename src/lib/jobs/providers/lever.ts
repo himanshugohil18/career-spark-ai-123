@@ -17,6 +17,7 @@ import {
 } from "../normalize";
 import type { NormalizedJob } from "../types";
 import type { JobProvider, ProviderConfig } from "./base";
+import { LEVER_COMPANIES, mergeBoards } from "./ats-companies";
 
 type LeverJob = {
   id: string;
@@ -35,21 +36,33 @@ export const leverProvider: JobProvider = {
   id: "lever",
   displayName: "Lever",
   async fetch(config: ProviderConfig) {
-    const companies = config.companies ?? [];
-    const out: NormalizedJob[] = [];
-    for (const company of companies) {
+    const companies = mergeBoards(config.companies, LEVER_COMPANIES);
+    return inBatches(companies, 8, async (company) => {
+      const out: NormalizedJob[] = [];
       try {
         const res = await fetch(`https://api.lever.co/v0/postings/${encodeURIComponent(company)}?mode=json`);
-        if (!res.ok) continue;
+        if (!res.ok) return out;
         const data = (await res.json()) as LeverJob[];
         for (const j of data) out.push(mapJob(company, j));
       } catch {
         // skip
       }
-    }
-    return out;
+      return out;
+    });
   },
 };
+
+/** Fetch board slugs with bounded concurrency so large registries stay inside
+ * the Worker request budget. */
+async function inBatches<T>(items: string[], size: number, fn: (slug: string) => Promise<T[]>): Promise<T[]> {
+  const out: T[] = [];
+  for (let i = 0; i < items.length; i += size) {
+    const results = await Promise.allSettled(items.slice(i, i + size).map(fn));
+    for (const r of results) if (r.status === "fulfilled") out.push(...r.value);
+  }
+  return out;
+}
+
 
 function mapJob(company: string, j: LeverJob): NormalizedJob {
   const html = j.description ?? "";

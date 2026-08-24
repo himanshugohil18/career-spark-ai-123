@@ -17,6 +17,7 @@ import {
 } from "../normalize";
 import type { NormalizedJob } from "../types";
 import type { JobProvider, ProviderConfig } from "./base";
+import { GREENHOUSE_BOARDS, mergeBoards } from "./ats-companies";
 
 type GhJob = {
   id: number;
@@ -34,14 +35,15 @@ export const greenhouseProvider: JobProvider = {
   id: "greenhouse",
   displayName: "Greenhouse",
   async fetch(config: ProviderConfig) {
-    const boards = config.boards ?? [];
-    const out: NormalizedJob[] = [];
-    for (const board of boards) {
+    // Registry defaults + any ops-configured extras (see ats-companies.ts).
+    const boards = mergeBoards(config.boards, GREENHOUSE_BOARDS);
+    return inBatches(boards, 8, async (board) => {
+      const out: NormalizedJob[] = [];
       try {
         const res = await fetch(
           `https://boards-api.greenhouse.io/v1/boards/${encodeURIComponent(board)}/jobs?content=true`,
         );
-        if (!res.ok) continue;
+        if (!res.ok) return out;
         const data = (await res.json()) as { jobs?: GhJob[] };
         for (const j of data.jobs ?? []) {
           out.push(mapJob(board, j));
@@ -49,10 +51,21 @@ export const greenhouseProvider: JobProvider = {
       } catch {
         // continue with next board
       }
-    }
-    return out;
+      return out;
+    });
   },
 };
+
+/** Fetch board slugs with bounded concurrency so large registries stay inside
+ * the Worker request budget. */
+async function inBatches<T>(items: string[], size: number, fn: (slug: string) => Promise<T[]>): Promise<T[]> {
+  const out: T[] = [];
+  for (let i = 0; i < items.length; i += size) {
+    const results = await Promise.allSettled(items.slice(i, i + size).map(fn));
+    for (const r of results) if (r.status === "fulfilled") out.push(...r.value);
+  }
+  return out;
+}
 
 function mapJob(board: string, j: GhJob): NormalizedJob {
   const html = decodeHtml(j.content ?? "");

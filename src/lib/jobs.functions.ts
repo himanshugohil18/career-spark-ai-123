@@ -16,6 +16,12 @@ import { refreshUserMatches } from "./jobs/matching.server";
 import { domainConfidence, expandQueryKeywords, titleRelevanceScore } from "./jobs/role-synonyms";
 import { computeRelevance, brainTechVocabulary, jobDedupeKey } from "./jobs/relevance";
 import { jobFreshness } from "./jobs/freshness";
+import {
+  providerMeta,
+  providerSourceLabel,
+  providerTier,
+  providerTrustBoost,
+} from "./jobs/provider-registry";
 import { buildJobSections, buildInsights } from "./jobs/sections.server";
 import {
   preferredLocations,
@@ -230,6 +236,11 @@ export const listJobs = createServerFn({ method: "POST" })
         domainConfidence: domainConfidence(jobLike, profile),
         interactionBias: bias,
         freshnessTier: jobFreshness(row as any).tier,
+        providerTier: providerTier(row.provider),
+        sourceLabel: providerSourceLabel(row.provider),
+        // Trust weighting: an official company ATS listing outranks a
+        // comparable experimental one, and experimental sources are demoted.
+        trustBoost: providerTrustBoost(row.provider),
         // Freshness never outranks relevance, but between two comparable
         // roles the recently re-verified one wins, and unverified/expired
         // listings are pushed down.
@@ -306,7 +317,8 @@ export const listJobs = createServerFn({ method: "POST" })
         (it.familyScore ?? 0) * 0.1 +
         (it.interactionBias ?? 0) +
         (it.locationBoost ?? 0) +
-        (it.freshnessBoost ?? 0);
+        (it.freshnessBoost ?? 0) +
+        (it.trustBoost ?? 0);
       items.sort((a, b) => {
         if (rawQuery) {
           const t = (b.titleScore ?? 0) - (a.titleScore ?? 0);
@@ -839,7 +851,11 @@ export const getPipelineDebug = createServerFn({ method: "GET" })
       supabaseAdmin.from("jobs").select("id", { count: "exact", head: true }).eq("is_active", true),
       supabaseAdmin.from("companies").select("id", { count: "exact", head: true }),
       context.supabase.from("job_matches").select("id", { count: "exact", head: true }).eq("user_id", context.userId),
-      supabaseAdmin.from("job_sources").select("id, enabled, last_run_at, last_error, config"),
+      supabaseAdmin
+        .from("job_sources")
+        .select(
+          "id, enabled, last_run_at, last_error, config, tier, source_type, health_status, last_attempt_at, last_success_at, consecutive_failures, failure_count, last_fetched_count, last_verified_count, avg_response_ms, disabled_reason",
+        ),
       context.supabase.from("job_matches").select("computed_at").eq("user_id", context.userId).order("computed_at", { ascending: false }).limit(1).maybeSingle(),
       context.supabase.from("career_brain").select("version, ai_model, last_generated_at").eq("user_id", context.userId).maybeSingle(),
       context.supabase.from("resumes").select("id, version, status, is_active, file_name").eq("user_id", context.userId).eq("is_active", true).maybeSingle(),
@@ -903,7 +919,19 @@ export const getPipelineDebug = createServerFn({ method: "GET" })
       discoveryStats: (sources ?? []).map((s: any) => ({
         provider: s.id,
         enabled: s.enabled,
+        tier: providerMeta(s.id).tier,
+        sourceType: providerMeta(s.id).sourceType,
+        integrationNote: providerMeta(s.id).integrationNote,
+        health: s.health_status ?? "unknown",
         lastRunAt: s.last_run_at,
+        lastSuccessAt: s.last_success_at ?? null,
+        lastAttemptAt: s.last_attempt_at ?? null,
+        consecutiveFailures: s.consecutive_failures ?? 0,
+        failureCount: s.failure_count ?? 0,
+        fetched: s.last_fetched_count ?? 0,
+        verified: s.last_verified_count ?? 0,
+        avgResponseMs: s.avg_response_ms ?? null,
+        disabledReason: s.disabled_reason ?? null,
         lastError: s.last_error,
         lastDiscovery: s.config?.lastDiscovery ?? null,
       })),
@@ -1158,9 +1186,13 @@ export const getFeedPulse = createServerFn({ method: "GET" })
       .eq("is_active", true)
       .gte("last_verified_at", freshCutoff)
       .limit(2000);
-    const providerCount = new Set(
+    const activeProviderIds = new Set(
       (recentProviders ?? []).map((r: any) => String(r.provider ?? "")).filter(Boolean),
-    ).size;
+    );
+    const providerCount = activeProviderIds.size;
+    // Only Tier 1/2 sources count as "trusted": official company ATS boards and
+    // documented public APIs. Experimental parsers are reported separately.
+    const trustedSourceCount = [...activeProviderIds].filter((id) => providerTier(id) <= 2).length;
 
     const live = liveCount.count ?? 0;
     const stored = storedCount.count ?? 0;
@@ -1183,6 +1215,7 @@ export const getFeedPulse = createServerFn({ method: "GET" })
       strongMatches,
       lastVerifiedAt: (latest.data as any)?.last_verified_at ?? null,
       activeSources: providerCount,
+      trustedSources: trustedSourceCount,
       domains,
       insight,
       displayName: (brain.identity?.fullName ?? "").split(/\s+/)[0] || "there",

@@ -12,6 +12,7 @@ export type FeedPulseData = {
   strongMatches: number;
   lastVerifiedAt: string | null;
   activeSources: number;
+  trustedSources?: number;
   domains: string[];
   insight: string;
   displayName: string;
@@ -132,6 +133,9 @@ export function FeedPulse({
             {data.activeSources > 0 && (
               <span className="text-muted-foreground">
                 across {data.activeSources} live source{data.activeSources === 1 ? "" : "s"}
+                {typeof data.trustedSources === "number" && data.trustedSources > 0
+                  ? ` · ${data.trustedSources} verified company/API source${data.trustedSources === 1 ? "" : "s"}`
+                  : ""}
               </span>
             )}
           </div>

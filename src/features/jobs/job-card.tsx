@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { openExternal, isValidExternalUrl } from "@/lib/open-external";
 import { BurstButton } from "@/components/motion/burst-button";
 import { jobFreshness, FRESHNESS_STYLES } from "@/lib/jobs/freshness";
+import { providerMeta, providerSourceLabel } from "@/lib/jobs/provider-registry";
 
 
 export type JobCardData = {
@@ -173,12 +174,15 @@ export function JobCard({
                     "rounded-full border px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-widest " +
                     freshStyle.className
                   }
-                  title={`${freshness.verifiedLabel} from ${job.provider}`}
+                  title={`${freshness.verifiedLabel} via ${providerMeta(job.provider).name}`}
                 >
                   {freshStyle.label}
                 </span>
                 <span className="text-[11px] text-muted-foreground/80">
-                  {freshness.postedLabel ?? freshness.verifiedLabel} · {job.provider}
+                  {freshness.postedLabel ?? freshness.verifiedLabel} ·{" "}
+                  <span title={providerMeta(job.provider).integrationNote}>
+                    {providerSourceLabel(job.provider)}
+                  </span>
                 </span>
               </div>
 
