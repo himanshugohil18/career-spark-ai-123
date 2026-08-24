@@ -17,6 +17,7 @@ import {
 } from "../normalize";
 import type { NormalizedJob } from "../types";
 import type { JobProvider, ProviderConfig } from "./base";
+import { ASHBY_COMPANIES, mergeBoards } from "./ats-companies";
 
 type AshbyJob = {
   id: string;
@@ -35,7 +36,7 @@ export const ashbyProvider: JobProvider = {
   id: "ashby",
   displayName: "Ashby",
   async fetch(config: ProviderConfig) {
-    const companies = config.companies ?? [];
+    const companies = mergeBoards(config.companies, ASHBY_COMPANIES);
     const out: NormalizedJob[] = [];
     for (const company of companies) {
       try {

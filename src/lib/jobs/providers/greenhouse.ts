@@ -17,6 +17,7 @@ import {
 } from "../normalize";
 import type { NormalizedJob } from "../types";
 import type { JobProvider, ProviderConfig } from "./base";
+import { GREENHOUSE_BOARDS, mergeBoards } from "./ats-companies";
 
 type GhJob = {
   id: number;
@@ -34,7 +35,8 @@ export const greenhouseProvider: JobProvider = {
   id: "greenhouse",
   displayName: "Greenhouse",
   async fetch(config: ProviderConfig) {
-    const boards = config.boards ?? [];
+    // Registry defaults + any ops-configured extras (see ats-companies.ts).
+    const boards = mergeBoards(config.boards, GREENHOUSE_BOARDS);
     const out: NormalizedJob[] = [];
     for (const board of boards) {
       try {
