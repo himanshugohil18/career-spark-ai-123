@@ -1215,6 +1215,7 @@ export const getFeedPulse = createServerFn({ method: "GET" })
       strongMatches,
       lastVerifiedAt: (latest.data as any)?.last_verified_at ?? null,
       activeSources: providerCount,
+      trustedSources: trustedSourceCount,
       domains,
       insight,
       displayName: (brain.identity?.fullName ?? "").split(/\s+/)[0] || "there",

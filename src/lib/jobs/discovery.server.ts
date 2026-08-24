@@ -26,7 +26,7 @@ import {
   AUTO_DISABLE_AFTER_FAILURES,
   healthFromFailures,
   providerMeta,
-} from "../provider-registry";
+} from "./provider-registry";
 import {
   classifyJob,
   domainConfidence,
