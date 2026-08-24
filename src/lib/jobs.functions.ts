@@ -108,7 +108,10 @@ export const listJobs = createServerFn({ method: "POST" })
           .order("posted_at", { ascending: false, nullsFirst: false });
         break;
       case "updated":
-        jobsQuery = jobsQuery.order("last_seen_at", { ascending: false });
+        jobsQuery = jobsQuery
+          .order("last_verified_at", { ascending: false, nullsFirst: false })
+          .order("last_seen_at", { ascending: false });
+
         break;
       default:
         jobsQuery = jobsQuery.order("posted_at", { ascending: false, nullsFirst: false });
