@@ -230,6 +230,11 @@ export const listJobs = createServerFn({ method: "POST" })
         domainConfidence: domainConfidence(jobLike, profile),
         interactionBias: bias,
         freshnessTier: jobFreshness(row as any).tier,
+        providerTier: providerTier(row.provider),
+        sourceLabel: providerSourceLabel(row.provider),
+        // Trust weighting: an official company ATS listing outranks a
+        // comparable experimental one, and experimental sources are demoted.
+        trustBoost: providerTrustBoost(row.provider),
         // Freshness never outranks relevance, but between two comparable
         // roles the recently re-verified one wins, and unverified/expired
         // listings are pushed down.
@@ -306,7 +311,8 @@ export const listJobs = createServerFn({ method: "POST" })
         (it.familyScore ?? 0) * 0.1 +
         (it.interactionBias ?? 0) +
         (it.locationBoost ?? 0) +
-        (it.freshnessBoost ?? 0);
+        (it.freshnessBoost ?? 0) +
+        (it.trustBoost ?? 0);
       items.sort((a, b) => {
         if (rawQuery) {
           const t = (b.titleScore ?? 0) - (a.titleScore ?? 0);
@@ -903,7 +909,19 @@ export const getPipelineDebug = createServerFn({ method: "GET" })
       discoveryStats: (sources ?? []).map((s: any) => ({
         provider: s.id,
         enabled: s.enabled,
+        tier: providerMeta(s.id).tier,
+        sourceType: providerMeta(s.id).sourceType,
+        integrationNote: providerMeta(s.id).integrationNote,
+        health: s.health_status ?? "unknown",
         lastRunAt: s.last_run_at,
+        lastSuccessAt: s.last_success_at ?? null,
+        lastAttemptAt: s.last_attempt_at ?? null,
+        consecutiveFailures: s.consecutive_failures ?? 0,
+        failureCount: s.failure_count ?? 0,
+        fetched: s.last_fetched_count ?? 0,
+        verified: s.last_verified_count ?? 0,
+        avgResponseMs: s.avg_response_ms ?? null,
+        disabledReason: s.disabled_reason ?? null,
         lastError: s.last_error,
         lastDiscovery: s.config?.lastDiscovery ?? null,
       })),
