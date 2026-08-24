@@ -16,6 +16,12 @@ import { refreshUserMatches } from "./jobs/matching.server";
 import { domainConfidence, expandQueryKeywords, titleRelevanceScore } from "./jobs/role-synonyms";
 import { computeRelevance, brainTechVocabulary, jobDedupeKey } from "./jobs/relevance";
 import { jobFreshness } from "./jobs/freshness";
+import {
+  providerMeta,
+  providerSourceLabel,
+  providerTier,
+  providerTrustBoost,
+} from "./jobs/provider-registry";
 import { buildJobSections, buildInsights } from "./jobs/sections.server";
 import {
   preferredLocations,
@@ -845,7 +851,11 @@ export const getPipelineDebug = createServerFn({ method: "GET" })
       supabaseAdmin.from("jobs").select("id", { count: "exact", head: true }).eq("is_active", true),
       supabaseAdmin.from("companies").select("id", { count: "exact", head: true }),
       context.supabase.from("job_matches").select("id", { count: "exact", head: true }).eq("user_id", context.userId),
-      supabaseAdmin.from("job_sources").select("id, enabled, last_run_at, last_error, config"),
+      supabaseAdmin
+        .from("job_sources")
+        .select(
+          "id, enabled, last_run_at, last_error, config, tier, source_type, health_status, last_attempt_at, last_success_at, consecutive_failures, failure_count, last_fetched_count, last_verified_count, avg_response_ms, disabled_reason",
+        ),
       context.supabase.from("job_matches").select("computed_at").eq("user_id", context.userId).order("computed_at", { ascending: false }).limit(1).maybeSingle(),
       context.supabase.from("career_brain").select("version, ai_model, last_generated_at").eq("user_id", context.userId).maybeSingle(),
       context.supabase.from("resumes").select("id, version, status, is_active, file_name").eq("user_id", context.userId).eq("is_active", true).maybeSingle(),
