@@ -44,11 +44,29 @@ export const getStudioResume = createServerFn({ method: "POST" })
       .maybeSingle();
     if (r.error) throw new Error(`Could not load resume: ${r.error.message}`);
     if (!r.data) throw new Error("Resume not found.");
-    const row = r.data as Record<string, unknown>;
+    const row = r.data as Record<string, any>;
     const doc = normalizeDoc(row.optimized_content);
     const order = defaultOrder(row.section_order);
-    return { row, doc, order, ats: atsReport(doc, order) };
+    return {
+      meta: {
+        id: String(row.id),
+        name: String(row.version_name ?? ""),
+        template: String(row.template ?? "ats_classic"),
+        origin: String(row.origin ?? "scratch"),
+        isDefault: Boolean(row.is_default),
+        targetCompany: (row.target_company as string | null) ?? null,
+        targetJobTitle: (row.target_job_title as string | null) ?? null,
+        atsScore: (row.ats_score as number | null) ?? null,
+        keywordsAdded: (row.keywords_added as string[] | null) ?? [],
+        aiModel: (row.ai_model as string | null) ?? null,
+        updatedAt: String(row.updated_at ?? ""),
+      },
+      doc,
+      order,
+      ats: atsReport(doc, order),
+    };
   });
+
 
 export const createStudioResume = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
