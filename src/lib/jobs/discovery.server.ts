@@ -23,6 +23,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { computeFingerprint } from "./fingerprint";
 import { getProvider } from "./providers/registry";
 import {
+  AUTO_DISABLE_AFTER_FAILURES,
+  healthFromFailures,
+  providerMeta,
+} from "../provider-registry";
+import {
   classifyJob,
   domainConfidence,
   type CandidateProfile,
@@ -59,6 +64,7 @@ export type DiscoveryStats = {
     queries: string[];
   } | null;
   errors: { provider: string; message: string }[];
+  skipped: { provider: string; reason: string }[];
 };
 
 export async function runDiscovery(
@@ -96,10 +102,15 @@ export async function runDiscovery(
         }
       : null,
     errors: [],
+    skipped: [],
   };
 
   // Load enabled providers from job_sources.
-  let query = supabase.from("job_sources").select("id, config, enabled");
+  let query = supabase
+    .from("job_sources")
+    .select(
+      "id, config, enabled, tier, health_status, consecutive_failures, failure_count, last_success_at, avg_response_ms",
+    );
   if (opts.providerIds && opts.providerIds.length > 0) {
     query = query.in("id", opts.providerIds);
   } else {
@@ -111,10 +122,27 @@ export async function runDiscovery(
   const collected: NormalizedJob[] = [];
   const queryStats = new Map(stats.perQuery.map((q) => [q.query.toLowerCase(), q] as const));
 
-  for (const src of sources ?? []) {
+  // Tier 1 (official company ATS / documented company feeds) crawls first so the
+  // production core always lands even if a later experimental provider stalls.
+  const ordered = [...(sources ?? [])].sort(
+    (a: any, b: any) => providerMeta(a.id).tier - providerMeta(b.id).tier,
+  );
+
+  for (const src of ordered) {
     const provider = getProvider(src.id);
     if (!provider) continue;
+    const meta = providerMeta(src.id);
+    const priorFailures = Number((src as any).consecutive_failures ?? 0);
+    const explicitlyRequested = (opts.providerIds?.length ?? 0) > 0;
+    // Back-off: an unhealthy provider is not retried on every scheduled crawl.
+    // It stays in the table with its real health so maintenance can see it, and
+    // crucially its stored jobs are NOT touched, so they age out naturally.
+    if (!explicitlyRequested && priorFailures >= AUTO_DISABLE_AFTER_FAILURES) {
+      stats.skipped.push({ provider: src.id, reason: "unhealthy — awaiting maintenance" });
+      continue;
+    }
     stats.providersRun.push(src.id);
+    const startedAt = Date.now();
     const perProv: PerProviderStat = {
       provider: src.id,
       fetched: 0,
@@ -141,11 +169,34 @@ export async function runDiscovery(
       collected.push(...kept);
 
       const config = typeof src.config === "object" && src.config ? src.config as Record<string, unknown> : {};
+      const elapsed = Date.now() - startedAt;
+      // A crawl that returns zero listings is a SOFT FAILURE, not a success:
+      // it does not refresh last_success_at and it does not reset the failure
+      // streak, so a silently blocked source degrades instead of looking fine.
+      const succeeded = perProv.fetched > 0;
+      const failures = succeeded ? 0 : priorFailures + 1;
+      const priorAvg = Number((src as any).avg_response_ms ?? 0);
+      const nowStamp = new Date().toISOString();
       await supabase
         .from("job_sources")
         .update({
-          last_run_at: new Date().toISOString(),
-          last_error: null,
+          last_run_at: nowStamp,
+          last_attempt_at: nowStamp,
+          last_success_at: succeeded ? nowStamp : ((src as any).last_success_at ?? null),
+          last_error: succeeded ? null : "Crawl returned zero usable listings",
+          tier: meta.tier,
+          source_type: meta.sourceType,
+          consecutive_failures: failures,
+          failure_count: Number((src as any).failure_count ?? 0) + (succeeded ? 0 : 1),
+          last_fetched_count: perProv.fetched,
+          last_verified_count: perProv.kept,
+          avg_response_ms: priorAvg > 0 ? Math.round(priorAvg * 0.7 + elapsed * 0.3) : elapsed,
+          health_status: healthFromFailures(failures, succeeded || !!(src as any).last_success_at),
+          enabled: failures >= AUTO_DISABLE_AFTER_FAILURES && meta.tier === 3 ? false : src.enabled,
+          disabled_reason:
+            failures >= AUTO_DISABLE_AFTER_FAILURES && meta.tier === 3
+              ? "Auto-disabled after repeated empty or failed crawls"
+              : null,
           config: {
             ...config,
             lastDiscovery: {
@@ -163,11 +214,26 @@ export async function runDiscovery(
       const message = err instanceof Error ? err.message : String(err);
       stats.errors.push({ provider: src.id, message });
       const config = typeof src.config === "object" && src.config ? src.config as Record<string, unknown> : {};
+      const failures = priorFailures + 1;
+      const nowStamp = new Date().toISOString();
+      // Hard failure: last_success_at and every stored job are left untouched.
       await supabase
         .from("job_sources")
         .update({
-          last_run_at: new Date().toISOString(),
+          last_run_at: nowStamp,
+          last_attempt_at: nowStamp,
           last_error: message.slice(0, 500),
+          tier: meta.tier,
+          source_type: meta.sourceType,
+          consecutive_failures: failures,
+          failure_count: Number((src as any).failure_count ?? 0) + 1,
+          last_fetched_count: 0,
+          health_status: healthFromFailures(failures, !!(src as any).last_success_at),
+          enabled: failures >= AUTO_DISABLE_AFTER_FAILURES && meta.tier === 3 ? false : src.enabled,
+          disabled_reason:
+            failures >= AUTO_DISABLE_AFTER_FAILURES && meta.tier === 3
+              ? `Auto-disabled after ${failures} consecutive failures`
+              : null,
           config: { ...config, lastDiscovery: { error: message.slice(0, 500), queries: profile?.roleQueries ?? [] } },
         })
         .eq("id", src.id);
