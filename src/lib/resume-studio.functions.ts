@@ -95,7 +95,7 @@ export const createStudioResume = createServerFn({ method: "POST" })
       .insert({
         user_id: userId,
         version_name: data.name,
-        optimized_content: doc as unknown as Record<string, unknown>,
+        optimized_content: doc as unknown as never,
         section_order: order,
         template: isTemplateId(data.template) ? data.template : "ats_classic",
         origin: data.mode === "blank" ? "scratch" : "profile",
@@ -130,7 +130,7 @@ export const saveStudioResume = createServerFn({ method: "POST" })
     if (order) patch.section_order = order;
     if (data.content !== undefined) {
       const doc = normalizeDoc(data.content);
-      patch.optimized_content = doc as unknown as Record<string, unknown>;
+      patch.optimized_content = doc as unknown as never;
       if (!order) {
         const current = await supabase
           .from("resume_versions")
@@ -234,7 +234,7 @@ export const refreshStudioFromBrain = createServerFn({ method: "POST" })
     const up = await supabase
       .from("resume_versions")
       .update({
-        optimized_content: doc as unknown as Record<string, unknown>,
+        optimized_content: doc as unknown as never,
         ats_score: atsReport(doc, order).score,
         updated_at: new Date().toISOString(),
       } as never)
@@ -310,7 +310,7 @@ export const tailorStudioResume = createServerFn({ method: "POST" })
         target_company: job.companyName,
         target_job_title: job.title,
         generation_reason: "job_tailored",
-        optimized_content: tailored.doc as unknown as Record<string, unknown>,
+        optimized_content: tailored.doc as unknown as never,
         section_order: order,
         template,
         origin: "optimized",
