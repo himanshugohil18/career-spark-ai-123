@@ -930,6 +930,47 @@ export type Database = {
           },
         ]
       }
+      career_chat_messages: {
+        Row: {
+          ai_model: string | null
+          content: string
+          created_at: string
+          grounding: Json
+          id: string
+          job_id: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          ai_model?: string | null
+          content: string
+          created_at?: string
+          grounding?: Json
+          id?: string
+          job_id?: string | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          ai_model?: string | null
+          content?: string
+          created_at?: string
+          grounding?: Json
+          id?: string
+          job_id?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "career_chat_messages_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       career_dna: {
         Row: {
           ai: number
@@ -2126,6 +2167,59 @@ export type Database = {
         }
         Relationships: []
       }
+      outreach_messages: {
+        Row: {
+          ai_model: string | null
+          body: string
+          created_at: string
+          id: string
+          job_id: string | null
+          kind: string
+          recipient: string | null
+          sent_at: string | null
+          subject: string | null
+          tone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_model?: string | null
+          body: string
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          kind: string
+          recipient?: string | null
+          sent_at?: string | null
+          subject?: string | null
+          tone?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_model?: string | null
+          body?: string
+          created_at?: string
+          id?: string
+          job_id?: string | null
+          kind?: string
+          recipient?: string | null
+          sent_at?: string | null
+          subject?: string | null
+          tone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "outreach_messages_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       payments: {
         Row: {
           amount: number
@@ -2383,12 +2477,16 @@ export type Database = {
           id: string
           input_hash: string | null
           is_active: boolean
+          is_default: boolean
           job_id: string | null
           keywords_added: string[]
           optimized_content: Json
+          origin: string
           readiness_score: number | null
+          section_order: string[]
           target_company: string | null
           target_job_title: string | null
+          template: string
           updated_at: string
           user_id: string
           version_name: string
@@ -2406,12 +2504,16 @@ export type Database = {
           id?: string
           input_hash?: string | null
           is_active?: boolean
+          is_default?: boolean
           job_id?: string | null
           keywords_added?: string[]
           optimized_content?: Json
+          origin?: string
           readiness_score?: number | null
+          section_order?: string[]
           target_company?: string | null
           target_job_title?: string | null
+          template?: string
           updated_at?: string
           user_id: string
           version_name: string
@@ -2429,12 +2531,16 @@ export type Database = {
           id?: string
           input_hash?: string | null
           is_active?: boolean
+          is_default?: boolean
           job_id?: string | null
           keywords_added?: string[]
           optimized_content?: Json
+          origin?: string
           readiness_score?: number | null
+          section_order?: string[]
           target_company?: string | null
           target_job_title?: string | null
+          template?: string
           updated_at?: string
           user_id?: string
           version_name?: string
@@ -2536,41 +2642,70 @@ export type Database = {
       }
       saved_jobs: {
         Row: {
+          applied_at: string | null
+          cover_letter_id: string | null
           created_at: string
+          follow_up_at: string | null
           id: string
           job_id: string
           notes: string | null
+          resume_version_id: string | null
           status: Database["public"]["Enums"]["saved_job_status"]
+          status_changed_at: string
           tags: string[]
           updated_at: string
           user_id: string
         }
         Insert: {
+          applied_at?: string | null
+          cover_letter_id?: string | null
           created_at?: string
+          follow_up_at?: string | null
           id?: string
           job_id: string
           notes?: string | null
+          resume_version_id?: string | null
           status?: Database["public"]["Enums"]["saved_job_status"]
+          status_changed_at?: string
           tags?: string[]
           updated_at?: string
           user_id: string
         }
         Update: {
+          applied_at?: string | null
+          cover_letter_id?: string | null
           created_at?: string
+          follow_up_at?: string | null
           id?: string
           job_id?: string
           notes?: string | null
+          resume_version_id?: string | null
           status?: Database["public"]["Enums"]["saved_job_status"]
+          status_changed_at?: string
           tags?: string[]
           updated_at?: string
           user_id?: string
         }
         Relationships: [
           {
+            foreignKeyName: "saved_jobs_cover_letter_id_fkey"
+            columns: ["cover_letter_id"]
+            isOneToOne: false
+            referencedRelation: "cover_letters"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "saved_jobs_job_id_fkey"
             columns: ["job_id"]
             isOneToOne: false
             referencedRelation: "jobs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_jobs_resume_version_id_fkey"
+            columns: ["resume_version_id"]
+            isOneToOne: false
+            referencedRelation: "resume_versions"
             referencedColumns: ["id"]
           },
         ]
@@ -2987,6 +3122,13 @@ export type Database = {
         | "archived"
         | "ignored"
         | "applied_later"
+        | "preparing"
+        | "applied"
+        | "assessment"
+        | "interview"
+        | "rejected"
+        | "offer"
+        | "closed"
       screening_question_kind:
         | "about_you"
         | "why_company"
@@ -3204,6 +3346,13 @@ export const Constants = {
         "archived",
         "ignored",
         "applied_later",
+        "preparing",
+        "applied",
+        "assessment",
+        "interview",
+        "rejected",
+        "offer",
+        "closed",
       ],
       screening_question_kind: [
         "about_you",
