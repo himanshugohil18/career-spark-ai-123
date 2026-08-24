@@ -78,6 +78,7 @@ const REGISTRY: Record<string, JobProvider> = {
   [jobicyProvider.id]: jobicyProvider,
   [himalayasProvider.id]: himalayasProvider,
   [weworkremotelyProvider.id]: weworkremotelyProvider,
+  [workingnomadsProvider.id]: workingnomadsProvider,
   [customProvider.id]: customProvider,
 };
 
