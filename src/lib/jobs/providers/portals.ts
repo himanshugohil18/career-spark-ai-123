@@ -239,10 +239,11 @@ export const himalayasProvider = createPortal("himalayas", "Himalayas", async (q
 /* -------------------------------------------------------- We Work Remotely */
 
 export const weworkremotelyProvider = createPortal("weworkremotely", "We Work Remotely", async (query) => {
-  const xml = await getText(
-    `https://weworkremotely.com/remote-jobs/search.rss?term=${encodeURIComponent(query)}`,
-  );
+  // WWR blocks its search RSS endpoint (HTTP 406) for non-browser clients, so
+  // read the documented full feed once and filter locally by the query token.
+  const xml = await getText("https://weworkremotely.com/remote-jobs.rss");
   if (!xml) return [];
+  const token = (query.toLowerCase().split(" ")[0] ?? "").trim();
   const items = xml.match(/<item>[\s\S]*?<\/item>/gi) ?? [];
   return items
     .map((item) => {
