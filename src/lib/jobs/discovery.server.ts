@@ -21,7 +21,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { computeFingerprint } from "./fingerprint";
-import { getProvider } from "./providers/registry";
+import { getProvider, listProviderIds } from "./providers/registry";
 import {
   AUTO_DISABLE_AFTER_FAILURES,
   healthFromFailures,
@@ -67,6 +67,56 @@ export type DiscoveryStats = {
   skipped: { provider: string; reason: string }[];
 };
 
+/**
+ * Source registry sync — a provider added in code is registered in
+ * `job_sources` automatically on the next crawl, so adding a source never
+ * needs a manual database insert. Existing rows keep their ops state
+ * (enabled / config / health); only tier + source_type are refreshed.
+ * New tier-3 (experimental) sources land disabled and must be enabled by an
+ * admin; tier 1-2 land enabled.
+ */
+/**
+ * A source is auto-disabled when it is experimental (tier 3) and keeps
+ * failing, or when it has NEVER once produced a usable crawl regardless of
+ * tier — a permanently blocked endpoint is dead weight, not "awaiting
+ * maintenance" forever.
+ */
+function shouldAutoDisable(
+  failures: number,
+  tier: number,
+  lastSuccessAt: string | null | undefined,
+): boolean {
+  if (failures < AUTO_DISABLE_AFTER_FAILURES) return false;
+  return tier === 3 || !lastSuccessAt;
+}
+
+export async function syncSourceRegistry(supabase: SupabaseClient): Promise<string[]> {
+  const { data: existing, error } = await supabase.from("job_sources").select("id");
+  if (error) return [];
+  const known = new Set((existing ?? []).map((r: any) => String(r.id)));
+  const added: string[] = [];
+  const rows = listProviderIds()
+    .filter((id) => id !== "custom")
+    .map((id) => ({ id, meta: providerMeta(id) }))
+    .filter(({ id }) => !known.has(id))
+    .map(({ id, meta }) => {
+      added.push(id);
+      return {
+        id,
+        display_name: meta.name,
+        enabled: meta.tier <= 2,
+        tier: meta.tier,
+        source_type: meta.sourceType,
+        health_status: "unknown",
+        config: {},
+      };
+    });
+  if (rows.length > 0) {
+    await supabase.from("job_sources").upsert(rows, { onConflict: "id" });
+  }
+  return added;
+}
+
 export async function runDiscovery(
   supabase: SupabaseClient,
   opts: {
@@ -104,6 +154,9 @@ export async function runDiscovery(
     errors: [],
     skipped: [],
   };
+
+  // Register any provider that exists in code but not yet in the table.
+  await syncSourceRegistry(supabase);
 
   // Load enabled providers from job_sources.
   let query = supabase
@@ -192,11 +245,10 @@ export async function runDiscovery(
           last_verified_count: perProv.kept,
           avg_response_ms: priorAvg > 0 ? Math.round(priorAvg * 0.7 + elapsed * 0.3) : elapsed,
           health_status: healthFromFailures(failures, succeeded || !!(src as any).last_success_at),
-          enabled: failures >= AUTO_DISABLE_AFTER_FAILURES && meta.tier === 3 ? false : src.enabled,
-          disabled_reason:
-            failures >= AUTO_DISABLE_AFTER_FAILURES && meta.tier === 3
-              ? "Auto-disabled after repeated empty or failed crawls"
-              : null,
+          enabled: shouldAutoDisable(failures, meta.tier, (src as any).last_success_at) ? false : src.enabled,
+          disabled_reason: shouldAutoDisable(failures, meta.tier, (src as any).last_success_at)
+            ? "Auto-disabled after repeated empty or failed crawls"
+            : null,
           config: {
             ...config,
             lastDiscovery: {
@@ -229,11 +281,10 @@ export async function runDiscovery(
           failure_count: Number((src as any).failure_count ?? 0) + 1,
           last_fetched_count: 0,
           health_status: healthFromFailures(failures, !!(src as any).last_success_at),
-          enabled: failures >= AUTO_DISABLE_AFTER_FAILURES && meta.tier === 3 ? false : src.enabled,
-          disabled_reason:
-            failures >= AUTO_DISABLE_AFTER_FAILURES && meta.tier === 3
-              ? `Auto-disabled after ${failures} consecutive failures`
-              : null,
+          enabled: shouldAutoDisable(failures, meta.tier, (src as any).last_success_at) ? false : src.enabled,
+          disabled_reason: shouldAutoDisable(failures, meta.tier, (src as any).last_success_at)
+            ? `Auto-disabled after ${failures} consecutive failures`
+            : null,
           config: { ...config, lastDiscovery: { error: message.slice(0, 500), queries: profile?.roleQueries ?? [] } },
         })
         .eq("id", src.id);

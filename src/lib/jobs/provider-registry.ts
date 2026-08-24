@@ -134,7 +134,16 @@ const META: ProviderMeta[] = [
     tier: 2,
     sourceType: "public_feed",
     uiLabel: "Job Feed · We Work Remotely",
-    integrationNote: "Public WWR search RSS feed.",
+    integrationNote:
+      "Public WWR full-catalog RSS feed (remote-jobs.rss), filtered locally. The search RSS endpoint rejects non-browser clients.",
+  },
+  {
+    id: "workingnomads",
+    name: "Working Nomads",
+    tier: 2,
+    sourceType: "official_api",
+    uiLabel: "Job API · Working Nomads",
+    integrationNote: "Documented Working Nomads public jobs API (/api/exposed_jobs/).",
   },
   {
     id: "indeed",

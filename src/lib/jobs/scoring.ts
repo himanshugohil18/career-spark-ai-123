@@ -18,6 +18,7 @@ import {
   semanticTechOverlap,
 } from "./role-synonyms";
 import { computeRelevance, brainTechVocabulary } from "./relevance";
+import { candidateSeniority, seniorityAlignment } from "@/lib/career-profile";
 import type { NormalizedJob } from "./types";
 
 
@@ -119,13 +120,21 @@ export function experienceScore(brain: CareerBrainSnapshot, job: NormalizedJob):
   };
   const [min, max] = map[job.experienceLevel] ?? map.unknown;
   const effectiveYears = years + practicalBonus;
-  if (effectiveYears >= min && effectiveYears <= max) return 100;
-  if (effectiveYears < min) {
+
+  let band: number;
+  if (effectiveYears >= min && effectiveYears <= max) band = 100;
+  else if (effectiveYears < min) {
     // Semantic tech overlap between projects and job req softens the gap.
     const techBridge = semanticTechOverlap(projectTechs, [...jobReq, ...job.preferredSkills.map(norm)]);
-    return clamp(100 - (min - effectiveYears) * 12 + techBridge * 25);
+    band = clamp(100 - (min - effectiveYears) * 12 + techBridge * 25);
+  } else {
+    band = clamp(100 - (effectiveYears - max) * 6);
   }
-  return clamp(100 - (effectiveYears - max) * 6);
+
+  // Ladder alignment: an intern-level brain must not score high on a
+  // Principal posting even when the years band happens to overlap.
+  const ladder = seniorityAlignment(candidateSeniority(brain), job.experienceLevel);
+  return clamp(band * 0.7 + ladder * 100 * 0.3);
 }
 
 export function educationScore(brain: CareerBrainSnapshot, job: NormalizedJob): number {
