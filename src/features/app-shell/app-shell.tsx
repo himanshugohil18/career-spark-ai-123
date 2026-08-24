@@ -82,6 +82,10 @@ const NAV_PRIMARY = [
   { label: "Career Brain", to: "/profile", icon: Brain },
   { label: "Jobs", to: "/jobs", icon: Briefcase },
   { label: "Saved", to: "/jobs/saved", icon: FileText },
+  { label: "Resume Studio", to: "/resumes", icon: Wand2 },
+  { label: "Tracker", to: "/tracker", icon: Radar },
+  { label: "Outreach", to: "/outreach", icon: Mail },
+  { label: "Assistant", to: "/chat", icon: Sparkles },
   { label: "Applications", to: "/applications", icon: CommandIcon },
   { label: "AI Agent", to: "/agent", icon: Bot },
   { label: "Interview", to: "/interview", icon: MessagesSquare },
@@ -89,6 +93,7 @@ const NAV_PRIMARY = [
   { label: "Learning", to: "/learning", icon: GraduationCap },
   { label: "Analytics", to: "/analytics", icon: BarChart3 },
 ] as const;
+
 
 
 const NAV_SECONDARY = [

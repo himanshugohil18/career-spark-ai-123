@@ -18,20 +18,25 @@ import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedTrackerRouteImport } from './routes/_authenticated/tracker'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedOutreachRouteImport } from './routes/_authenticated/outreach'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
 import { Route as AuthenticatedLearningRouteImport } from './routes/_authenticated/learning'
 import { Route as AuthenticatedInterviewRouteImport } from './routes/_authenticated/interview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
+import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
 import { Route as AuthenticatedBillingRouteImport } from './routes/_authenticated/billing'
 import { Route as AuthenticatedAnalyticsRouteImport } from './routes/_authenticated/analytics'
 import { Route as AuthenticatedAgentRouteImport } from './routes/_authenticated/agent'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedResumesIndexRouteImport } from './routes/_authenticated/resumes.index'
 import { Route as AuthenticatedJobsIndexRouteImport } from './routes/_authenticated/jobs.index'
 import { Route as AuthenticatedApplicationsIndexRouteImport } from './routes/_authenticated/applications.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
+import { Route as AuthenticatedResumesResumeIdRouteImport } from './routes/_authenticated/resumes.$resumeId'
 import { Route as AuthenticatedResumeReviewResumeIdRouteImport } from './routes/_authenticated/resume-review.$resumeId'
 import { Route as AuthenticatedJobsSavedRouteImport } from './routes/_authenticated/jobs.saved'
 import { Route as AuthenticatedJobsCollectionsRouteImport } from './routes/_authenticated/jobs.collections'
@@ -101,6 +106,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedTrackerRoute = AuthenticatedTrackerRouteImport.update({
+  id: '/tracker',
+  path: '/tracker',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
@@ -109,6 +119,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOutreachRoute = AuthenticatedOutreachRouteImport.update({
+  id: '/outreach',
+  path: '/outreach',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMeRoute = AuthenticatedMeRouteImport.update({
@@ -136,6 +151,11 @@ const AuthenticatedCoachRoute = AuthenticatedCoachRouteImport.update({
   path: '/coach',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedBillingRoute = AuthenticatedBillingRouteImport.update({
   id: '/billing',
   path: '/billing',
@@ -156,6 +176,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedResumesIndexRoute =
+  AuthenticatedResumesIndexRouteImport.update({
+    id: '/resumes/',
+    path: '/resumes/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedJobsIndexRoute = AuthenticatedJobsIndexRouteImport.update({
   id: '/jobs/',
   path: '/jobs/',
@@ -172,6 +198,12 @@ const AuthenticatedAdminIndexRoute = AuthenticatedAdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedResumesResumeIdRoute =
+  AuthenticatedResumesResumeIdRouteImport.update({
+    id: '/resumes/$resumeId',
+    path: '/resumes/$resumeId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedResumeReviewResumeIdRoute =
   AuthenticatedResumeReviewResumeIdRouteImport.update({
     id: '/resume-review/$resumeId',
@@ -323,13 +355,16 @@ export interface FileRoutesByFullPath {
   '/agent': typeof AuthenticatedAgentRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/billing': typeof AuthenticatedBillingRoute
+  '/chat': typeof AuthenticatedChatRoute
   '/coach': typeof AuthenticatedCoachRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/interview': typeof AuthenticatedInterviewRoute
   '/learning': typeof AuthenticatedLearningRoute
   '/me': typeof AuthenticatedMeRoute
+  '/outreach': typeof AuthenticatedOutreachRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/tracker': typeof AuthenticatedTrackerRoute
   '/admin/ai': typeof AuthenticatedAdminAiRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/auto-apply': typeof AuthenticatedAdminAutoApplyRoute
@@ -344,9 +379,11 @@ export interface FileRoutesByFullPath {
   '/jobs/collections': typeof AuthenticatedJobsCollectionsRouteWithChildren
   '/jobs/saved': typeof AuthenticatedJobsSavedRoute
   '/resume-review/$resumeId': typeof AuthenticatedResumeReviewResumeIdRoute
+  '/resumes/$resumeId': typeof AuthenticatedResumesResumeIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/applications/': typeof AuthenticatedApplicationsIndexRoute
   '/jobs/': typeof AuthenticatedJobsIndexRoute
+  '/resumes/': typeof AuthenticatedResumesIndexRoute
   '/applications/$workspaceId/agent': typeof AuthenticatedApplicationsWorkspaceIdAgentRoute
   '/jobs/collections/$collectionId': typeof AuthenticatedJobsCollectionsCollectionIdRoute
   '/api/public/hooks/auto-apply-events': typeof ApiPublicHooksAutoApplyEventsRoute
@@ -370,13 +407,16 @@ export interface FileRoutesByTo {
   '/agent': typeof AuthenticatedAgentRoute
   '/analytics': typeof AuthenticatedAnalyticsRoute
   '/billing': typeof AuthenticatedBillingRoute
+  '/chat': typeof AuthenticatedChatRoute
   '/coach': typeof AuthenticatedCoachRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/interview': typeof AuthenticatedInterviewRoute
   '/learning': typeof AuthenticatedLearningRoute
   '/me': typeof AuthenticatedMeRoute
+  '/outreach': typeof AuthenticatedOutreachRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
+  '/tracker': typeof AuthenticatedTrackerRoute
   '/admin/ai': typeof AuthenticatedAdminAiRoute
   '/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/admin/auto-apply': typeof AuthenticatedAdminAutoApplyRoute
@@ -391,9 +431,11 @@ export interface FileRoutesByTo {
   '/jobs/collections': typeof AuthenticatedJobsCollectionsRouteWithChildren
   '/jobs/saved': typeof AuthenticatedJobsSavedRoute
   '/resume-review/$resumeId': typeof AuthenticatedResumeReviewResumeIdRoute
+  '/resumes/$resumeId': typeof AuthenticatedResumesResumeIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/applications': typeof AuthenticatedApplicationsIndexRoute
   '/jobs': typeof AuthenticatedJobsIndexRoute
+  '/resumes': typeof AuthenticatedResumesIndexRoute
   '/applications/$workspaceId/agent': typeof AuthenticatedApplicationsWorkspaceIdAgentRoute
   '/jobs/collections/$collectionId': typeof AuthenticatedJobsCollectionsCollectionIdRoute
   '/api/public/hooks/auto-apply-events': typeof ApiPublicHooksAutoApplyEventsRoute
@@ -420,13 +462,16 @@ export interface FileRoutesById {
   '/_authenticated/agent': typeof AuthenticatedAgentRoute
   '/_authenticated/analytics': typeof AuthenticatedAnalyticsRoute
   '/_authenticated/billing': typeof AuthenticatedBillingRoute
+  '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/coach': typeof AuthenticatedCoachRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/interview': typeof AuthenticatedInterviewRoute
   '/_authenticated/learning': typeof AuthenticatedLearningRoute
   '/_authenticated/me': typeof AuthenticatedMeRoute
+  '/_authenticated/outreach': typeof AuthenticatedOutreachRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
+  '/_authenticated/tracker': typeof AuthenticatedTrackerRoute
   '/_authenticated/admin/ai': typeof AuthenticatedAdminAiRoute
   '/_authenticated/admin/analytics': typeof AuthenticatedAdminAnalyticsRoute
   '/_authenticated/admin/auto-apply': typeof AuthenticatedAdminAutoApplyRoute
@@ -441,9 +486,11 @@ export interface FileRoutesById {
   '/_authenticated/jobs/collections': typeof AuthenticatedJobsCollectionsRouteWithChildren
   '/_authenticated/jobs/saved': typeof AuthenticatedJobsSavedRoute
   '/_authenticated/resume-review/$resumeId': typeof AuthenticatedResumeReviewResumeIdRoute
+  '/_authenticated/resumes/$resumeId': typeof AuthenticatedResumesResumeIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/applications/': typeof AuthenticatedApplicationsIndexRoute
   '/_authenticated/jobs/': typeof AuthenticatedJobsIndexRoute
+  '/_authenticated/resumes/': typeof AuthenticatedResumesIndexRoute
   '/_authenticated/applications/$workspaceId/agent': typeof AuthenticatedApplicationsWorkspaceIdAgentRoute
   '/_authenticated/jobs/collections/$collectionId': typeof AuthenticatedJobsCollectionsCollectionIdRoute
   '/api/public/hooks/auto-apply-events': typeof ApiPublicHooksAutoApplyEventsRoute
@@ -470,13 +517,16 @@ export interface FileRouteTypes {
     | '/agent'
     | '/analytics'
     | '/billing'
+    | '/chat'
     | '/coach'
     | '/dashboard'
     | '/interview'
     | '/learning'
     | '/me'
+    | '/outreach'
     | '/profile'
     | '/settings'
+    | '/tracker'
     | '/admin/ai'
     | '/admin/analytics'
     | '/admin/auto-apply'
@@ -491,9 +541,11 @@ export interface FileRouteTypes {
     | '/jobs/collections'
     | '/jobs/saved'
     | '/resume-review/$resumeId'
+    | '/resumes/$resumeId'
     | '/admin/'
     | '/applications/'
     | '/jobs/'
+    | '/resumes/'
     | '/applications/$workspaceId/agent'
     | '/jobs/collections/$collectionId'
     | '/api/public/hooks/auto-apply-events'
@@ -517,13 +569,16 @@ export interface FileRouteTypes {
     | '/agent'
     | '/analytics'
     | '/billing'
+    | '/chat'
     | '/coach'
     | '/dashboard'
     | '/interview'
     | '/learning'
     | '/me'
+    | '/outreach'
     | '/profile'
     | '/settings'
+    | '/tracker'
     | '/admin/ai'
     | '/admin/analytics'
     | '/admin/auto-apply'
@@ -538,9 +593,11 @@ export interface FileRouteTypes {
     | '/jobs/collections'
     | '/jobs/saved'
     | '/resume-review/$resumeId'
+    | '/resumes/$resumeId'
     | '/admin'
     | '/applications'
     | '/jobs'
+    | '/resumes'
     | '/applications/$workspaceId/agent'
     | '/jobs/collections/$collectionId'
     | '/api/public/hooks/auto-apply-events'
@@ -566,13 +623,16 @@ export interface FileRouteTypes {
     | '/_authenticated/agent'
     | '/_authenticated/analytics'
     | '/_authenticated/billing'
+    | '/_authenticated/chat'
     | '/_authenticated/coach'
     | '/_authenticated/dashboard'
     | '/_authenticated/interview'
     | '/_authenticated/learning'
     | '/_authenticated/me'
+    | '/_authenticated/outreach'
     | '/_authenticated/profile'
     | '/_authenticated/settings'
+    | '/_authenticated/tracker'
     | '/_authenticated/admin/ai'
     | '/_authenticated/admin/analytics'
     | '/_authenticated/admin/auto-apply'
@@ -587,9 +647,11 @@ export interface FileRouteTypes {
     | '/_authenticated/jobs/collections'
     | '/_authenticated/jobs/saved'
     | '/_authenticated/resume-review/$resumeId'
+    | '/_authenticated/resumes/$resumeId'
     | '/_authenticated/admin/'
     | '/_authenticated/applications/'
     | '/_authenticated/jobs/'
+    | '/_authenticated/resumes/'
     | '/_authenticated/applications/$workspaceId/agent'
     | '/_authenticated/jobs/collections/$collectionId'
     | '/api/public/hooks/auto-apply-events'
@@ -687,6 +749,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/tracker': {
+      id: '/_authenticated/tracker'
+      path: '/tracker'
+      fullPath: '/tracker'
+      preLoaderRoute: typeof AuthenticatedTrackerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/settings': {
       id: '/_authenticated/settings'
       path: '/settings'
@@ -699,6 +768,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/outreach': {
+      id: '/_authenticated/outreach'
+      path: '/outreach'
+      fullPath: '/outreach'
+      preLoaderRoute: typeof AuthenticatedOutreachRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/me': {
@@ -736,6 +812,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCoachRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/chat': {
+      id: '/_authenticated/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof AuthenticatedChatRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/billing': {
       id: '/_authenticated/billing'
       path: '/billing'
@@ -764,6 +847,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/resumes/': {
+      id: '/_authenticated/resumes/'
+      path: '/resumes'
+      fullPath: '/resumes/'
+      preLoaderRoute: typeof AuthenticatedResumesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/jobs/': {
       id: '/_authenticated/jobs/'
       path: '/jobs'
@@ -784,6 +874,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/'
       preLoaderRoute: typeof AuthenticatedAdminIndexRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
+    }
+    '/_authenticated/resumes/$resumeId': {
+      id: '/_authenticated/resumes/$resumeId'
+      path: '/resumes/$resumeId'
+      fullPath: '/resumes/$resumeId'
+      preLoaderRoute: typeof AuthenticatedResumesResumeIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/resume-review/$resumeId': {
       id: '/_authenticated/resume-review/$resumeId'
@@ -1018,21 +1115,26 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAgentRoute: typeof AuthenticatedAgentRoute
   AuthenticatedAnalyticsRoute: typeof AuthenticatedAnalyticsRoute
   AuthenticatedBillingRoute: typeof AuthenticatedBillingRoute
+  AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedInterviewRoute: typeof AuthenticatedInterviewRoute
   AuthenticatedLearningRoute: typeof AuthenticatedLearningRoute
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
+  AuthenticatedOutreachRoute: typeof AuthenticatedOutreachRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
+  AuthenticatedTrackerRoute: typeof AuthenticatedTrackerRoute
   AuthenticatedApplicationsWorkspaceIdRoute: typeof AuthenticatedApplicationsWorkspaceIdRouteWithChildren
   AuthenticatedInvoicePaymentIdRoute: typeof AuthenticatedInvoicePaymentIdRoute
   AuthenticatedJobsJobIdRoute: typeof AuthenticatedJobsJobIdRoute
   AuthenticatedJobsCollectionsRoute: typeof AuthenticatedJobsCollectionsRouteWithChildren
   AuthenticatedJobsSavedRoute: typeof AuthenticatedJobsSavedRoute
   AuthenticatedResumeReviewResumeIdRoute: typeof AuthenticatedResumeReviewResumeIdRoute
+  AuthenticatedResumesResumeIdRoute: typeof AuthenticatedResumesResumeIdRoute
   AuthenticatedApplicationsIndexRoute: typeof AuthenticatedApplicationsIndexRoute
   AuthenticatedJobsIndexRoute: typeof AuthenticatedJobsIndexRoute
+  AuthenticatedResumesIndexRoute: typeof AuthenticatedResumesIndexRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -1040,13 +1142,16 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAgentRoute: AuthenticatedAgentRoute,
   AuthenticatedAnalyticsRoute: AuthenticatedAnalyticsRoute,
   AuthenticatedBillingRoute: AuthenticatedBillingRoute,
+  AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedCoachRoute: AuthenticatedCoachRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedInterviewRoute: AuthenticatedInterviewRoute,
   AuthenticatedLearningRoute: AuthenticatedLearningRoute,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
+  AuthenticatedOutreachRoute: AuthenticatedOutreachRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
+  AuthenticatedTrackerRoute: AuthenticatedTrackerRoute,
   AuthenticatedApplicationsWorkspaceIdRoute:
     AuthenticatedApplicationsWorkspaceIdRouteWithChildren,
   AuthenticatedInvoicePaymentIdRoute: AuthenticatedInvoicePaymentIdRoute,
@@ -1056,8 +1161,10 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedJobsSavedRoute: AuthenticatedJobsSavedRoute,
   AuthenticatedResumeReviewResumeIdRoute:
     AuthenticatedResumeReviewResumeIdRoute,
+  AuthenticatedResumesResumeIdRoute: AuthenticatedResumesResumeIdRoute,
   AuthenticatedApplicationsIndexRoute: AuthenticatedApplicationsIndexRoute,
   AuthenticatedJobsIndexRoute: AuthenticatedJobsIndexRoute,
+  AuthenticatedResumesIndexRoute: AuthenticatedResumesIndexRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
