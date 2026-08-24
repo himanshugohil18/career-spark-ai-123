@@ -20,6 +20,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticated/profile'
+import { Route as AuthenticatedOutreachRouteImport } from './routes/_authenticated/outreach'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
 import { Route as AuthenticatedLearningRouteImport } from './routes/_authenticated/learning'
 import { Route as AuthenticatedInterviewRouteImport } from './routes/_authenticated/interview'
@@ -111,6 +112,11 @@ const AuthenticatedSettingsRoute = AuthenticatedSettingsRouteImport.update({
 const AuthenticatedProfileRoute = AuthenticatedProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOutreachRoute = AuthenticatedOutreachRouteImport.update({
+  id: '/outreach',
+  path: '/outreach',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedMeRoute = AuthenticatedMeRouteImport.update({
@@ -342,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/interview': typeof AuthenticatedInterviewRoute
   '/learning': typeof AuthenticatedLearningRoute
   '/me': typeof AuthenticatedMeRoute
+  '/outreach': typeof AuthenticatedOutreachRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/admin/ai': typeof AuthenticatedAdminAiRoute
@@ -391,6 +398,7 @@ export interface FileRoutesByTo {
   '/interview': typeof AuthenticatedInterviewRoute
   '/learning': typeof AuthenticatedLearningRoute
   '/me': typeof AuthenticatedMeRoute
+  '/outreach': typeof AuthenticatedOutreachRoute
   '/profile': typeof AuthenticatedProfileRoute
   '/settings': typeof AuthenticatedSettingsRoute
   '/admin/ai': typeof AuthenticatedAdminAiRoute
@@ -443,6 +451,7 @@ export interface FileRoutesById {
   '/_authenticated/interview': typeof AuthenticatedInterviewRoute
   '/_authenticated/learning': typeof AuthenticatedLearningRoute
   '/_authenticated/me': typeof AuthenticatedMeRoute
+  '/_authenticated/outreach': typeof AuthenticatedOutreachRoute
   '/_authenticated/profile': typeof AuthenticatedProfileRoute
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/admin/ai': typeof AuthenticatedAdminAiRoute
@@ -495,6 +504,7 @@ export interface FileRouteTypes {
     | '/interview'
     | '/learning'
     | '/me'
+    | '/outreach'
     | '/profile'
     | '/settings'
     | '/admin/ai'
@@ -544,6 +554,7 @@ export interface FileRouteTypes {
     | '/interview'
     | '/learning'
     | '/me'
+    | '/outreach'
     | '/profile'
     | '/settings'
     | '/admin/ai'
@@ -595,6 +606,7 @@ export interface FileRouteTypes {
     | '/_authenticated/interview'
     | '/_authenticated/learning'
     | '/_authenticated/me'
+    | '/_authenticated/outreach'
     | '/_authenticated/profile'
     | '/_authenticated/settings'
     | '/_authenticated/admin/ai'
@@ -725,6 +737,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof AuthenticatedProfileRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/outreach': {
+      id: '/_authenticated/outreach'
+      path: '/outreach'
+      fullPath: '/outreach'
+      preLoaderRoute: typeof AuthenticatedOutreachRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/me': {
@@ -1063,6 +1082,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInterviewRoute: typeof AuthenticatedInterviewRoute
   AuthenticatedLearningRoute: typeof AuthenticatedLearningRoute
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
+  AuthenticatedOutreachRoute: typeof AuthenticatedOutreachRoute
   AuthenticatedProfileRoute: typeof AuthenticatedProfileRoute
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedApplicationsWorkspaceIdRoute: typeof AuthenticatedApplicationsWorkspaceIdRouteWithChildren
@@ -1087,6 +1107,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedInterviewRoute: AuthenticatedInterviewRoute,
   AuthenticatedLearningRoute: AuthenticatedLearningRoute,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
+  AuthenticatedOutreachRoute: AuthenticatedOutreachRoute,
   AuthenticatedProfileRoute: AuthenticatedProfileRoute,
   AuthenticatedSettingsRoute: AuthenticatedSettingsRoute,
   AuthenticatedApplicationsWorkspaceIdRoute:
