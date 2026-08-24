@@ -15,6 +15,7 @@ import { matchJob } from "@/lib/job-matching.functions";
 import { openWorkspace } from "@/lib/workspace.functions";
 import { ApplyWithAiButton } from "@/features/auto-apply/apply-with-ai-button";
 import { openExternal, isValidExternalUrl } from "@/lib/open-external";
+import { jobFreshness, FRESHNESS_STYLES } from "@/lib/jobs/freshness";
 
 export const Route = createFileRoute("/_authenticated/jobs/$jobId")({
   head: () => ({ meta: [{ title: "Job · CareerOS" }] }),
@@ -305,6 +306,11 @@ function JobDetail() {
           <Fact label="Posted" value={j.posted_at ? new Date(j.posted_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"} />
           <Fact label="Source" value={String(j.provider)} />
           <Fact label="Industry" value={j.company?.industry ?? "—"} />
+          <Fact label="Last verified" value={jobFreshness(j as any).verifiedLabel.replace("Verified ", "")} />
+          <Fact
+            label="Freshness"
+            value={FRESHNESS_STYLES[jobFreshness(j as any).tier].label}
+          />
         </dl>
       </section>
 

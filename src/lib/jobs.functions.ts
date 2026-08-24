@@ -108,7 +108,10 @@ export const listJobs = createServerFn({ method: "POST" })
           .order("posted_at", { ascending: false, nullsFirst: false });
         break;
       case "updated":
-        jobsQuery = jobsQuery.order("last_seen_at", { ascending: false });
+        jobsQuery = jobsQuery
+          .order("last_verified_at", { ascending: false, nullsFirst: false })
+          .order("last_seen_at", { ascending: false });
+
         break;
       default:
         jobsQuery = jobsQuery.order("posted_at", { ascending: false, nullsFirst: false });
@@ -1064,3 +1067,83 @@ export const getDashboardWidgets = createServerFn({ method: "GET" })
     };
   });
 
+
+/**
+ * Feed pulse — real freshness + coverage telemetry for the Jobs header.
+ * Every number here is a live count against the jobs catalog; nothing is
+ * simulated. Used by <FeedPulse /> to explain what the user is looking at.
+ */
+export const getFeedPulse = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const nowMs = Date.now();
+    const dayAgo = new Date(nowMs - 86_400_000).toISOString();
+    const weekAgo = new Date(nowMs - 7 * 86_400_000).toISOString();
+
+    const [totalActive, newToday, newThisWeek, latest, brainRaw, matchAgg] = await Promise.all([
+      context.supabase.from("jobs").select("id", { count: "exact", head: true }).eq("is_active", true),
+      context.supabase
+        .from("jobs")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true)
+        .gte("first_seen_at", dayAgo),
+      context.supabase
+        .from("jobs")
+        .select("id", { count: "exact", head: true })
+        .eq("is_active", true)
+        .gte("first_seen_at", weekAgo),
+      context.supabase
+        .from("jobs")
+        .select("last_verified_at, provider")
+        .eq("is_active", true)
+        .order("last_verified_at", { ascending: false })
+        .limit(1)
+        .maybeSingle(),
+      getCareerBrainSnapshot(),
+      context.supabase
+        .from("job_matches")
+        .select("overall_score")
+        .eq("user_id", context.userId)
+        .gte("overall_score", 75)
+        .limit(500),
+    ]);
+
+    const brain = brainRaw as CareerBrainSnapshot;
+    const { buildProfileFromSnapshot } = await import("./jobs/role-synonyms");
+    const profile = brain.ready ? buildProfileFromSnapshot(brain) : null;
+    const domains = (profile?.families ?? []).map((f: any) => f.label).slice(0, 4);
+
+    // job_sources is admin-only, so derive live source coverage from the
+    // catalog itself: distinct providers seen in the last 7 days.
+    const { data: recentProviders } = await context.supabase
+      .from("jobs")
+      .select("provider")
+      .eq("is_active", true)
+      .gte("last_verified_at", weekAgo)
+      .limit(1000);
+    const providerCount = new Set(
+      (recentProviders ?? []).map((r: any) => String(r.provider ?? "")).filter(Boolean),
+    ).size;
+
+
+    const strongMatches = (matchAgg.data ?? []).length;
+    const insight = !brain.ready
+      ? "Upload and approve a resume to activate live matching."
+      : strongMatches > 0
+        ? `We're tracking ${strongMatches} strong match${strongMatches === 1 ? "" : "es"}${domains.length ? ` across your ${domains.slice(0, 2).join(" and ")} experience` : ""}.`
+        : `Scanning ${totalActive.count ?? 0} live roles${domains.length ? ` for ${domains[0]} opportunities` : ""}.`;
+
+    return {
+      ready: Boolean(brain.ready),
+      totalActive: totalActive.count ?? 0,
+      newToday: newToday.count ?? 0,
+      newThisWeek: newThisWeek.count ?? 0,
+      strongMatches,
+      lastVerifiedAt: (latest.data as any)?.last_verified_at ?? null,
+      activeSources: providerCount,
+      domains,
+      insight,
+      displayName:
+        (brain.identity?.fullName ?? "").split(/\s+/)[0] || "there",
+    };
+  });

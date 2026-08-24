@@ -271,6 +271,10 @@ export async function runDiscovery(
       raw_payload: job.rawPayload ?? null,
       first_seen_at: nowIso,
       last_seen_at: nowIso,
+      // The source returned this listing in the current crawl, so it is
+      // verified as of now. Any previous stale flag is cleared.
+      last_verified_at: nowIso,
+      stale_reason: null,
       is_active: true,
     });
   }
