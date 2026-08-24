@@ -14,6 +14,7 @@ import { JobFiltersPanel, type FeedFilters } from "@/features/jobs/job-filters";
 import { NLSearchBar } from "@/features/jobs/nl-search";
 import { EmptyFeed } from "@/features/jobs/empty-feed";
 import { FeedPulse, type FeedPulseData } from "@/features/jobs/feed-pulse";
+import { CareerSignal } from "@/features/jobs/career-signal";
 import {
   ensureInitialMatches,
   getFeedPulse,
@@ -203,6 +204,8 @@ function JobsFeed() {
         onRefresh={() => refreshMutation.mutate()}
         refreshing={refreshMutation.isPending}
       />
+
+      {hasBrain && <CareerSignal brain={brainQuery.data} />}
 
       {/* Command bar */}
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
