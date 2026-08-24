@@ -1908,6 +1908,7 @@ export type Database = {
           id: string
           is_active: boolean
           last_seen_at: string
+          last_verified_at: string
           location: string | null
           location_country: string | null
           posted_at: string | null
@@ -1922,8 +1923,10 @@ export type Database = {
           salary_max: number | null
           salary_min: number | null
           source_id: string
+          stale_reason: string | null
           title: string
           updated_at: string
+          verification_count: number
         }
         Insert: {
           application_url: string
@@ -1939,6 +1942,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_seen_at?: string
+          last_verified_at?: string
           location?: string | null
           location_country?: string | null
           posted_at?: string | null
@@ -1953,8 +1957,10 @@ export type Database = {
           salary_max?: number | null
           salary_min?: number | null
           source_id: string
+          stale_reason?: string | null
           title: string
           updated_at?: string
+          verification_count?: number
         }
         Update: {
           application_url?: string
@@ -1970,6 +1976,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           last_seen_at?: string
+          last_verified_at?: string
           location?: string | null
           location_country?: string | null
           posted_at?: string | null
@@ -1984,8 +1991,10 @@ export type Database = {
           salary_max?: number | null
           salary_min?: number | null
           source_id?: string
+          stale_reason?: string | null
           title?: string
           updated_at?: string
+          verification_count?: number
         }
         Relationships: [
           {
@@ -2868,6 +2877,13 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      sweep_stale_jobs: {
+        Args: { _stale_days?: number }
+        Returns: {
+          expired_count: number
+          stale_count: number
+        }[]
       }
     }
     Enums: {
