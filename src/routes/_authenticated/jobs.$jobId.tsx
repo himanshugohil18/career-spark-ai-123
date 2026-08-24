@@ -16,6 +16,7 @@ import { openWorkspace } from "@/lib/workspace.functions";
 import { ApplyWithAiButton } from "@/features/auto-apply/apply-with-ai-button";
 import { openExternal, isValidExternalUrl } from "@/lib/open-external";
 import { jobFreshness, FRESHNESS_STYLES } from "@/lib/jobs/freshness";
+import { providerSourceLabel } from "@/lib/jobs/provider-registry";
 
 export const Route = createFileRoute("/_authenticated/jobs/$jobId")({
   head: () => ({ meta: [{ title: "Job · CareerOS" }] }),
@@ -141,7 +142,7 @@ function JobDetail() {
       >
         <div className="min-w-0">
           <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-            {j.provider} · {j.company?.name ?? "Company"}
+            {providerSourceLabel(j.provider)} · {j.company?.name ?? "Company"}
           </p>
           <h1 className="mt-1 font-display text-2xl font-semibold md:text-3xl">{j.title}</h1>
           <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
@@ -304,7 +305,7 @@ function JobDetail() {
             }
           />
           <Fact label="Posted" value={j.posted_at ? new Date(j.posted_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"} />
-          <Fact label="Source" value={String(j.provider)} />
+          <Fact label="Source" value={providerSourceLabel(j.provider)} />
           <Fact label="Industry" value={j.company?.industry ?? "—"} />
           <Fact label="Last verified" value={jobFreshness(j as any).verifiedLabel.replace("Verified ", "")} />
           <Fact
@@ -367,7 +368,7 @@ function JobDetail() {
       <section className="surface-card p-6">
         <h3 className="mb-2 font-display text-lg font-semibold">How to apply</h3>
         <p className="text-sm text-muted-foreground">
-          Apply on {j.company?.name ?? "the company site"} via {String(j.provider)}, or let the AI agent tailor your
+          Apply on {j.company?.name ?? "the company site"} via {providerSourceLabel(j.provider)}, or let the AI agent tailor your
           resume and complete the form for you.
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-2">
