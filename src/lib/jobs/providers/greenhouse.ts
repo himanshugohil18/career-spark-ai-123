@@ -51,10 +51,21 @@ export const greenhouseProvider: JobProvider = {
       } catch {
         // continue with next board
       }
-    }
-    return out;
+      return out;
+    });
   },
 };
+
+/** Fetch board slugs with bounded concurrency so large registries stay inside
+ * the Worker request budget. */
+async function inBatches<T>(items: string[], size: number, fn: (slug: string) => Promise<T[]>): Promise<T[]> {
+  const out: T[] = [];
+  for (let i = 0; i < items.length; i += size) {
+    const results = await Promise.allSettled(items.slice(i, i + size).map(fn));
+    for (const r of results) if (r.status === "fulfilled") out.push(...r.value);
+  }
+  return out;
+}
 
 function mapJob(board: string, j: GhJob): NormalizedJob {
   const html = decodeHtml(j.content ?? "");
