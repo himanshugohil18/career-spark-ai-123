@@ -6,6 +6,7 @@ import { Mic, Play, Send, CheckCircle2, Circle, ChevronRight, RotateCcw, Loader2
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ai/skeleton";
 import { PageHeader } from "@/components/product/page-header";
+import { Button } from "@/components/ui/button";
 import {
   startInterviewSim,
   getInterviewSimSession,
@@ -139,15 +140,10 @@ function SetupCard({ onStarted }: { onStarted: (id: string) => void }) {
             ))}
           </select>
         </label>
-        <button
-          type="button"
-          disabled={role.trim().length < 2 || startMut.isPending}
-          onClick={() => startMut.mutate()}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-50"
-        >
+        <Button disabled={role.trim().length < 2 || startMut.isPending} onClick={() => startMut.mutate()}>
           {startMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
           Start interview
-        </button>
+        </Button>
       </div>
     </section>
   );
@@ -202,13 +198,9 @@ function ActiveSession({ sessionId, onExit }: { sessionId: string; onExit: () =>
               />
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onExit}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-foreground hover:bg-accent"
-          >
+          <Button type="button" variant="outline" size="sm" onClick={onExit}>
             <RotateCcw className="h-3.5 w-3.5" /> All sessions
-          </button>
+          </Button>
         </div>
       </section>
 
@@ -266,15 +258,14 @@ function ActiveSession({ sessionId, onExit }: { sessionId: string; onExit: () =>
             className="mt-4 w-full rounded-xl border border-input bg-background px-4 py-3 text-sm leading-relaxed outline-none focus:border-primary"
           />
           <div className="mt-3 flex justify-end">
-            <button
+            <Button
               type="button"
               disabled={answer.trim().length < 3 || submitMut.isPending}
               onClick={() => submitMut.mutate({ turnId: currentTurn.id, answer: answer.trim() })}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity disabled:opacity-50"
             >
               {submitMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
               Submit answer
-            </button>
+            </Button>
           </div>
         </motion.section>
       ) : null}
