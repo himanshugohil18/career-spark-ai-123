@@ -4,6 +4,7 @@
  */
 
 import { slugify } from "../fingerprint";
+import { companyDisplayName, companyDomain, companyLogoUrl, companyWebsite } from "./company-names";
 import {
   detectCountry,
   detectExperience,
@@ -75,11 +76,11 @@ function mapJob(company: string, j: LeverJob): NormalizedJob {
   return {
     title: j.text,
     company: {
-      name: company.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      name: companyDisplayName(company),
       slug: slugify(company),
-      domain: null,
-      logoUrl: null,
-      website: `https://jobs.lever.co/${company}`,
+      domain: companyDomain(company),
+      logoUrl: companyLogoUrl(company),
+      website: companyWebsite(company) ?? `https://jobs.lever.co/${company}`,
       industry: null,
       size: null,
       remotePolicy: null,

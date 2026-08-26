@@ -29,6 +29,13 @@ export const GREENHOUSE_BOARDS: string[] = [
   "sigmacomputing", "smartsheet", "sonder", "starburst", "strava",
   "stytch", "superhuman", "tecton", "tripadvisor", "vanta", "veed",
   "wealthfront", "whatnot", "wiz", "zipline",
+  // validated expansion — India + EU + mid-market employers (probed live)
+  "groww", "postman", "phonepe", "lyft", "pinterest", "coursera", "roblox",
+  "remotecom", "via", "tulip", "hightouch", "tailscale", "cribl", "newrelic",
+  "slice", "forter", "kikoff", "earnin", "thirdlove", "tia", "seatgeek",
+  "liftoff", "taskrabbit", "udacity", "modernhealth", "truebill", "yotpo",
+  "suki", "typeform", "topsort", "zenput", "watershed", "weave", "upwork",
+  "motive", "outschool", "postscript", "narvar", "tigergraph", "netlify",
 ];
 
 /** Lever company slugs — https://api.lever.co/v0/postings/{slug} */
@@ -38,13 +45,16 @@ export const LEVER_COMPANIES: string[] = [
   "huggingface", "attio", "ramp", "attn", "angellist", "substack",
   "robinhood", "opendoor", "doordash", "segment", "checkr", "kickstarter",
   // expansion
-  "leverdemo", "voleon", "matchgroup", "kojo", "cabify", "vimeo",
+  "voleon", "matchgroup", "kojo", "cabify", "vimeo",
   "brightwheel", "cloudkitchens", "eightfold", "fetchrewards", "gitpod",
   "hopper", "kong", "lucidmotors", "mistral", "moveworks", "nubank",
   "quantcast", "recharge", "replit", "sardine", "scribd", "shieldai",
   "sift", "sigmoid", "swiftnav", "talkdesk", "thoughtspot", "trellix",
   "turing", "twitch", "upgrade", "veriff", "vestiaire", "wander",
   "wefox", "zego", "zwift",
+  // validated expansion — EU + India employers (probed live)
+  "aircall", "ro", "qonto", "contentsquare", "zeta", "jobandtalent", "swile",
+  "younited", "ledger",
 ];
 
 /** Ashby organisation slugs — https://api.ashbyhq.com/posting-api/job-board/{slug} */
