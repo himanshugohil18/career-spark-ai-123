@@ -239,6 +239,22 @@ function FormPanel({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }
 
 type PasswordlessMode = "magic" | "otp";
 
+const CANONICAL_APP_ORIGIN = "https://careerosai.site";
+
+function getAuthRedirectOrigin() {
+  if (typeof window === "undefined") return CANONICAL_APP_ORIGIN;
+
+  const { hostname, origin } = window.location;
+  const isLocalPreview = hostname === "localhost" || hostname === "127.0.0.1";
+  const isEditorPreview = hostname.startsWith("id-preview--");
+
+  if (isLocalPreview || isEditorPreview || hostname.endsWith("careerosai.site")) {
+    return origin;
+  }
+
+  return CANONICAL_APP_ORIGIN;
+}
+
 function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -269,7 +285,7 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
         /* ignore */
       }
       const result = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
+        redirect_uri: getAuthRedirectOrigin(),
 
         // Always show the Google account chooser instead of silently
         // reusing the browser's already-signed-in account.
