@@ -27,7 +27,6 @@ import { Route as AuthenticatedProfileRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedOutreachRouteImport } from './routes/_authenticated/outreach'
 import { Route as AuthenticatedMeRouteImport } from './routes/_authenticated/me'
 import { Route as AuthenticatedLearningRouteImport } from './routes/_authenticated/learning'
-import { Route as AuthenticatedInterviewRouteImport } from './routes/_authenticated/interview'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCoachRouteImport } from './routes/_authenticated/coach'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated/chat'
@@ -155,11 +154,6 @@ const AuthenticatedLearningRoute = AuthenticatedLearningRouteImport.update({
   path: '/learning',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedInterviewRoute = AuthenticatedInterviewRouteImport.update({
-  id: '/interview',
-  path: '/interview',
-  getParentRoute: () => AuthenticatedRouteRoute,
-} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -253,9 +247,9 @@ const AuthenticatedInvoicePaymentIdRoute =
   } as any)
 const AuthenticatedInterviewSimulatorRoute =
   AuthenticatedInterviewSimulatorRouteImport.update({
-    id: '/simulator',
-    path: '/simulator',
-    getParentRoute: () => AuthenticatedInterviewRoute,
+    id: '/interview/simulator',
+    path: '/interview/simulator',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedApplicationsWorkspaceIdRoute =
   AuthenticatedApplicationsWorkspaceIdRouteImport.update({
@@ -383,7 +377,6 @@ export interface FileRoutesByFullPath {
   '/chat': typeof AuthenticatedChatRoute
   '/coach': typeof AuthenticatedCoachRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/interview': typeof AuthenticatedInterviewRouteWithChildren
   '/learning': typeof AuthenticatedLearningRoute
   '/me': typeof AuthenticatedMeRoute
   '/outreach': typeof AuthenticatedOutreachRoute
@@ -439,7 +432,6 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatRoute
   '/coach': typeof AuthenticatedCoachRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/interview': typeof AuthenticatedInterviewRouteWithChildren
   '/learning': typeof AuthenticatedLearningRoute
   '/me': typeof AuthenticatedMeRoute
   '/outreach': typeof AuthenticatedOutreachRoute
@@ -498,7 +490,6 @@ export interface FileRoutesById {
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/coach': typeof AuthenticatedCoachRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/interview': typeof AuthenticatedInterviewRouteWithChildren
   '/_authenticated/learning': typeof AuthenticatedLearningRoute
   '/_authenticated/me': typeof AuthenticatedMeRoute
   '/_authenticated/outreach': typeof AuthenticatedOutreachRoute
@@ -557,7 +548,6 @@ export interface FileRouteTypes {
     | '/chat'
     | '/coach'
     | '/dashboard'
-    | '/interview'
     | '/learning'
     | '/me'
     | '/outreach'
@@ -613,7 +603,6 @@ export interface FileRouteTypes {
     | '/chat'
     | '/coach'
     | '/dashboard'
-    | '/interview'
     | '/learning'
     | '/me'
     | '/outreach'
@@ -671,7 +660,6 @@ export interface FileRouteTypes {
     | '/_authenticated/chat'
     | '/_authenticated/coach'
     | '/_authenticated/dashboard'
-    | '/_authenticated/interview'
     | '/_authenticated/learning'
     | '/_authenticated/me'
     | '/_authenticated/outreach'
@@ -862,13 +850,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLearningRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/interview': {
-      id: '/_authenticated/interview'
-      path: '/interview'
-      fullPath: '/interview'
-      preLoaderRoute: typeof AuthenticatedInterviewRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -990,10 +971,10 @@ declare module '@tanstack/react-router' {
     }
     '/_authenticated/interview/simulator': {
       id: '/_authenticated/interview/simulator'
-      path: '/simulator'
+      path: '/interview/simulator'
       fullPath: '/interview/simulator'
       preLoaderRoute: typeof AuthenticatedInterviewSimulatorRouteImport
-      parentRoute: typeof AuthenticatedInterviewRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/applications/$workspaceId': {
       id: '/_authenticated/applications/$workspaceId'
@@ -1158,20 +1139,6 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
 const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
-interface AuthenticatedInterviewRouteChildren {
-  AuthenticatedInterviewSimulatorRoute: typeof AuthenticatedInterviewSimulatorRoute
-}
-
-const AuthenticatedInterviewRouteChildren: AuthenticatedInterviewRouteChildren =
-  {
-    AuthenticatedInterviewSimulatorRoute: AuthenticatedInterviewSimulatorRoute,
-  }
-
-const AuthenticatedInterviewRouteWithChildren =
-  AuthenticatedInterviewRoute._addFileChildren(
-    AuthenticatedInterviewRouteChildren,
-  )
-
 interface AuthenticatedApplicationsWorkspaceIdRouteChildren {
   AuthenticatedApplicationsWorkspaceIdAgentRoute: typeof AuthenticatedApplicationsWorkspaceIdAgentRoute
 }
@@ -1210,7 +1177,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedInterviewRoute: typeof AuthenticatedInterviewRouteWithChildren
   AuthenticatedLearningRoute: typeof AuthenticatedLearningRoute
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
   AuthenticatedOutreachRoute: typeof AuthenticatedOutreachRoute
@@ -1220,6 +1186,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSettingsRoute: typeof AuthenticatedSettingsRoute
   AuthenticatedTrackerRoute: typeof AuthenticatedTrackerRoute
   AuthenticatedApplicationsWorkspaceIdRoute: typeof AuthenticatedApplicationsWorkspaceIdRouteWithChildren
+  AuthenticatedInterviewSimulatorRoute: typeof AuthenticatedInterviewSimulatorRoute
   AuthenticatedInvoicePaymentIdRoute: typeof AuthenticatedInvoicePaymentIdRoute
   AuthenticatedJobsJobIdRoute: typeof AuthenticatedJobsJobIdRoute
   AuthenticatedJobsCollectionsRoute: typeof AuthenticatedJobsCollectionsRouteWithChildren
@@ -1239,7 +1206,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedCoachRoute: AuthenticatedCoachRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedInterviewRoute: AuthenticatedInterviewRouteWithChildren,
   AuthenticatedLearningRoute: AuthenticatedLearningRoute,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
   AuthenticatedOutreachRoute: AuthenticatedOutreachRoute,
@@ -1250,6 +1216,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedTrackerRoute: AuthenticatedTrackerRoute,
   AuthenticatedApplicationsWorkspaceIdRoute:
     AuthenticatedApplicationsWorkspaceIdRouteWithChildren,
+  AuthenticatedInterviewSimulatorRoute: AuthenticatedInterviewSimulatorRoute,
   AuthenticatedInvoicePaymentIdRoute: AuthenticatedInvoicePaymentIdRoute,
   AuthenticatedJobsJobIdRoute: AuthenticatedJobsJobIdRoute,
   AuthenticatedJobsCollectionsRoute:
