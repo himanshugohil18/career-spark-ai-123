@@ -91,11 +91,53 @@ function InterviewPage() {
         </div>
       ) : (
         <>
-          <section className="grid gap-3 md:grid-cols-3">
+          <section className="grid gap-3 md:grid-cols-4">
             <Stat label="Total questions" value={data!.totals.totalQ} />
             <Stat label="Practiced" value={data!.totals.totalPracticed} suffix={` · ${totalPct}%`} />
-            <Stat label="Active sessions" value={data!.sessions.length} />
+            <Stat label="Prep packs" value={data!.sessions.length} />
+            <Stat
+              label="Mock interviews"
+              value={data!.mockStats.total}
+              suffix={
+                data!.mockStats.averageScore != null
+                  ? ` · avg ${data!.mockStats.averageScore}/10`
+                  : undefined
+              }
+            />
           </section>
+
+          {data!.mockSessions.length > 0 && (
+            <section>
+              <h3 className="mb-3 font-display text-lg font-semibold">Mock interview history</h3>
+              <ul className="surface-card divide-y divide-border">
+                {data!.mockSessions.map((m: any) => (
+                  <li key={m.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-foreground">
+                        {m.target_role}
+                        {m.target_company ? ` · ${m.target_company}` : ""}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(m.created_at).toLocaleDateString()} ·{" "}
+                        {String(m.interview_type ?? "mixed").replace("_", " ")} ·{" "}
+                        {m.answered_questions}/{m.planned_questions} answered
+                        {m.mode === "teacher" ? " · teacher mode" : ""}
+                      </p>
+                    </div>
+                    {m.status === "completed" ? (
+                      <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                        {Number(m.overall_score).toFixed(1)}/10
+                      </span>
+                    ) : (
+                      <Button asChild size="sm" variant="outline">
+                        <Link to="/interview/simulator">Resume</Link>
+                      </Button>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           <section className="surface-card p-6">
             <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">By category</p>
