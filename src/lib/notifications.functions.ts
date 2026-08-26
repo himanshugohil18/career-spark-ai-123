@@ -23,11 +23,16 @@ export const listNotifications = createServerFn({ method: "GET" })
       .eq("user_id", context.userId)
       .order("created_at", { ascending: false })
       .limit(50);
-    if (error) throw new Error(error.message);
+    if (error) {
+      // Transient PostgREST schema-cache warmups must not blank the app shell.
+      if (/schema cache/i.test(error.message)) return { items: [], unread: 0 };
+      throw new Error(error.message);
+    }
     const rows = (data ?? []) as NotificationRow[];
     const unread = rows.filter((r) => !r.read_at).length;
     return { items: rows, unread };
   });
+
 
 export const markNotificationRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
