@@ -13,7 +13,6 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { Toaster } from "@/components/ui/sonner";
-import { THEME_BOOT_SCRIPT } from "@/lib/theme";
 import { RouteProgress } from "@/components/motion/route-progress";
 
 function NotFoundComponent() {
@@ -100,7 +99,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "application-name", content: "CareerOS" },
       { name: "apple-mobile-web-app-title", content: "CareerOS" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
-      { name: "theme-color", content: "#1E1E1E" },
+      { name: "theme-color", content: "#F8FAFC" },
 
       { property: "og:site_name", content: "CareerOS" },
       { property: "og:title", content: "CareerOS – AI Career Operating System" },
@@ -136,7 +135,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Google+Sans+Display:wght@400;500;600;700&family=Montserrat:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap",
       },
     ],
 
@@ -149,9 +148,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 
 function RootShell({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en">
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         <HeadContent />
       </head>
       <body className="min-h-screen bg-background font-sans text-foreground antialiased">
