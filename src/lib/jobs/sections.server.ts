@@ -12,6 +12,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { diversifyByCompany } from "./diversity";
 import { jobDedupeKey } from "./relevance";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CareerBrainSnapshot } from "@/lib/career-brain.service";
