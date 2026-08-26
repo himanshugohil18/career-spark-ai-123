@@ -238,6 +238,6 @@ function OutreachPage() {
           </ul>
         )}
       </section>
-    </div>
+    </PageShell>
   );
 }
