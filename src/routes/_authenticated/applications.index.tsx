@@ -93,7 +93,7 @@ function ApplicationsIndex() {
         <EmptyState
           icon={Sparkles}
           title="No applications yet"
-          description="Open any job and choose Prepare Application to spin up a workspace."
+          body="Open any job and choose Prepare Application to spin up a workspace."
           action={{ label: "Browse jobs", to: "/jobs" }}
         />
       )}
