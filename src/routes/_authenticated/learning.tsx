@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { GraduationCap, ExternalLink, Sparkles } from "lucide-react";
+import { GraduationCap, ExternalLink, Sparkles, CheckCircle2 } from "lucide-react";
 import { Skeleton } from "@/components/ai/skeleton";
 import { PageHeader } from "@/components/product/page-header";
 import { getLearningPaths } from "@/lib/career-intel.functions";
+import { getLearningProgress, toggleLearningSkill } from "@/lib/learning.functions";
 
 export const Route = createFileRoute("/_authenticated/learning")({
   head: () => ({ meta: [{ title: "Learning · CareerOS" }] }),
