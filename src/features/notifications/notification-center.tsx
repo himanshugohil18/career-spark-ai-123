@@ -35,7 +35,11 @@ export function NotificationCenter() {
     queryFn: () => listNotifications(),
     refetchInterval: 45_000,
     staleTime: 15_000,
+    retry: 2,
+    retryDelay: 1500,
+    throwOnError: false,
   });
+
   const markOne = useMutation({
     mutationFn: (id: string) => markNotificationRead({ data: { id } }),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
