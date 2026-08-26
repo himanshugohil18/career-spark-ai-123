@@ -6,13 +6,11 @@ import {
   ArrowRight,
   ArrowUpRight,
   Award,
-  BookmarkCheck,
   Brain,
   Briefcase,
   Clock,
   FileText,
   GraduationCap,
-  Heart,
   Mic,
   Radar,
   Sparkles,
@@ -114,7 +112,6 @@ function Dashboard() {
 
   const activeResume = data?.resumes?.find((r) => r.is_active);
   const health = data?.careerHealth;
-  const dna = data?.careerDna;
   const brain = data?.careerBrain as { version?: number | null; overall_confidence?: number | null; last_generated_at?: string | null } | null | undefined;
   const completeness = computeCompleteness({
     profile: profile as Parameters<typeof computeCompleteness>[0]["profile"],
