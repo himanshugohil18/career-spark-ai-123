@@ -19,6 +19,7 @@ import {
   ensureInitialMatches,
   getFeedPulse,
   getJobSections,
+  crawlCatalog,
   kickMatchRefresh,
   listJobs,
   nlSearch,
