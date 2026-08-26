@@ -871,8 +871,7 @@ function CTA() {
     <Band>
       <Reveal>
         <div
-          className="relative overflow-hidden rounded-[32px] border border-border px-7 py-16 text-center md:px-16 md:py-20"
-          style={{ background: "var(--gradient-hero)" }}
+          className="relative overflow-hidden rounded-[32px] border border-border bg-accent px-7 py-16 text-center md:px-16 md:py-20"
         >
           <div aria-hidden className="landing-grid-lines pointer-events-none absolute inset-0" />
           <div className="relative">
