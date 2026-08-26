@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { BarChart3 } from "lucide-react";
 import { Skeleton } from "@/components/ai/skeleton";
+import { PageHeader } from "@/components/product/page-header";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { getCareerAnalytics } from "@/lib/career-intel.functions";
 

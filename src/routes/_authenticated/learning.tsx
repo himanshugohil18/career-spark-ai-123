@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { GraduationCap, ExternalLink, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ai/skeleton";
+import { PageHeader } from "@/components/product/page-header";
 import { getLearningPaths } from "@/lib/career-intel.functions";
 
 export const Route = createFileRoute("/_authenticated/learning")({
