@@ -90,21 +90,6 @@ function AuthPage() {
 function BrandingPanel({ mode }: { mode: Mode }) {
   return (
     <div className="relative hidden overflow-hidden border-r border-border/50 lg:flex lg:flex-col lg:justify-between lg:p-12">
-      {/* orb */}
-      <motion.div
-        aria-hidden
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-        className="pointer-events-none absolute -left-24 top-1/4 h-[520px] w-[520px] rounded-full blur-3xl"
-        style={{ background: "var(--gradient-brand-glow)", opacity: 0.35 }}
-      />
-      <motion.div
-        aria-hidden
-        animate={{ y: [0, -18, 0] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="pointer-events-none absolute right-10 top-24 h-64 w-64 rounded-full bg-accent/20 blur-3xl"
-      />
 
       {/* header */}
       <div className="relative z-10">
@@ -474,13 +459,7 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card p-7 sm:p-8 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.6)]">
-      {/* subtle inner glow */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-24 h-48 opacity-40 blur-3xl"
-        className="bg-primary"
-      />
+    <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card p-7 sm:p-8 shadow-[var(--shadow-elevated)]">
 
       <div className="relative">
         <h2 className="font-display text-2xl font-semibold tracking-tight sm:text-[26px]">
