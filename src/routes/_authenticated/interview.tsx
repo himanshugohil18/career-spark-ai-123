@@ -1,6 +1,9 @@
-import { createFileRoute, Outlet } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/interview")({
+  beforeLoad: ({ location }) => {
+    if (location.pathname === "/interview") throw redirect({ to: "/interview/", replace: true });
+  },
   head: () => ({
     meta: [
       { title: "Interview Prep · CareerOS" },
