@@ -83,7 +83,7 @@ export function Navbar() {
                   {item.label}
                   <span
                     className={cn(
-                      "pointer-events-none absolute inset-x-3 -bottom-px h-px origin-left scale-x-0 bg-[image:var(--gradient-brand-glow)] transition-transform duration-300 group-hover:scale-x-100",
+                      "pointer-events-none absolute inset-x-3 -bottom-px h-px origin-left scale-x-0 bg-primary transition-transform duration-300 group-hover:scale-x-100",
                       isActive && "scale-x-100",
                     )}
                   />
