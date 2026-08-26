@@ -616,6 +616,63 @@ function Workforce() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Section 07.5 — Intelligence Layer feature index                     */
+/* ------------------------------------------------------------------ */
+
+const INTELLIGENCE_FEATURES = [
+  { num: "01", name: "Career Readiness Score", desc: "A single 0–100 signal computed from your profile, skills, and market position." },
+  { num: "02", name: "Next Best Action", desc: "The one highest-leverage move for today — ranked by real impact, not checklists." },
+  { num: "03", name: "Skill Gap Analyzer", desc: "Every gap between you and your target role, with a concrete fix attached." },
+  { num: "04", name: "Roadmap Engine", desc: "A phased career plan generated from your Career Brain — tracked week by week." },
+  { num: "05", name: "AI Interview Simulator", desc: "Adaptive mock interviews scored against the roles you're actually targeting." },
+  { num: "06", name: "Salary & Market Intelligence", desc: "Percentile bands, remote splits, and sponsorship trends for your lane." },
+];
+
+function FeatureIndex() {
+  return (
+    <section id="intelligence" className="border-t border-border">
+      <div className="mx-auto max-w-7xl px-5 py-28 md:px-8 md:py-40">
+        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
+          <div>
+            <Reveal><Eyebrow>Intelligence layer</Eyebrow></Reveal>
+            <h2 className="display-section mt-5 text-5xl text-foreground md:text-7xl">
+              <MaskLines lines={[<>Everything knows</>, <span key="b"><span className="text-primary">everything</span> else.</span>]} />
+            </h2>
+          </div>
+          <Reveal delay={0.2}>
+            <p className="max-w-sm text-base leading-relaxed text-muted-foreground">
+              Six connected intelligence modules — all reasoning over the same
+              Career Brain, all live in your workspace today.
+            </p>
+          </Reveal>
+        </div>
+
+        <div className="mt-16 border-t border-border">
+          {INTELLIGENCE_FEATURES.map((f, i) => (
+            <motion.div
+              key={f.num}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ delay: i * 0.06, duration: 0.6, ease: EASE }}
+              className="group grid items-baseline gap-2 border-b border-border py-7 transition-colors duration-300 hover:bg-card md:grid-cols-[auto_1fr_1fr] md:gap-10 md:px-6"
+            >
+              <span className="font-mono text-xs text-primary">{f.num}</span>
+              <h3 className="font-display text-2xl font-bold uppercase tracking-tight text-foreground transition-colors duration-300 group-hover:text-primary md:text-3xl">
+                {f.name}
+              </h3>
+              <p className="max-w-md text-sm leading-relaxed text-muted-foreground md:justify-self-end">
+                {f.desc}
+              </p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Section 08 — Progress                                               */
 /* ------------------------------------------------------------------ */
 
@@ -717,20 +774,45 @@ function FinalCTA() {
 
 function ImmersiveFooter() {
   return (
-    <footer className="border-t border-border bg-card">
-      <div className="mx-auto flex max-w-7xl flex-col gap-8 px-5 py-14 md:flex-row md:items-center md:justify-between md:px-8">
-        <div className="flex items-center gap-2.5">
-          <Logo size={24} />
-          <span className="font-display text-sm font-bold uppercase tracking-[0.18em] text-foreground">CareerOS</span>
-          <span className="ml-2 rounded-full border border-primary/50 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-widest text-primary">Immersive</span>
+    <footer className="overflow-hidden border-t border-border bg-card">
+      <div className="mx-auto max-w-7xl px-5 pt-16 md:px-8 md:pt-20">
+        <div className="grid gap-10 md:grid-cols-[1fr_auto_auto] md:gap-20">
+          <div>
+            <div className="flex items-center gap-2.5">
+              <Logo size={24} />
+              <span className="font-display text-sm font-bold uppercase tracking-[0.18em] text-foreground">CareerOS</span>
+            </div>
+            <p className="mt-4 max-w-xs text-sm leading-relaxed text-muted-foreground">
+              The AI career operating system. Your career, connected.
+            </p>
+          </div>
+          <nav className="flex flex-col gap-3 text-[13px] text-muted-foreground">
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground">Product</p>
+            <a href="#brain" className="transition-colors hover:text-foreground">Career Brain</a>
+            <a href="#intelligence" className="transition-colors hover:text-foreground">Intelligence</a>
+            <a href="#agents" className="transition-colors hover:text-foreground">AI Agents</a>
+            <Link to="/auth" className="transition-colors hover:text-foreground">Sign in</Link>
+          </nav>
+          <nav className="flex flex-col gap-3 text-[13px] text-muted-foreground">
+            <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-foreground">Company</p>
+            <Link to="/contact" className="transition-colors hover:text-foreground">Contact</Link>
+            <Link to="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>
+            <Link to="/terms" className="transition-colors hover:text-foreground">Terms</Link>
+          </nav>
         </div>
-        <nav className="flex flex-wrap gap-x-8 gap-y-3 text-[13px] text-muted-foreground">
-          <Link to="/contact" className="transition-colors hover:text-foreground">Contact</Link>
-          <Link to="/privacy" className="transition-colors hover:text-foreground">Privacy</Link>
-          <Link to="/terms" className="transition-colors hover:text-foreground">Terms</Link>
-          <Link to="/auth" className="transition-colors hover:text-foreground">Sign in</Link>
-        </nav>
-        <p className="text-xs text-muted-foreground">© 2026 CareerOS. Your career, connected.</p>
+
+        {/* Giant wordmark signature */}
+        <div aria-hidden className="pointer-events-none mt-14 select-none">
+          <p className="display-hero -mb-[0.12em] text-center text-[16.5vw] leading-none text-foreground/[0.07]">
+            CAREEROS
+          </p>
+        </div>
+      </div>
+      <div className="border-t border-border">
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-5 py-5 text-xs text-muted-foreground md:flex-row md:items-center md:justify-between md:px-8">
+          <p>© 2026 CareerOS. All rights reserved.</p>
+          <p className="font-mono text-[10px] uppercase tracking-[0.2em]">Your career, connected.</p>
+        </div>
       </div>
     </footer>
   );
@@ -752,6 +834,7 @@ export function LandingPageImmersive() {
         <Opportunities />
         <Journey />
         <Workforce />
+        <FeatureIndex />
         <Progress />
         <FinalCTA />
       </main>
