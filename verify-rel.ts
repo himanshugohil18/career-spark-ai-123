@@ -1,0 +1,11 @@
+import { computeRelevance, brainTechVocabulary, resolveTitleRole } from "@/lib/jobs/relevance";
+import { buildCandidateProfile, semanticTechOverlap } from "@/lib/jobs/role-synonyms";
+const skills=["AWS","Docker","Kubernetes","CI/CD","Linux","Terraform","Jenkins","Git","Python","GitHub Actions"];
+const profile = buildCandidateProfile({preferredRole:"DevOps Engineer",currentTitle:"DevOps Engineer (Fresher)",skills,projectTechs:["AWS","Kubernetes","Terraform","Docker","GitHub Actions","Prometheus","Grafana"]});
+console.log("families",profile.families.map(f=>f.id),"primary",profile.primary?.id,"seniority",(profile as any).seniority);
+const job={title:"Associate Cloud Engineer",description:"AWS Docker Kubernetes Terraform CI/CD",requiredSkills:["AWS","Docker","Kubernetes","CI/CD","Linux","Terraform"],preferredSkills:["Prometheus","Grafana"],companyTechStack:["AWS","Kubernetes","Terraform"],responsibilities:[],requirements:["0-2 years experience"]};
+const brainTechs=[...skills,"Prometheus","Grafana"];
+const r=computeRelevance(job as any,profile,brainTechs);
+console.log(r);
+console.log("titleRole",resolveTitleRole(job.title));
+console.log("overlap",semanticTechOverlap(brainTechs,[...job.requiredSkills,...job.preferredSkills,...job.companyTechStack]));

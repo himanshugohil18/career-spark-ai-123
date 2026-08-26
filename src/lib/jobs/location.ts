@@ -76,8 +76,23 @@ export type LocationAffinityInput = {
   jobLocation?: string | null;
   jobCountry?: string | null;
   remoteStatus?: string | null;
+  /** Posting text — used to detect geo-restricted remote ("US only"). */
+  description?: string | null;
   preferred: Array<string | null | undefined>;
 };
+
+/** Country a remote posting is restricted to, or null when worldwide. */
+function remoteRestriction(input: LocationAffinityInput): string | null {
+  const blob = norm(
+    `${input.jobLocation ?? ""} ${input.jobCountry ?? ""} ${(input.description ?? "").slice(0, 1200)}`,
+  );
+  if (/\b(worldwide|anywhere|global|globally|any location)\b/.test(blob)) return null;
+  const c = countryOf(norm(`${input.jobLocation ?? ""} ${input.jobCountry ?? ""}`));
+  if (c) return c;
+  const m = blob.match(/\b(?:us|usa|united states|uk|united kingdom|canada|germany|india)\b(?=[^a-z]*only)/);
+  if (m) return countryOf(m[0]) ?? m[0];
+  return null;
+}
 
 export function locationAffinity(input: LocationAffinityInput): number {
   const prefs = input.preferred.map(norm).filter(Boolean);
@@ -85,7 +100,16 @@ export function locationAffinity(input: LocationAffinityInput): number {
   const remote = (input.remoteStatus ?? "").toLowerCase();
 
   const wantsRemote = prefs.some((p) => p.includes("remote") || p.includes("anywhere"));
-  if (remote === "remote") return wantsRemote ? 1 : 0.86;
+  if (remote === "remote") {
+    // A remote role restricted to another country is NOT globally remote for
+    // this candidate — an India-based user cannot take a "Remote (US only)"
+    // job, so it must never rank like an India-remote role.
+    const restrictedTo = remoteRestriction(input);
+    const prefCountry = prefs.map(countryOf).find(Boolean) ?? null;
+    if (restrictedTo && prefCountry && restrictedTo !== prefCountry) return 0.34;
+    if (restrictedTo && prefCountry && restrictedTo === prefCountry) return 1;
+    return wantsRemote ? 1 : 0.86;
+  }
   if (!prefs.length) return jobText ? 0.6 : 0.55;
   if (!jobText) return 0.5;
 
@@ -106,6 +130,7 @@ export function locationAffinity(input: LocationAffinityInput): number {
   if (remote === "hybrid") return 0.45;
   return 0.2;
 }
+
 
 /** Preferred-location strings pulled off a Career Brain snapshot. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

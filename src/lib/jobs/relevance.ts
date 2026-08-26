@@ -16,10 +16,13 @@ import {
   familyCompatibility,
   classifyJob,
   semanticTechOverlap,
+  techCoverage,
+  skillCovered,
   type CandidateProfile,
   type JobLike,
   type RoleFamily,
 } from "./role-synonyms";
+
 
 /* ------------------------------------------------------------------ */
 /* Title parsing                                                       */
@@ -213,11 +216,18 @@ export function computeRelevance(
     ...(job.preferredSkills ?? []),
     ...(job.companyTechStack ?? []),
   ].filter(Boolean);
+  // Directional: what share of the JOB's technology the candidate can
+  // evidence. `semanticTechOverlap` is symmetric and unfairly punishes broad
+  // resumes, so we take the stronger of the two readings.
   const techFit = isTechnicalCandidate
     ? jobTechs.length
-      ? semanticTechOverlap(brainTechs, jobTechs)
-      : semanticTechOverlap(brainTechs, extractTechTokens(job))
+      ? Math.max(semanticTechOverlap(brainTechs, jobTechs), techCoverage(jobTechs, brainTechs))
+      : (() => {
+          const tokens = extractTechTokens(job);
+          return Math.max(semanticTechOverlap(brainTechs, tokens), techCoverage(tokens, brainTechs));
+        })()
     : domainKeywordFit(job, brainTechs);
+
 
   const base: Omit<RelevanceResult, "relevance" | "gate" | "vetoed" | "reason"> = {
     titleFit: 0,
@@ -322,7 +332,7 @@ function requiredSkillCoverage(job: JobLike, brainTechs: string[]): number {
   const reqText = req.join(" ").toLowerCase();
   if (/\bmern\b|mern stack/.test(brainText) && /mongodb|mongo|express|react|node/.test(reqText)) return 1;
   let hit = 0;
-  for (const skill of req) if (semanticTechOverlap([skill], brainTechs) >= 0.5) hit++;
+  for (const skill of req) if (skillCovered(skill, brainTechs)) hit++;
   return hit / req.length;
 }
 
