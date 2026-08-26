@@ -40,8 +40,8 @@ export async function getSalaryAnalytics(c: Ctx) {
         return role
           .toLowerCase()
           .split(/[^a-z0-9+#]+/i)
-          .filter((w) => w.length > 2)
-          .some((w) => t.includes(w));
+          .filter((w: string) => w.length > 2)
+          .some((w: string) => t.includes(w));
       })
     : [];
 
