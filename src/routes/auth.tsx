@@ -42,6 +42,13 @@ export const Route = createFileRoute("/auth")({
         name: "description",
         content: "Sign in to CareerOS — your AI career operating system.",
       },
+      { property: "og:title", content: "Sign in · CareerOS" },
+      {
+        property: "og:description",
+        content: "Sign in to CareerOS — your AI career operating system.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AuthPage,
