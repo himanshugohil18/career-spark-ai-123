@@ -166,22 +166,43 @@ function JobsFeed() {
   });
 
   const refreshMutation = useMutation({
-    mutationFn: () => kickMatchRefresh({ data: { force: true } }),
-    onSuccess: (r) => {
-      toast.success(
-        r.crawled
-          ? `Re-verified ${r.fetched} listings with live sources · ${r.evaluated} scored for you.`
-          : `AI evaluated ${r.evaluated} jobs · ${r.skipped} skipped.`,
-      );
-      void queryClient.invalidateQueries({ queryKey: ["jobs-feed-pulse"] });
-      void queryClient.invalidateQueries({ queryKey: ["jobs-feed"] });
-      void queryClient.invalidateQueries({ queryKey: ["job-sections"] });
+    mutationFn: async () => {
+      setStage("Preparing your profile…");
+      const timers: ReturnType<typeof setTimeout>[] = [
+        setTimeout(() => setStage("Calculating matches…"), 900),
+        setTimeout(() => setStage("Ranking opportunities…"), 4500),
+        setTimeout(() => setStage("Updating recommendations…"), 9000),
+      ];
+      try {
+        return await kickMatchRefresh({ data: { force: true } });
+      } finally {
+        timers.forEach(clearTimeout);
+      }
+    },
+    onSuccess: async (r) => {
+      setStage("Updating recommendations…");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["jobs-feed-pulse"] }),
+        queryClient.invalidateQueries({ queryKey: ["jobs-feed"] }),
+        queryClient.invalidateQueries({ queryKey: ["job-sections"] }),
+      ]);
+      setStage(null);
+      toast.success(`Completed — ${r.evaluated} jobs rescored with the current algorithm.`);
+      // Catalog top-up runs after the user already has corrected matches.
+      void crawlCatalog().then((c) => {
+        if (c?.inserted) {
+          void queryClient.invalidateQueries({ queryKey: ["jobs-feed"] });
+          void queryClient.invalidateQueries({ queryKey: ["job-sections"] });
+        }
+      }).catch(() => {});
     },
     onError: (e) => {
+      setStage(null);
       console.error("[jobs] refresh matches failed:", e);
       toast.error(e instanceof Error ? e.message : "Refresh failed");
     },
   });
+
 
   const onCardClick = (jobId: string) => {
     void trackJobInteraction({ data: { jobId, kind: "clicked" } }).catch(() => {});
