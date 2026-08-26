@@ -1831,14 +1831,18 @@ export type Database = {
         Row: {
           answered_questions: number
           created_at: string
+          current_difficulty: string
           difficulty: string
           feedback_summary: string | null
           id: string
           improvements: string[] | null
+          interview_type: string
+          mode: string
           overall_score: number | null
           planned_questions: number
           status: string
           strengths: string[] | null
+          target_company: string | null
           target_role: string
           updated_at: string
           user_id: string
@@ -1846,14 +1850,18 @@ export type Database = {
         Insert: {
           answered_questions?: number
           created_at?: string
+          current_difficulty?: string
           difficulty?: string
           feedback_summary?: string | null
           id?: string
           improvements?: string[] | null
+          interview_type?: string
+          mode?: string
           overall_score?: number | null
           planned_questions?: number
           status?: string
           strengths?: string[] | null
+          target_company?: string | null
           target_role: string
           updated_at?: string
           user_id: string
@@ -1861,14 +1869,18 @@ export type Database = {
         Update: {
           answered_questions?: number
           created_at?: string
+          current_difficulty?: string
           difficulty?: string
           feedback_summary?: string | null
           id?: string
           improvements?: string[] | null
+          interview_type?: string
+          mode?: string
           overall_score?: number | null
           planned_questions?: number
           status?: string
           strengths?: string[] | null
+          target_company?: string | null
           target_role?: string
           updated_at?: string
           user_id?: string
@@ -1879,8 +1891,12 @@ export type Database = {
         Row: {
           answer: string | null
           created_at: string
+          difficulty: string | null
           feedback: string | null
+          focus_area: string | null
+          hint: string | null
           id: string
+          model_answer: string | null
           points_hit: string[] | null
           points_missed: string[] | null
           question: string
@@ -1892,8 +1908,12 @@ export type Database = {
         Insert: {
           answer?: string | null
           created_at?: string
+          difficulty?: string | null
           feedback?: string | null
+          focus_area?: string | null
+          hint?: string | null
           id?: string
+          model_answer?: string | null
           points_hit?: string[] | null
           points_missed?: string[] | null
           question: string
@@ -1905,8 +1925,12 @@ export type Database = {
         Update: {
           answer?: string | null
           created_at?: string
+          difficulty?: string | null
           feedback?: string | null
+          focus_area?: string | null
+          hint?: string | null
           id?: string
+          model_answer?: string | null
           points_hit?: string[] | null
           points_missed?: string[] | null
           question?: string
@@ -2009,7 +2033,10 @@ export type Database = {
           location_score: number
           missing_skills: Json
           overall_score: number
+          required_years: number | null
           salary_score: number
+          seniority_score: number
+          seniority_tier: string
           skill_score: number
           strengths: string[]
           technology_score: number
@@ -2031,7 +2058,10 @@ export type Database = {
           location_score?: number
           missing_skills?: Json
           overall_score?: number
+          required_years?: number | null
           salary_score?: number
+          seniority_score?: number
+          seniority_tier?: string
           skill_score?: number
           strengths?: string[]
           technology_score?: number
@@ -2053,7 +2083,10 @@ export type Database = {
           location_score?: number
           missing_skills?: Json
           overall_score?: number
+          required_years?: number | null
           salary_score?: number
+          seniority_score?: number
+          seniority_tier?: string
           skill_score?: number
           strengths?: string[]
           technology_score?: number
@@ -2114,6 +2147,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      job_preferences: {
+        Row: {
+          created_at: string
+          employment_types: string[]
+          experience_levels: string[]
+          id: string
+          include_stretch: boolean
+          open_to_international: boolean
+          preferred_countries: string[]
+          preferred_locations: string[]
+          preferred_regions: string[]
+          preferred_roles: string[]
+          salary_currency: string
+          salary_max: number | null
+          salary_min: number | null
+          salary_period: string
+          strict_salary_filter: boolean
+          updated_at: string
+          user_id: string
+          willing_to_relocate: boolean
+          work_modes: string[]
+        }
+        Insert: {
+          created_at?: string
+          employment_types?: string[]
+          experience_levels?: string[]
+          id?: string
+          include_stretch?: boolean
+          open_to_international?: boolean
+          preferred_countries?: string[]
+          preferred_locations?: string[]
+          preferred_regions?: string[]
+          preferred_roles?: string[]
+          salary_currency?: string
+          salary_max?: number | null
+          salary_min?: number | null
+          salary_period?: string
+          strict_salary_filter?: boolean
+          updated_at?: string
+          user_id: string
+          willing_to_relocate?: boolean
+          work_modes?: string[]
+        }
+        Update: {
+          created_at?: string
+          employment_types?: string[]
+          experience_levels?: string[]
+          id?: string
+          include_stretch?: boolean
+          open_to_international?: boolean
+          preferred_countries?: string[]
+          preferred_locations?: string[]
+          preferred_regions?: string[]
+          preferred_roles?: string[]
+          salary_currency?: string
+          salary_max?: number | null
+          salary_min?: number | null
+          salary_period?: string
+          strict_salary_filter?: boolean
+          updated_at?: string
+          user_id?: string
+          willing_to_relocate?: boolean
+          work_modes?: string[]
+        }
+        Relationships: []
       }
       job_provider_ids: {
         Row: {

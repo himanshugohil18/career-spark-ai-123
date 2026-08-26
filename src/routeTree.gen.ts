@@ -42,6 +42,7 @@ import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedResumesResumeIdRouteImport } from './routes/_authenticated/resumes.$resumeId'
 import { Route as AuthenticatedResumeReviewResumeIdRouteImport } from './routes/_authenticated/resume-review.$resumeId'
 import { Route as AuthenticatedJobsSavedRouteImport } from './routes/_authenticated/jobs.saved'
+import { Route as AuthenticatedJobsPreferencesRouteImport } from './routes/_authenticated/jobs.preferences'
 import { Route as AuthenticatedJobsCollectionsRouteImport } from './routes/_authenticated/jobs.collections'
 import { Route as AuthenticatedJobsJobIdRouteImport } from './routes/_authenticated/jobs.$jobId'
 import { Route as AuthenticatedInvoicePaymentIdRouteImport } from './routes/_authenticated/invoice.$paymentId'
@@ -234,6 +235,12 @@ const AuthenticatedJobsSavedRoute = AuthenticatedJobsSavedRouteImport.update({
   path: '/jobs/saved',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedJobsPreferencesRoute =
+  AuthenticatedJobsPreferencesRouteImport.update({
+    id: '/jobs/preferences',
+    path: '/jobs/preferences',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedJobsCollectionsRoute =
   AuthenticatedJobsCollectionsRouteImport.update({
     id: '/jobs/collections',
@@ -406,6 +413,7 @@ export interface FileRoutesByFullPath {
   '/invoice/$paymentId': typeof AuthenticatedInvoicePaymentIdRoute
   '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/jobs/collections': typeof AuthenticatedJobsCollectionsRouteWithChildren
+  '/jobs/preferences': typeof AuthenticatedJobsPreferencesRoute
   '/jobs/saved': typeof AuthenticatedJobsSavedRoute
   '/resume-review/$resumeId': typeof AuthenticatedResumeReviewResumeIdRoute
   '/resumes/$resumeId': typeof AuthenticatedResumesResumeIdRoute
@@ -462,6 +470,7 @@ export interface FileRoutesByTo {
   '/invoice/$paymentId': typeof AuthenticatedInvoicePaymentIdRoute
   '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/jobs/collections': typeof AuthenticatedJobsCollectionsRouteWithChildren
+  '/jobs/preferences': typeof AuthenticatedJobsPreferencesRoute
   '/jobs/saved': typeof AuthenticatedJobsSavedRoute
   '/resume-review/$resumeId': typeof AuthenticatedResumeReviewResumeIdRoute
   '/resumes/$resumeId': typeof AuthenticatedResumesResumeIdRoute
@@ -521,6 +530,7 @@ export interface FileRoutesById {
   '/_authenticated/invoice/$paymentId': typeof AuthenticatedInvoicePaymentIdRoute
   '/_authenticated/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/_authenticated/jobs/collections': typeof AuthenticatedJobsCollectionsRouteWithChildren
+  '/_authenticated/jobs/preferences': typeof AuthenticatedJobsPreferencesRoute
   '/_authenticated/jobs/saved': typeof AuthenticatedJobsSavedRoute
   '/_authenticated/resume-review/$resumeId': typeof AuthenticatedResumeReviewResumeIdRoute
   '/_authenticated/resumes/$resumeId': typeof AuthenticatedResumesResumeIdRoute
@@ -580,6 +590,7 @@ export interface FileRouteTypes {
     | '/invoice/$paymentId'
     | '/jobs/$jobId'
     | '/jobs/collections'
+    | '/jobs/preferences'
     | '/jobs/saved'
     | '/resume-review/$resumeId'
     | '/resumes/$resumeId'
@@ -636,6 +647,7 @@ export interface FileRouteTypes {
     | '/invoice/$paymentId'
     | '/jobs/$jobId'
     | '/jobs/collections'
+    | '/jobs/preferences'
     | '/jobs/saved'
     | '/resume-review/$resumeId'
     | '/resumes/$resumeId'
@@ -694,6 +706,7 @@ export interface FileRouteTypes {
     | '/_authenticated/invoice/$paymentId'
     | '/_authenticated/jobs/$jobId'
     | '/_authenticated/jobs/collections'
+    | '/_authenticated/jobs/preferences'
     | '/_authenticated/jobs/saved'
     | '/_authenticated/resume-review/$resumeId'
     | '/_authenticated/resumes/$resumeId'
@@ -967,6 +980,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedJobsSavedRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/jobs/preferences': {
+      id: '/_authenticated/jobs/preferences'
+      path: '/jobs/preferences'
+      fullPath: '/jobs/preferences'
+      preLoaderRoute: typeof AuthenticatedJobsPreferencesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/jobs/collections': {
       id: '/_authenticated/jobs/collections'
       path: '/jobs/collections'
@@ -1223,6 +1243,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedInvoicePaymentIdRoute: typeof AuthenticatedInvoicePaymentIdRoute
   AuthenticatedJobsJobIdRoute: typeof AuthenticatedJobsJobIdRoute
   AuthenticatedJobsCollectionsRoute: typeof AuthenticatedJobsCollectionsRouteWithChildren
+  AuthenticatedJobsPreferencesRoute: typeof AuthenticatedJobsPreferencesRoute
   AuthenticatedJobsSavedRoute: typeof AuthenticatedJobsSavedRoute
   AuthenticatedResumeReviewResumeIdRoute: typeof AuthenticatedResumeReviewResumeIdRoute
   AuthenticatedResumesResumeIdRoute: typeof AuthenticatedResumesResumeIdRoute
@@ -1254,6 +1275,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedJobsJobIdRoute: AuthenticatedJobsJobIdRoute,
   AuthenticatedJobsCollectionsRoute:
     AuthenticatedJobsCollectionsRouteWithChildren,
+  AuthenticatedJobsPreferencesRoute: AuthenticatedJobsPreferencesRoute,
   AuthenticatedJobsSavedRoute: AuthenticatedJobsSavedRoute,
   AuthenticatedResumeReviewResumeIdRoute:
     AuthenticatedResumeReviewResumeIdRoute,

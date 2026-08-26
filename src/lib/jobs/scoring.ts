@@ -18,7 +18,7 @@ import {
   semanticTechOverlap,
 } from "./role-synonyms";
 import { computeRelevance, brainTechVocabulary } from "./relevance";
-import { candidateSeniority, seniorityAlignment } from "@/lib/career-profile";
+import { candidateSeniority, seniorityAlignment, seniorityFit } from "@/lib/career-profile";
 import type { NormalizedJob } from "./types";
 
 
@@ -93,6 +93,16 @@ export function skillOverlapScore(brain: CareerBrainSnapshot, job: NormalizedJob
   );
   const semanticBonus = semantic * 20;
   return clamp((hits / Math.max(total, 1)) * 90 + semanticBonus);
+}
+
+/** Seniority compatibility for a (brain, job) pair — the hard constraint. */
+export function seniorityFitFor(brain: CareerBrainSnapshot, job: NormalizedJob) {
+  return seniorityFit({
+    candidate: candidateSeniority(brain),
+    candidateYears: brain.identity.yearsOfExperience ?? 0,
+    jobLevel: job.experienceLevel,
+    jobText: `${job.title} ${job.requirements.join(" ")} ${job.description.slice(0, 2500)}`,
+  });
 }
 
 export function experienceScore(brain: CareerBrainSnapshot, job: NormalizedJob): number {
@@ -233,19 +243,21 @@ export function computeBaselineScores(brain: CareerBrainSnapshot, job: Normalize
   const projects = projectsScore(brain, job);
   const location = locationScore(brain, job);
   const salary = salaryScore(brain, job);
+  const fitInfo = seniorityFitFor(brain, job);
+  const seniority = fitInfo.score;
 
-  // Career-Brain-first weights. Total = 1.00.
-  //   careerGoal 0.28, skill 0.22, technology 0.20, projects 0.10,
-  //   experience 0.08, salary 0.05, location 0.04, education 0.03
+  // Career-Brain-first weights, with seniority as a first-class factor so a
+  // 0-year candidate can never be ranked into senior postings. Total = 1.00.
   const rawOverall =
-    careerGoal * 0.28 +
-    skill * 0.22 +
-    technology * 0.20 +
-    projects * 0.10 +
-    experience * 0.08 +
-    salary * 0.05 +
-    location * 0.04 +
-    education * 0.03;
+    careerGoal * 0.22 +
+    skill * 0.18 +
+    seniority * 0.17 +
+    technology * 0.15 +
+    experience * 0.10 +
+    projects * 0.08 +
+    location * 0.05 +
+    salary * 0.04 +
+    education * 0.01;
 
   // Hard career-path guardrail. The title-anchored relevance engine decides
   // whether the job is on-track at all; off-track and non-technical jobs can
@@ -263,6 +275,11 @@ export function computeBaselineScores(brain: CareerBrainSnapshot, job: Normalize
     if (fit === 0) overall = Math.min(overall, 25);
   }
 
+  // Seniority ceiling: an over-levelled posting is capped regardless of how
+  // strong the skill/tech overlap is. This is the "no senior jobs for a
+  // fresher" guarantee, applied mathematically.
+  if (fitInfo.cap != null) overall = Math.min(overall, fitInfo.cap);
+
   return {
     overall: Math.round(clamp(overall)),
     skill: Math.round(skill),
@@ -273,6 +290,11 @@ export function computeBaselineScores(brain: CareerBrainSnapshot, job: Normalize
     projects: Math.round(projects),
     location: Math.round(location),
     salary: Math.round(salary),
+    seniority: Math.round(seniority),
+    seniorityTier: fitInfo.tier,
+    seniorityLabel: fitInfo.label,
+    stretch: fitInfo.tier === "stretch",
+    requiredYears: fitInfo.requiredYears,
     familyFit: fit,
     excluded: excluded || rel.vetoed,
     relevance: rel.relevance,

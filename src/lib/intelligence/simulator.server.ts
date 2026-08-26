@@ -17,7 +17,51 @@ export type SimTurn = {
   feedback: string | null;
   points_hit: string[] | null;
   points_missed: string[] | null;
+  difficulty: string | null;
+  focus_area: string | null;
+  hint: string | null;
+  model_answer: string | null;
 };
+
+const TURN_SELECT =
+  "id, turn_index, question, answer, score, feedback, points_hit, points_missed, difficulty, focus_area, hint, model_answer";
+
+export type InterviewType = "technical" | "behavioral" | "hr" | "system_design" | "mixed";
+
+const TYPE_BRIEF: Record<InterviewType, string> = {
+  technical:
+    "a technical screening: coding fundamentals, language/framework depth, debugging, and applied problem solving",
+  behavioral:
+    "a behavioral interview: ownership, conflict, failure, collaboration and impact stories, judged with the STAR structure",
+  hr: "an HR / culture round: motivation, career goals, salary expectations, notice period, relocation and company fit",
+  system_design:
+    "a system design round: requirements gathering, data modelling, scaling, trade-offs and failure handling",
+  mixed:
+    "a full loop that alternates between behavioral, project deep-dive and technical questions",
+};
+
+const LADDER = ["easy", "medium", "hard"] as const;
+type Rung = (typeof LADDER)[number];
+
+/**
+ * Adaptive difficulty: the interviewer gets harder when the candidate is
+ * scoring well and easier when they are struggling, exactly like a real
+ * interviewer calibrating mid-loop. `mixed` sessions start in the middle.
+ */
+export function nextDifficulty(session: any, scores: number[]): Rung {
+  const requested = String(session.difficulty ?? "mixed");
+  if (requested === "easy" || requested === "hard") return requested;
+  const current = (LADDER as readonly string[]).includes(session.current_difficulty)
+    ? (session.current_difficulty as Rung)
+    : "medium";
+  if (!scores.length) return current;
+  const recent = scores.slice(-2);
+  const avg = recent.reduce((a, b) => a + b, 0) / recent.length;
+  const i = LADDER.indexOf(current);
+  if (avg >= 7.5) return LADDER[Math.min(LADDER.length - 1, i + 1)];
+  if (avg <= 4) return LADDER[Math.max(0, i - 1)];
+  return current;
+}
 
 async function candidateContext(c: Ctx): Promise<string> {
   const [{ data: profile }, { data: skills }, { data: exp }] = await Promise.all([
@@ -52,27 +96,64 @@ async function candidateContext(c: Ctx): Promise<string> {
   return parts.join("\n") || "No candidate profile data available.";
 }
 
-async function generateQuestion(c: Ctx, session: any, priorQuestions: string[]): Promise<string> {
+type GeneratedQuestion = {
+  question: string;
+  focusArea: string | null;
+  hint: string | null;
+  modelAnswer: string | null;
+  difficulty: string;
+};
+
+/**
+ * Generates the next question AND the teaching material for it (a nudge hint
+ * and a model answer) in one call, so "teacher mode" can reveal coaching
+ * without an extra round trip.
+ */
+async function generateQuestion(
+  c: Ctx,
+  session: any,
+  priorQuestions: string[],
+  difficulty: string,
+  transcript: string,
+): Promise<GeneratedQuestion> {
   const context = await candidateContext(c);
+  const type = (session.interview_type ?? "mixed") as InterviewType;
+  const brief = TYPE_BRIEF[type] ?? TYPE_BRIEF.mixed;
   try {
     const raw = await callLovableAI({
       messages: [
         {
           role: "system",
           content:
-            "You are a senior interviewer conducting a realistic mock interview. Ask ONE focused question. Return JSON: {\"question\": string}. Mix behavioral and technical based on difficulty. Never repeat prior questions.",
+            "You are a senior interviewer AND an interview coach running a realistic mock interview. Ask ONE focused question, then privately prepare coaching material for it. " +
+            'Return JSON: {"question": string, "focus_area": string (2-4 words), "hint": string (one sentence nudge, no answer given away), "model_answer": string (a strong 100-140 word example answer written in first person)}. ' +
+            "Ground every question in the candidate's real background. Never repeat a prior question. Escalate depth to match the stated difficulty.",
         },
         {
           role: "user",
-          content: `${context}\nTarget role: ${session.target_role}\nDifficulty: ${session.difficulty}\nThis is question ${priorQuestions.length + 1} of ${session.planned_questions}.\nPrior questions: ${JSON.stringify(priorQuestions)}`,
+          content: `${context}
+Target role: ${session.target_role}${session.target_company ? `\nTarget company: ${session.target_company}` : ""}
+Round type: ${brief}
+Difficulty for THIS question: ${difficulty}
+Question ${priorQuestions.length + 1} of ${session.planned_questions}.
+Prior questions: ${JSON.stringify(priorQuestions)}
+${transcript ? `Recent answers so far (calibrate depth against these):\n${transcript.slice(0, 2500)}` : ""}`,
         },
       ],
       responseFormat: "json_object",
       temperature: 0.7,
-      maxTokens: 400,
+      maxTokens: 900,
     });
     const parsed = JSON.parse(extractJson(raw));
-    if (parsed.question && typeof parsed.question === "string") return parsed.question.trim();
+    if (parsed.question && typeof parsed.question === "string") {
+      return {
+        question: String(parsed.question).trim(),
+        focusArea: parsed.focus_area ? String(parsed.focus_area).slice(0, 60) : null,
+        hint: parsed.hint ? String(parsed.hint).slice(0, 400) : null,
+        modelAnswer: parsed.model_answer ? String(parsed.model_answer).slice(0, 2000) : null,
+        difficulty,
+      };
+    }
   } catch {
     /* deterministic fallback keeps the simulator usable if AI is briefly unavailable */
   }
@@ -83,13 +164,27 @@ async function generateQuestion(c: Ctx, session: any, priorQuestions: string[]):
     `Which skills make you strongest for ${session.target_role}, and where are you still improving?`,
     `Why should this company choose you for a ${session.target_role} position?`,
   ];
-  return fallbackQuestions[priorQuestions.length % fallbackQuestions.length];
+  return {
+    question: fallbackQuestions[priorQuestions.length % fallbackQuestions.length],
+    focusArea: null,
+    hint: "Answer with one concrete example: the situation, what you personally did, and the measurable result.",
+    modelAnswer: null,
+    difficulty,
+  };
 }
 
 export async function startSimSession(
   c: Ctx,
-  input: { targetRole: string; difficulty: string; plannedQuestions: number },
+  input: {
+    targetRole: string;
+    difficulty: string;
+    plannedQuestions: number;
+    interviewType?: string;
+    targetCompany?: string | null;
+    mode?: string;
+  },
 ) {
+  const startDifficulty = input.difficulty === "mixed" ? "medium" : input.difficulty;
   const { data: session, error } = await c.supabase
     .from("interview_sim_sessions")
     .insert({
@@ -97,16 +192,29 @@ export async function startSimSession(
       target_role: input.targetRole,
       difficulty: input.difficulty,
       planned_questions: input.plannedQuestions,
+      interview_type: input.interviewType ?? "mixed",
+      target_company: input.targetCompany ?? null,
+      mode: input.mode ?? "practice",
+      current_difficulty: startDifficulty,
     })
     .select("*")
     .single();
   if (error) throw new Error(error.message);
 
-  const question = await generateQuestion(c, session, []);
+  const q = await generateQuestion(c, session, [], startDifficulty, "");
   const { data: turn, error: tErr } = await c.supabase
     .from("interview_sim_turns")
-    .insert({ session_id: session.id, user_id: c.userId, turn_index: 0, question })
-    .select("*")
+    .insert({
+      session_id: session.id,
+      user_id: c.userId,
+      turn_index: 0,
+      question: q.question,
+      difficulty: q.difficulty,
+      focus_area: q.focusArea,
+      hint: q.hint,
+      model_answer: q.modelAnswer,
+    })
+    .select(TURN_SELECT)
     .single();
   if (tErr) throw new Error(tErr.message);
   return { session, currentTurn: turn as SimTurn };
@@ -117,7 +225,7 @@ export async function getSimSession(c: Ctx, sessionId: string) {
     c.supabase.from("interview_sim_sessions").select("*").eq("id", sessionId).eq("user_id", c.userId).maybeSingle(),
     c.supabase
       .from("interview_sim_turns")
-      .select("*")
+      .select(TURN_SELECT)
       .eq("session_id", sessionId)
       .eq("user_id", c.userId)
       .order("turn_index", { ascending: true }),
@@ -130,7 +238,9 @@ export async function getSimSession(c: Ctx, sessionId: string) {
 export async function listSimSessions(c: Ctx) {
   const { data } = await c.supabase
     .from("interview_sim_sessions")
-    .select("id, target_role, difficulty, status, planned_questions, answered_questions, overall_score, created_at")
+    .select(
+      "id, target_role, difficulty, interview_type, target_company, mode, current_difficulty, status, planned_questions, answered_questions, overall_score, created_at",
+    )
     .eq("user_id", c.userId)
     .order("created_at", { ascending: false })
     .limit(20);
@@ -155,7 +265,8 @@ export async function submitSimAnswer(c: Ctx, input: { sessionId: string; turnId
         {
           role: "system",
           content:
-            "You are a senior interviewer scoring a mock interview answer. Be honest but constructive. Return JSON: {\"score\": number 0-10, \"feedback\": string (2-3 sentences), \"points_hit\": string[], \"points_missed\": string[]}.",
+            "You are a senior interviewer AND an interview coach scoring a mock interview answer. Be honest but constructive, and teach: name what was strong, what was missing, and how to restructure the answer. " +
+            'Return JSON: {"score": number 0-10, "feedback": string (3-4 sentences of coaching, ending with one concrete rewrite instruction), "points_hit": string[], "points_missed": string[]}.',
         },
         {
           role: "user",
@@ -193,17 +304,65 @@ export async function submitSimAnswer(c: Ctx, input: { sessionId: string; turnId
 
   if (isLast) {
     const finished = await finishSimSession(c, session.id);
-    return { finished: true as const, score, feedback, pointsHit, pointsMissed, result: finished };
+    return {
+      finished: true as const,
+      score,
+      feedback,
+      pointsHit,
+      pointsMissed,
+      modelAnswer: turn.model_answer,
+      difficulty: session.current_difficulty,
+      result: finished,
+    };
   }
 
-  const nextQuestion = await generateQuestion(c, session, [...turns.map((t) => t.question)]);
+  // Adaptive difficulty: recalibrate off the running scores before asking next.
+  const scores = [...turns.filter((t) => t.score != null).map((t) => Number(t.score)), score];
+  const difficulty = nextDifficulty(session, scores);
+  if (difficulty !== session.current_difficulty) {
+    await c.supabase
+      .from("interview_sim_sessions")
+      .update({ current_difficulty: difficulty })
+      .eq("id", session.id)
+      .eq("user_id", c.userId);
+  }
+
+  const transcript = [...turns.filter((t) => t.answer), { question: turn.question, answer: input.answer, score }]
+    .map((t: any) => `Q: ${t.question}\nA: ${String(t.answer).slice(0, 500)}\nScore: ${t.score}/10`)
+    .join("\n\n");
+
+  const next = await generateQuestion(
+    c,
+    { ...session, current_difficulty: difficulty },
+    [...turns.map((t) => t.question)],
+    difficulty,
+    transcript,
+  );
   const { data: nextTurn, error: nErr } = await c.supabase
     .from("interview_sim_turns")
-    .insert({ session_id: session.id, user_id: c.userId, turn_index: turns.length, question: nextQuestion })
-    .select("*")
+    .insert({
+      session_id: session.id,
+      user_id: c.userId,
+      turn_index: turns.length,
+      question: next.question,
+      difficulty: next.difficulty,
+      focus_area: next.focusArea,
+      hint: next.hint,
+      model_answer: next.modelAnswer,
+    })
+    .select(TURN_SELECT)
     .single();
   if (nErr) throw new Error(nErr.message);
-  return { finished: false as const, score, feedback, pointsHit, pointsMissed, nextTurn: nextTurn as SimTurn };
+  return {
+    finished: false as const,
+    score,
+    feedback,
+    pointsHit,
+    pointsMissed,
+    modelAnswer: turn.model_answer,
+    difficulty,
+    nextTurn: nextTurn as SimTurn,
+  };
 }
 
 export async function finishSimSession(c: Ctx, sessionId: string) {

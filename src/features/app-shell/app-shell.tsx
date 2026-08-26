@@ -34,6 +34,7 @@ import {
   Home,
   Target,
   Bookmark,
+  SlidersHorizontal,
   Palette,
   Banknote,
 } from "lucide-react";
@@ -94,6 +95,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Discover", to: "/jobs", icon: Briefcase },
       { label: "Saved jobs", to: "/jobs/saved", icon: Bookmark },
+      { label: "Preferences", to: "/jobs/preferences", icon: SlidersHorizontal },
       { label: "Applications", to: "/applications", icon: CommandIcon },
       { label: "Tracker", to: "/tracker", icon: Radar },
       { label: "Outreach", to: "/outreach", icon: Mail },

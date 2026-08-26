@@ -23,7 +23,21 @@ import {
   type CandidateProfile,
   type RoleFamily,
 } from "./role-synonyms";
-import { locationAffinity } from "./location";
+import { locationAffinity, isIndiaJob } from "./location";
+import {
+  candidateSeniority,
+  seniorityFit,
+  type SeniorityTier,
+} from "@/lib/career-profile";
+import {
+  DEFAULT_JOB_PREFERENCES,
+  regionFor,
+  regionLabel,
+  remoteAllows,
+  remoteEligibility,
+  type JobPreferences,
+  type RegionId,
+} from "@/lib/job-preferences";
 
 export type SectionJob = {
   id: string;
@@ -40,6 +54,15 @@ export type SectionJob = {
   match: any | null;
   insights: string[];
   savedStatus?: string | null;
+  /** Seniority verdict against the candidate's own level. */
+  seniorityTier?: SeniorityTier;
+  seniorityLabel?: string | null;
+  stretch?: boolean;
+  /** Resolved remote geographic eligibility label ("Remote — US only"). */
+  remoteLabel?: string | null;
+  remoteEligible?: boolean;
+  region?: string | null;
+  regionLabel?: string | null;
 };
 
 export type JobSection = {
@@ -60,9 +83,25 @@ export type CompanyBucket = {
 };
 
 const JOB_SELECT =
-  "id,title,location,location_country,remote_status,salary_min,salary_max,salary_currency,posted_at,first_seen_at,last_seen_at,last_verified_at,expires_at,stale_reason,application_url,provider,required_skills,company:companies(id,name,slug,logo_url,industry,size,remote_policy,tech_stack)";
+  "id,title,location,location_country,remote_status,employment_type,experience_level,salary_min,salary_max,salary_currency,posted_at,first_seen_at,last_seen_at,last_verified_at,expires_at,stale_reason,application_url,provider,required_skills,company:companies(id,name,slug,logo_url,industry,size,remote_policy,tech_stack)";
 
 const HIDE_BELOW = 40; // hard floor for below-relevance jobs
+
+/** Candidate's own country, from the brain / saved preferences. */
+function candidateCountry(brain: CareerBrainSnapshot | null, prefs: JobPreferences): string | null {
+  if (prefs.preferredCountries[0]) return prefs.preferredCountries[0].toLowerCase();
+  const loc = [
+    brain?.identity?.location,
+    brain?.identity?.preferences?.preferredLocation,
+    ...prefs.preferredLocations,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  if (!loc) return null;
+  if (isIndiaJob(loc, null)) return "india";
+  const region = regionFor(loc, null);
+  return region ? loc.toLowerCase() : null;
+}
 
 export async function buildJobSections(
   supabase: SupabaseClient,
@@ -71,6 +110,64 @@ export async function buildJobSections(
 ): Promise<{ sections: JobSection[]; companies: CompanyBucket[] }> {
   const sections: JobSection[] = [];
   const profile: CandidateProfile = buildProfileFromSnapshot(brain);
+
+  // Saved job preferences drive location tiers, work mode ranking and whether
+  // stretch opportunities are surfaced at all.
+  const { data: prefRow } = await supabase
+    .from("job_preferences")
+    .select("*")
+    .eq("user_id", userId)
+    .maybeSingle();
+  const prefs: JobPreferences = prefRow
+    ? {
+        ...DEFAULT_JOB_PREFERENCES,
+        preferredRoles: (prefRow as any).preferred_roles ?? [],
+        preferredLocations: (prefRow as any).preferred_locations ?? [],
+        preferredCountries: (prefRow as any).preferred_countries ?? [],
+        preferredRegions: (prefRow as any).preferred_regions ?? [],
+        workModes: (prefRow as any).work_modes ?? [],
+        experienceLevels: (prefRow as any).experience_levels ?? [],
+        employmentTypes: (prefRow as any).employment_types ?? [],
+        salaryMin: (prefRow as any).salary_min ?? null,
+        salaryMax: (prefRow as any).salary_max ?? null,
+        salaryCurrency: (prefRow as any).salary_currency ?? "INR",
+        salaryPeriod: (prefRow as any).salary_period === "month" ? "month" : "year",
+        willingToRelocate: !!(prefRow as any).willing_to_relocate,
+        openToInternational: !!(prefRow as any).open_to_international,
+        includeStretch: (prefRow as any).include_stretch ?? true,
+        strictSalaryFilter: !!(prefRow as any).strict_salary_filter,
+      }
+    : { ...DEFAULT_JOB_PREFERENCES };
+
+  const myCountry = candidateCountry(brain, prefs);
+  const myLevel = candidateSeniority(brain);
+  const myYears = brain?.identity?.yearsOfExperience ?? 0;
+
+  /** Attach seniority + remote-eligibility + region metadata to a job row. */
+  const annotate = (job: any): Partial<SectionJob> => {
+    const fit = seniorityFit({
+      candidate: myLevel,
+      candidateYears: myYears,
+      jobLevel: job.experience_level ?? null,
+      jobText: `${job.title ?? ""} ${(job.description ?? "").slice(0, 2000)}`,
+    });
+    const elig = remoteEligibility({
+      remoteStatus: job.remote_status,
+      location: job.location,
+      locationCountry: job.location_country,
+      description: job.description,
+    });
+    const region = regionFor(job.location, job.location_country);
+    return {
+      seniorityTier: fit.tier,
+      seniorityLabel: fit.label,
+      stretch: fit.tier === "stretch",
+      remoteLabel: elig.remote ? elig.label : null,
+      remoteEligible: remoteAllows(elig, myCountry),
+      region,
+      regionLabel: regionLabel(region),
+    };
+  };
 
   const brainFamilies: RoleFamily[] = profile.families;
   const jobLikeFromRow = (j: any) => ({
@@ -90,7 +187,7 @@ export async function buildJobSections(
   const { data: matches } = await supabase
     .from("job_matches")
     .select(
-      `overall_score, skill_score, experience_score, technology_score, career_goal_score, location_score, salary_score, education_score, strengths, weaknesses, missing_skills, explanation, job:jobs(${JOB_SELECT},description)`,
+      `overall_score, skill_score, experience_score, technology_score, career_goal_score, location_score, salary_score, education_score, seniority_score, seniority_tier, required_years, strengths, weaknesses, missing_skills, explanation, job:jobs(${JOB_SELECT},description)`,
     )
     .eq("user_id", userId)
     .order("overall_score", { ascending: false })
@@ -111,8 +208,18 @@ export async function buildJobSections(
       if (brainFamilies.length && fitInfo.excluded) overall = Math.min(overall, 15);
       else if (brainFamilies.length && fitInfo.fit === 0) overall = Math.min(overall, 22);
       else if (brainFamilies.length && fitInfo.fit <= 0.4) overall = Math.min(overall, 48);
+
+      // Seniority ceiling re-applied at read time so cached scores computed
+      // before the seniority constraint existed can never show an
+      // over-levelled senior role as a high match to a fresher.
+      const meta = annotate(job);
+      const seniorityCap: Record<string, number> = { stretch: 82, over: 46, "far-over": 30 };
+      const cap = seniorityCap[meta.seniorityTier ?? "match"];
+      if (cap != null) overall = Math.min(overall, cap);
+
       return {
         ...job,
+        ...meta,
         match: {
           overall_score: overall,
           skill_score: m.skill_score,
@@ -122,6 +229,10 @@ export async function buildJobSections(
           location_score: m.location_score,
           salary_score: m.salary_score,
           education_score: m.education_score,
+          seniority_score: (m as any).seniority_score ?? null,
+          seniority_tier: meta.seniorityTier,
+          seniority_label: meta.seniorityLabel,
+          required_years: (m as any).required_years ?? null,
           strengths: m.strengths,
           weaknesses: m.weaknesses,
           missing_skills: m.missing_skills,
@@ -188,29 +299,57 @@ export async function buildJobSections(
     .in("status", ["archived", "ignored"]);
   for (const s of (hiddenSaved ?? []) as any[]) used.add(s.job_id);
 
-  // 1) Today's Best Matches
-  const best = take(deduped, 18);
-  if (best.length) {
+  // ---- Seniority partitioning (PART 4 / PART 7) ----------------------
+  // Level-appropriate jobs form the primary feed. Stretch jobs get their own
+  // clearly-labelled shelf. Over-levelled jobs never enter the shelves at all.
+  const levelAppropriate = deduped.filter(
+    (j) => j.seniorityTier === "match" || j.seniorityTier === "under",
+  );
+  const stretchPool = deduped.filter((j) => j.seniorityTier === "stretch");
+  for (const j of deduped) {
+    if (j.seniorityTier === "over" || j.seniorityTier === "far-over") used.add(j.id);
+  }
+  const primary = levelAppropriate;
+
+  // 1) Recommended for You — level-appropriate, preference-aware ranking.
+  const modeBoost = (j: SectionJob) => {
+    if (!prefs.workModes.length) return 0;
+    const mode = (j.remote_status ?? "").toLowerCase();
+    const wanted = prefs.workModes as string[];
+    if (wanted.includes(mode)) return 12;
+    if (mode === "hybrid" && wanted.includes("remote")) return 4;
+    return -6;
+  };
+  const salaryBoost = (j: SectionJob) => {
+    const target = prefs.salaryMin;
+    if (!target || !j.salary_max) return 0;
+    const period = prefs.salaryPeriod === "month" ? target * 12 : target;
+    return Number(j.salary_max) >= period ? 6 : -4;
+  };
+  const recommended = take(
+    primary
+      .slice()
+      .sort(
+        (a, b) =>
+          Number(b.match?.overall_score ?? 0) + modeBoost(b) + salaryBoost(b) -
+          (Number(a.match?.overall_score ?? 0) + modeBoost(a) + salaryBoost(a)),
+      ),
+    18,
+  );
+  if (recommended.length) {
     sections.push({
       id: "best",
-      title: "Today's Best Matches",
-      subtitle: "Highest-scoring roles across your Career Brain",
-      reason: "Ranked by AI across skills, projects, tech, and preferences.",
-      items: best,
+      title: "Recommended for You",
+      subtitle: "Level-appropriate roles matched to your Career Brain",
+      reason:
+        "Ranked across skills, projects, tech stack, seniority fit, location and your saved preferences.",
+      items: recommended,
     });
   }
 
   // 1b) India-first shelf — CareerOS is India-first, then global.
-  const INDIA_HINTS = [
-    "india", "bengaluru", "bangalore", "mumbai", "delhi", "noida", "gurgaon", "gurugram",
-    "pune", "hyderabad", "chennai", "kolkata", "ahmedabad", "jaipur", "indore", "kochi",
-    "coimbatore", "chandigarh", "vadodara", "surat",
-  ];
-  const isIndia = (j: SectionJob) => {
-    const text = `${j.location ?? ""} ${(j as any).location_country ?? ""}`.toLowerCase();
-    return INDIA_HINTS.some((h) => text.includes(h));
-  };
-  const indiaItems = take(deduped.filter(isIndia), 16);
+  const isIndia = (j: SectionJob) => isIndiaJob(j.location, (j as any).location_country);
+  const indiaItems = take(primary.filter(isIndia), 16);
   if (indiaItems.length) {
     sections.push({
       id: "india",
@@ -221,8 +360,29 @@ export async function buildJobSections(
     });
   }
 
+  // 1c) Stretch Opportunities — explicitly one level above the candidate, so
+  // ambition is still served without polluting the recommended feed.
+  if (prefs.includeStretch) {
+    const stretchItems = take(
+      stretchPool.sort(
+        (a, b) => Number(b.match?.overall_score ?? 0) - Number(a.match?.overall_score ?? 0),
+      ),
+      10,
+    );
+    if (stretchItems.length) {
+      sections.push({
+        id: "stretch",
+        title: "Stretch Opportunities",
+        subtitle: "One level above you — worth applying with a strong story",
+        reason:
+          "These ask for slightly more experience than your resume shows. Shown separately so your main feed stays realistic.",
+        items: stretchItems,
+      });
+    }
+  }
+
   // 2) High Confidence (>=85)
-  const high = take(deduped.filter((m) => Number(m.match?.overall_score ?? 0) >= 85), 16);
+  const high = take(primary.filter((m) => Number(m.match?.overall_score ?? 0) >= 85), 16);
   if (high.length >= 2) {
     sections.push({
       id: "high",
@@ -245,7 +405,7 @@ export async function buildJobSections(
   }
   if (dreamCompanyIds.size) {
     const dreamItems = take(
-      deduped.filter((j) => j.company?.id && dreamCompanyIds.has(j.company.id)),
+      primary.filter((j) => j.company?.id && dreamCompanyIds.has(j.company.id)),
       4,
     );
     if (dreamItems.length) {
@@ -261,7 +421,7 @@ export async function buildJobSections(
 
   // 4) Hidden Gem — strong match (>=75) at a small/unknown company
   const gems = take(
-    deduped.filter((j) => {
+    primary.filter((j) => {
       const score = Number(j.match?.overall_score ?? 0);
       const size = (j.company?.size ?? "").toString().toLowerCase();
       const isSmall = /startup|1-10|11-50|51-100|small/.test(size) || !size;
@@ -280,7 +440,7 @@ export async function buildJobSections(
   }
 
   // 5) Highest Salary among on-track matches
-  const bySalary = deduped
+  const bySalary = primary
     .filter((j) => j.salary_max && Number(j.match?.overall_score ?? 0) >= 60)
     .sort((a, b) => Number(b.salary_max ?? 0) - Number(a.salary_max ?? 0));
   const salaryItems = take(bySalary, 8);
@@ -295,21 +455,61 @@ export async function buildJobSections(
     });
   }
 
-  // 6) Best Remote Roles
+  // 6) Remote roles you're actually eligible for — a "Remote (US only)"
+  // posting is not a real remote option for a candidate based in India.
   const remoteItems = take(
-    deduped
-      .filter((j) => j.remote_status === "remote" && Number(j.match?.overall_score ?? 0) >= 55)
+    primary
+      .filter(
+        (j) =>
+          j.remote_status === "remote" &&
+          j.remoteEligible !== false &&
+          Number(j.match?.overall_score ?? 0) >= 55,
+      )
       .sort((a, b) => Number(b.match?.overall_score ?? 0) - Number(a.match?.overall_score ?? 0)),
     10,
   );
   if (remoteItems.length) {
     sections.push({
       id: "remote",
-      title: "Best Remote Roles",
-      subtitle: "Fully remote and matched to your Career Brain",
-      reason: "Remote-only filter over your top matches.",
+      title: "Remote Roles You Can Take",
+      subtitle: "Fully remote and open to your location",
+      reason:
+        "Remote postings restricted to other countries are filtered out, so every role here accepts applicants from where you are.",
       items: remoteItems,
     });
+  }
+
+  // 6b) International opportunities, grouped by region, only when the user
+  // opted in. Keeps the India-first feed clean by default.
+  if (prefs.openToInternational) {
+    const intl = primary.filter(
+      (j) => !isIndia(j) && j.region && Number(j.match?.overall_score ?? 0) >= 55,
+    );
+    const byRegion = new Map<string, SectionJob[]>();
+    for (const j of intl) {
+      const key = j.region as string;
+      if (!byRegion.has(key)) byRegion.set(key, []);
+      byRegion.get(key)!.push(j);
+    }
+    const wanted: RegionId[] = (prefs.preferredRegions.length
+      ? prefs.preferredRegions
+      : [...byRegion.keys()]) as RegionId[];
+    for (const region of wanted) {
+      const pool = byRegion.get(region);
+      if (!pool?.length) continue;
+      const items = take(
+        pool.sort((a, b) => Number(b.match?.overall_score ?? 0) - Number(a.match?.overall_score ?? 0)),
+        8,
+      );
+      if (items.length < 2) continue;
+      sections.push({
+        id: `intl-${region}`,
+        title: `Opportunities in ${regionLabel(region)}`,
+        subtitle: "International roles matched to your profile",
+        reason: "Shown because you marked yourself open to international opportunities.",
+        items,
+      });
+    }
   }
 
   // 7) Recently Discovered (on-track only)
@@ -342,7 +542,7 @@ export async function buildJobSections(
   const preferredLoc = brain?.identity?.preferences?.preferredLocation ?? brain?.identity?.location ?? null;
   if (preferredLoc) {
     const nearItems = take(
-      deduped
+      primary
         .filter((j) => locationAffinity({
           jobLocation: j.location,
           jobCountry: (j as any).location_country,
@@ -369,7 +569,7 @@ export async function buildJobSections(
   // 9) Adjacent role families — help discovery outside the tight family.
   if (brainFamilies[0]?.related?.length) {
     const relatedIds = new Set(brainFamilies[0].related);
-    const adjacent = deduped.filter((j) => {
+    const adjacent = primary.filter((j) => {
       const { jobFamily } = jobFamilyFitProfile(jobLikeFromRow(j), profile);
       return jobFamily && relatedIds.has(jobFamily.id);
     });
