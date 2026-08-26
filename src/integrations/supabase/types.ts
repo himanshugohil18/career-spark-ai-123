@@ -1088,6 +1088,164 @@ export type Database = {
         }
         Relationships: []
       }
+      career_missions: {
+        Row: {
+          completed_count: number
+          created_at: string
+          id: string
+          kind: string
+          link: string | null
+          mission_date: string
+          status: string
+          target_count: number
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_count?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string | null
+          mission_date?: string
+          status?: string
+          target_count?: number
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_count?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          link?: string | null
+          mission_date?: string
+          status?: string
+          target_count?: number
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      career_roadmap_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          item_type: string
+          linked_job_id: string | null
+          linked_learning_topic: string | null
+          linked_project_id: string | null
+          phase: number
+          phase_label: string | null
+          roadmap_id: string
+          skills: string[] | null
+          sort_order: number
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          item_type?: string
+          linked_job_id?: string | null
+          linked_learning_topic?: string | null
+          linked_project_id?: string | null
+          phase?: number
+          phase_label?: string | null
+          roadmap_id: string
+          skills?: string[] | null
+          sort_order?: number
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          item_type?: string
+          linked_job_id?: string | null
+          linked_learning_topic?: string | null
+          linked_project_id?: string | null
+          phase?: number
+          phase_label?: string | null
+          roadmap_id?: string
+          skills?: string[] | null
+          sort_order?: number
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "career_roadmap_items_roadmap_id_fkey"
+            columns: ["roadmap_id"]
+            isOneToOne: false
+            referencedRelation: "career_roadmaps"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      career_roadmaps: {
+        Row: {
+          ai_model: string | null
+          created_at: string
+          id: string
+          present_role: string | null
+          progress: number
+          status: string
+          target_companies: string[] | null
+          target_location: string | null
+          target_role: string
+          target_salary: string | null
+          target_timeline: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          ai_model?: string | null
+          created_at?: string
+          id?: string
+          present_role?: string | null
+          progress?: number
+          status?: string
+          target_companies?: string[] | null
+          target_location?: string | null
+          target_role: string
+          target_salary?: string | null
+          target_timeline?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          ai_model?: string | null
+          created_at?: string
+          id?: string
+          present_role?: string | null
+          progress?: number
+          status?: string
+          target_companies?: string[] | null
+          target_location?: string | null
+          target_role?: string
+          target_salary?: string | null
+          target_timeline?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       certifications: {
         Row: {
           ai_original: Json | null
@@ -2167,6 +2325,45 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          career_insights: boolean
+          created_at: string
+          follow_ups: boolean
+          id: string
+          interview_reminders: boolean
+          job_matches: boolean
+          roadmap_progress: boolean
+          skill_gaps: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          career_insights?: boolean
+          created_at?: string
+          follow_ups?: boolean
+          id?: string
+          interview_reminders?: boolean
+          job_matches?: boolean
+          roadmap_progress?: boolean
+          skill_gaps?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          career_insights?: boolean
+          created_at?: string
+          follow_ups?: boolean
+          id?: string
+          interview_reminders?: boolean
+          job_matches?: boolean
+          roadmap_progress?: boolean
+          skill_gaps?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       outreach_messages: {
         Row: {
           ai_model: string | null
@@ -2362,6 +2559,71 @@ export type Database = {
           years_of_experience?: number | null
         }
         Relationships: []
+      }
+      project_recommendations: {
+        Row: {
+          architecture_overview: string | null
+          checklist: Json
+          created_at: string
+          description: string | null
+          difficulty: string
+          id: string
+          learning_goals: string[] | null
+          name: string
+          roadmap_id: string | null
+          skills_covered: string[] | null
+          source: string
+          status: string
+          tech_stack: string[] | null
+          updated_at: string
+          user_id: string
+          why_recommended: string | null
+        }
+        Insert: {
+          architecture_overview?: string | null
+          checklist?: Json
+          created_at?: string
+          description?: string | null
+          difficulty?: string
+          id?: string
+          learning_goals?: string[] | null
+          name: string
+          roadmap_id?: string | null
+          skills_covered?: string[] | null
+          source?: string
+          status?: string
+          tech_stack?: string[] | null
+          updated_at?: string
+          user_id: string
+          why_recommended?: string | null
+        }
+        Update: {
+          architecture_overview?: string | null
+          checklist?: Json
+          created_at?: string
+          description?: string | null
+          difficulty?: string
+          id?: string
+          learning_goals?: string[] | null
+          name?: string
+          roadmap_id?: string | null
+          skills_covered?: string[] | null
+          source?: string
+          status?: string
+          tech_stack?: string[] | null
+          updated_at?: string
+          user_id?: string
+          why_recommended?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "project_recommendations_roadmap_id_fkey"
+            columns: ["roadmap_id"]
+            isOneToOne: false
+            referencedRelation: "career_roadmaps"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       projects: {
         Row: {
