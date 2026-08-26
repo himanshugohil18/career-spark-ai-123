@@ -8,6 +8,10 @@ import { useCrossModuleSync } from "@/hooks/use-cross-module-sync";
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
+    // Client-only: the session lives in browser storage, so the server can
+    // never see a user. Redirecting here during SSR renders /auth inside the
+    // ssr:false shell and causes a hydration mismatch on the client.
+    if (typeof window === "undefined") return;
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
     return { user: data.user };
