@@ -64,7 +64,7 @@ function useOAuthLandingRedirect() {
 export function LandingPage() {
   useOAuthLandingRedirect();
   return (
-    <div className="landing-light relative min-h-screen overflow-x-clip">
+    <div className="relative min-h-screen overflow-x-clip">
       <PillNavbar />
       <main className="relative">
         <Hero />
@@ -231,8 +231,7 @@ function Hero() {
       </video>
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-20"
-        style={{ background: "var(--gradient-hero)", opacity: 0.86 }}
+        className="pointer-events-none absolute inset-0 -z-20 bg-background/80"
       />
       <div aria-hidden className="landing-grid-lines pointer-events-none absolute inset-0 -z-10" />
 
@@ -272,11 +271,10 @@ function Hero() {
         <Reveal delay={0.24}>
           <div className="mt-8 flex items-center justify-center gap-3">
             <div className="flex -space-x-2">
-              {["#2F5CFF", "#7C5CFF", "#F2779A"].map((c) => (
+              {["bg-primary", "bg-primary/60", "bg-primary/35"].map((c) => (
                 <span
                   key={c}
-                  className="h-7 w-7 rounded-full border-2 border-card"
-                  style={{ background: c }}
+                  className={cn("h-7 w-7 rounded-full border-2 border-card", c)}
                 />
               ))}
             </div>
