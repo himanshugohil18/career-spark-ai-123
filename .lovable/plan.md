@@ -1,75 +1,66 @@
-# Production Stabilization Plan
+# CareerOS Intelligence Layer — Master Upgrade
 
-Treat the app as one pipeline with a single source of truth:
+Transform CareerOS into a connected AI Career Operating System. **Nothing existing is removed or broken** — every feature builds on current tables, themes, and routes. All data is real; empty states guide the user when data is missing.
 
-```text
-Resume (parsed) → Career Brain → Jobs/Matching → Saved/Applications
-                                      ↓
-                       Interview / Coach / Learning / Analytics
-```
+## What already exists (reused, not rebuilt)
+- Career Brain snapshot (`career-brain-logic.server.ts`) — skills, experiences, projects, education, completeness
+- Job match scoring + MatchBreakdown UI, `application_readiness`, `gap_analysis`, `ats_analysis` tables
+- Interview sessions/questions tables, learning/coach routes, notifications.functions, tracker, resume studio, analytics
 
-Every module reads from `career_brain` + `resume_versions` + real activity tables. When the resume changes, one invalidation fan-out refreshes every dependent query.
+## New database tables (one migration, all with RLS + grants)
+- `career_roadmaps` — target role, location, salary, timeline, status
+- `career_roadmap_items` — phase, title, type (skill/project/cert/prep), status (not_started/in_progress/completed/skipped), sort order, linked ids
+- `project_recommendations` — name, difficulty, skills covered, stack, checklist, status, source (AI)
+- `career_missions` — daily mission items + completion state (marked only by real actions)
+- `notification_preferences` — per-category enable/disable
+- `resume_version_stats` view usage: reuse existing `resume_versions` + applications join (no new table)
+- Extend `notifications` categories via existing table if present (checked during migration)
 
-## Phase 1 — Resume parsing accuracy (the foundation)
+## Phase 1 — Intelligence foundation (server logic)
+- `src/lib/intelligence/readiness.server.ts` — Career Readiness Score: weighted from profile completeness, resume quality, skills count/confidence, projects, market alignment (job_matches), application activity, interview sessions, learning progress. Returns per-category breakdown + highest-impact next action.
+- `src/lib/intelligence/next-action.server.ts` — Next Best Action engine: ranks saved high-match jobs, stale applications (7+ days → follow-up), top skill gaps, upcoming interviews, roadmap items.
+- `src/lib/intelligence/skill-gap.server.ts` — compare brain skills vs job required/preferred skills (deterministic set-diff + existing AI analysis where present).
+- `src/lib/intelligence/insights.server.ts` — Career Insights computed from real aggregates (e.g. "Terraform missing in 2 of your top 5 matches"). Returns `insufficient_data` state when empty.
+- `src/lib/intelligence/missions.server.ts` — daily missions derived from next-action engine; completion verified against real activity (applications created, interview questions answered, roadmap items completed).
 
-Files: `src/lib/resume.functions.ts`, `src/lib/resume-schema.ts`, `src/features/resume/upload-processor.ts`.
+## Phase 2 — Command Center dashboard
+- Upgrade `_authenticated/dashboard.tsx`: greeting, clickable Readiness score w/ breakdown sheet, Today's Priorities, Today's Missions, Career Insights — all from Phase 1 functions, all real-data with proper empty states. Works in both themes.
 
-- Switch extraction to `google/gemini-2.5-pro` with strict `Output.object` schema.
-- Rewrite the system prompt: extract-only, never invent, leave fields empty when absent, preserve exact URLs (LinkedIn/GitHub/portfolio/website), keep original casing/punctuation for names and companies.
-- Post-process pass in TS: URL normalizer that only cleans whitespace/trailing punctuation (never reconstructs missing domains), phone/email regex validators, ISO date coercion with `null` fallback.
-- Add a repair pass: if URL fields fail regex, re-scan the raw resume text for `linkedin.com/in/…`, `github.com/…`, common portfolio patterns and lift them in verbatim.
-- Persist raw model output alongside structured output in `resume_versions.content` for auditability.
+## Phase 3 — Job Match Intelligence + Skill Gap UI
+- Job detail (`jobs.$jobId.tsx`): AI Match Intelligence panel — overall match, category bars, Why You Match / What's Missing / Resume Improvement / Apply recommendation (reuses existing match + gap data; AI analysis on demand, cached).
+- Skill gap actions: "Learn this skill" → learning, "Add to roadmap" → roadmap item insert, "Find a project" → project recommendations.
+- Company Intelligence section on job detail: only data actually present (job record + company table + similar jobs); no fabrication.
 
-## Phase 2 — Career Brain as single source of truth
+## Phase 4 — Career Roadmap module
+- New route `_authenticated/roadmap.tsx` + nav entry. Wizard: current role → target role/location/salary/timeline → AI generates phased roadmap (Gemini, strict JSON) saved to `career_roadmap_items`.
+- Board view grouped by phase, item status cycling, progress bar, manual add/edit, links to learning/projects/jobs/interview.
+- Interactive Career Graph (SVG tree: target role → domains → skills → tools → projects) with status colors; clicking a node opens detail popover with related jobs/projects/learning. Renders in both themes.
 
-Files: `src/lib/career-brain.service.ts`, `src/lib/career-intel.functions.ts`.
+## Phase 5 — Project Recommendations + Learning intelligence
+- `project_recommendations` generated from target role + missing skills (Gemini). Card UI w/ difficulty, stack, checklist; actions: Add to Roadmap, Start (status), Track progress.
+- Learning page: each item shows "why recommended" (appears in N saved jobs), linked gap/jobs/roadmap phase; manual progress marking.
 
-- Rebuild the snapshot deterministically from the active `resume_versions` row: skills, seniority, target roles, tech stack, education, location.
-- Delete any static "if empty then demo" fallback branches; return `{ ready: false }` when there is no active resume.
-- Add a version stamp (`brain_version = resume.id + updated_at`) that downstream queries key on.
+## Phase 6 — Application intelligence + notifications
+- Analytics: real funnel (applications → responses → interviews → offers), rates, performance by role/resume version/match score, insights only when data suffices.
+- Tracker: follow-up alerts (applied 7+ days, no response), resume-version-used and match-score snapshot columns surfaced.
+- Smart notifications: job match, follow-up, skill-gap, interview-reminder, readiness-change generators + preferences UI in Settings.
 
-## Phase 3 — Jobs pipeline: real data + View Details + Saved
+## Phase 7 — AI Interview Simulator + Career Copilot
+- Interview: type selector (HR/Technical/Behavioral/System Design/Mixed), job/company/difficulty/tech focus; text-based simulator; post-session analysis (5 scored dimensions + strong/improvement areas + practice questions) saved to existing interview tables; history + progress chart. Architecture leaves room for voice later; no fake voice.
+- Copilot (chat): system context now includes readiness, roadmap, top gaps, stale applications, upcoming interviews; dynamic suggested questions from user state.
 
-Files: `src/lib/jobs/matching.server.ts`, `src/lib/jobs/scoring.ts`, `src/lib/jobs/sections.server.ts`, `src/lib/jobs/dev-seed.server.ts`, `src/routes/_authenticated/jobs.$jobId.tsx`, `src/routes/_authenticated/jobs.saved.tsx`, `src/features/jobs/job-card.tsx`.
+## Phase 8 — Resume Version Manager
+- Resume Studio list: versions grouped under master, with target role, last modified, linked applications count, performance where data exists. Actions: duplicate, rename, archive, set default, generate job-specific version.
 
-- **Fake data**: keep `dev-seed.server.ts` but hard-gate it behind `has_role(admin)` at runtime AND behind an explicit admin action — no dashboard, no auto-seed on empty. Never called from user paths.
-- **Matching**: require Career Brain ready; score = weighted (skills 45, role/title 20, seniority 15, tech stack 10, location 5, education 5); reject rows scoring < 15 so a Python dev never sees Marketing.
-- **View Details**: fix `/jobs/$jobId` loader to fetch the full job row + provider metadata + computed match + missing skills; ensure the route file exists and card links use typed `<Link to="/jobs/$jobId" params={{ jobId }}>`.
-- **Saved jobs**: single `saved_jobs` mutation with optimistic update, invalidate `["saved-jobs"]` and `["job-matches"]`; Saved page shows Remove/Apply/View Details, supports search + sort + filter.
+## Design & quality
+- Uses existing theme tokens only — renders correctly in Classic + Immersive; no per-theme logic duplication.
+- Loading skeletons, error states, actionable empty states everywhere; fully responsive, no fake data.
+- Heavy AI calls are on-demand + cached (input hash), never block page load.
 
-## Phase 4 — Interview / Coach / Learning driven by Brain + activity
-
-Files: `src/lib/workspace-assistant.functions.ts`, `src/routes/_authenticated/interview.tsx`, `src/routes/_authenticated/coach.tsx`, `src/routes/_authenticated/learning.tsx`.
-
-- Replace all hard-coded question/topic arrays with generators that take `{ brain, targetJob?, recentActivity }` and call Lovable AI with strict schema.
-- Persist to existing tables: `interview_sessions`, `interview_questions`, `recommendation_history`, `search_history`.
-- Coach + Learning read `career_health`, `gap_analysis`, `job_matches` (top missing skills) and recent `viewed_jobs`/`saved_jobs` to bias recommendations.
-
-## Phase 5 — Global search, Analytics, cross-module sync
-
-Files: `src/features/jobs/nl-search.tsx` (promote to global), `src/routes/_authenticated/analytics.tsx`, `src/lib/stats.functions.ts`, `src/routes/__root.tsx` (query invalidation fan-out).
-
-- **Global search**: one server fn `searchAll({ q })` fanning across jobs, skills, companies, saved, applications, career_brain, learning topics; results grouped by type with typed navigation.
-- **Analytics**: every card/graph reads real tables (`application_workspaces`, `viewed_jobs`, `saved_jobs`, `resume_versions`, `interview_sessions`, `ai_application_sessions`, `career_health`); delete mock series.
-- **Sync**: on resume approval, invalidate keys `["career-brain"]`, `["job-matches"]`, `["dashboard"]`, `["analytics"]`, `["learning"]`, `["coach"]`, `["interview"]`. Add a Supabase realtime listener in `__root.tsx` for `resume_versions` + `career_brain` that fires the same invalidations across tabs.
-
-## Verification checklist (run after each phase)
-
-- Upload a real PDF → name/email/phone/LinkedIn/GitHub/portfolio all present and exact.
-- Career Brain snapshot values equal resume values (no invented skills).
-- Job list contains zero seed rows for a non-admin account; matches are role-relevant.
-- View Details opens with full job payload; Save toggles counts everywhere.
-- Interview/Coach/Learning content references user's actual skills and target role.
-- Analytics cards match `select count(*)` on their source tables.
-- Deleting the resume clears the brain and empties dependent widgets (no ghost data).
-
-## Rollout order
-
-Phase 1 → 2 → 3 → 4 → 5, each phase merged and verified before the next. Phase 1 alone unblocks accuracy for every other module, so I'll start there once you approve.
+## Rollout & verification
+Phase 1–2 first (dashboard comes alive), then 3–8 in order. Final sweep: Playwright check of dashboard, job detail, roadmap, interview, analytics in both themes; confirm zero console errors and all existing routes intact.
 
 ## Technical notes
-
-- Model: `google/gemini-2.5-pro` for resume parsing (one call per upload). Reasoning/other modules stay on `google/gemini-3-flash-preview` for cost.
-- Zod schemas live in `src/lib/resume-schema.ts` and are shared between server fn and client review UI.
-- Admin gate for `dev-seed`: check `has_role(auth.uid(), 'admin')` server-side; UI entry only in `/admin/jobs`.
-- Query cache: use existing TanStack Query client; keys standardized in a new `src/lib/query-keys.ts` so invalidation is centralized.
+- All AI via existing `callLovableAI` gateway helper (`google/gemini-3-flash-preview`, `json_object`, temp 0.2) — same pattern as `workspace/analysis.server.ts`.
+- Server fns in `src/lib/intelligence/*.functions.ts` with `requireSupabaseAuth`; helpers in `.server.ts`.
+- Query keys added to central invalidation so resume/brain changes refresh readiness, roadmap, missions.
