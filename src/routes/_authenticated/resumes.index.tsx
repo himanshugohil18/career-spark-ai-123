@@ -96,15 +96,12 @@ function ResumeStudioList() {
   });
 
   return (
-    <div className="mx-auto max-w-6xl space-y-8 p-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Resume Studio</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Every resume here is built from data you approved in your Career Brain. Pick a template,
-          edit inline, tailor it to a job, then export a text-based PDF or Word file that ATS
-          parsers can actually read.
-        </p>
-      </header>
+    <PageShell width="wide">
+      <PageHeader
+        eyebrow="AI Tools"
+        title="Resume Studio"
+        description="Every resume here is built from data you approved in your Career Brain. Pick a template, edit inline, tailor it to a job, then export a text-based PDF or Word file that ATS parsers can actually read."
+      />
 
       <section className="rounded-xl border border-border bg-card/60 p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -142,13 +139,11 @@ function ResumeStudioList() {
           <Skeleton className="h-20 w-full" />
         </div>
       ) : (data ?? []).length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border p-10 text-center">
-          <FileText className="mx-auto mb-3 h-8 w-8 text-muted-foreground" />
-          <p className="text-sm font-medium">No resumes yet</p>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Create one from your Career Brain to get an ATS score in seconds.
-          </p>
-        </div>
+        <EmptyState
+          icon={FileText}
+          title="No resumes yet"
+          body="Create one from your Career Brain to get an ATS score in seconds."
+        />
       ) : (
         <ul className="space-y-3">
           {(data ?? []).map((row) => {
