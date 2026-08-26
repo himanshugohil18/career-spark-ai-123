@@ -13,6 +13,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { StatCard, Panel, money, StatusPill } from "@/features/admin/ui";
+import { ExportBar } from "@/features/admin/ExportMenu";
 
 export const Route = createFileRoute("/_authenticated/admin/")({
   component: AdminOverview,
@@ -31,6 +32,52 @@ function AdminOverview() {
 
   return (
     <div className="space-y-6">
+      <ExportBar
+        title="Platform overview"
+        description="Executive snapshot of users, revenue, job catalogue and AI activity."
+        filenameBase="careeros-overview"
+        buildReport={() => ({
+          title: "Platform Executive Summary",
+          subtitle:
+            "Consolidated snapshot of growth, monetisation, job catalogue and AI reliability for the CareerOS platform.",
+          filename: "careeros-executive-summary",
+          kpis: [
+            { label: "Total users", value: String(d.counts.users), sub: `+${d.counts.newToday} today` },
+            { label: "Premium subscriptions", value: String(d.counts.activeSubs), tone: "good" },
+            { label: "Revenue (30 days)", value: money(d.revenue.monthPaise), tone: "good" },
+            { label: "Revenue today", value: money(d.revenue.todayPaise) },
+            { label: "Active jobs", value: d.counts.activeJobs.toLocaleString() },
+            { label: "Job matches", value: d.counts.matches.toLocaleString() },
+            { label: "Applications", value: String(d.counts.workspaces) },
+            { label: "AI success rate", value: `${d.counts.aiSuccessRate}%`, tone: d.counts.aiSuccessRate >= 90 ? "good" : "bad" },
+            { label: "Payments captured", value: String(d.counts.capturedPayments), tone: "good" },
+            { label: "Payments failed", value: String(d.counts.failedPayments), tone: d.counts.failedPayments ? "bad" : "default" },
+            { label: "Auto-apply running", value: String(d.counts.autoRunning) },
+            { label: "Auto-apply failed", value: String(d.counts.autoFailed), tone: d.counts.autoFailed ? "bad" : "default" },
+          ],
+          tables: [
+            {
+              title: "Recent signups",
+              columns: ["Name", "Email", "Method", "Joined"],
+              rows: d.recentUsers.map((u: any) => [
+                u.full_name || "—",
+                u.email || "—",
+                u.provider === "google" ? "Google" : "Email",
+                u.created_at ? new Date(u.created_at).toLocaleString() : "—",
+              ]),
+            },
+            {
+              title: "Recent failed AI generations",
+              columns: ["Feature", "Error", "When"],
+              rows: d.failedGenerations.map((g: any) => [
+                g.kind,
+                (g.error ?? "—").slice(0, 90),
+                new Date(g.created_at).toLocaleString(),
+              ]),
+            },
+          ],
+        })}
+      />
       <section className="grid gap-3 md:grid-cols-4">
         <StatCard label="Users" value={d.counts.users} icon={Users} sub={`+${d.counts.newToday} today`} />
         <StatCard label="Premium" value={d.counts.activeSubs} icon={CreditCard} tone="success" />

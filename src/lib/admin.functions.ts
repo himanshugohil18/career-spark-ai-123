@@ -670,3 +670,179 @@ export const exportAdminTable = createServerFn({ method: "GET" })
       .limit(5000);
     return { rows: rows ?? [] };
   });
+
+/* -------------------- JOB PROVIDER MONITORING -------------------- */
+
+export const getProviderMonitoring = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const dayAgo = new Date(Date.now() - 86400_000).toISOString();
+    const weekAgo = new Date(Date.now() - 7 * 86400_000).toISOString();
+
+    const sources = await supabaseAdmin.from("job_sources").select("*").order("tier").order("id");
+
+    // PostgREST caps a single response, so page through the catalogue.
+    const { count: jobCount } = await supabaseAdmin
+      .from("jobs")
+      .select("*", { count: "exact", head: true });
+    const pageSize = 1000;
+    const pages = Math.min(40, Math.ceil((jobCount ?? 0) / pageSize));
+    const chunks = await Promise.all(
+      Array.from({ length: pages }, (_, i) =>
+        supabaseAdmin
+          .from("jobs")
+          .select("provider, is_active, created_at, application_url, country_code, geo_region")
+          .order("id")
+          .range(i * pageSize, i * pageSize + pageSize - 1),
+      ),
+    );
+    const jobRows = { data: chunks.flatMap((c) => c.data ?? []) };
+
+    type Agg = {
+      provider: string;
+      total: number;
+      active: number;
+      last24h: number;
+      last7d: number;
+      withApplyUrl: number;
+      india: number;
+    };
+    const agg = new Map<string, Agg>();
+    const regions: Record<string, number> = {};
+    const countries: Record<string, number> = {};
+
+    for (const r of (jobRows.data ?? []) as any[]) {
+      const key = r.provider ?? "unknown";
+      const a =
+        agg.get(key) ??
+        { provider: key, total: 0, active: 0, last24h: 0, last7d: 0, withApplyUrl: 0, india: 0 };
+      a.total++;
+      if (r.is_active) a.active++;
+      if (r.created_at >= dayAgo) a.last24h++;
+      if (r.created_at >= weekAgo) a.last7d++;
+      if (r.application_url) a.withApplyUrl++;
+      if (r.country_code === "IN") a.india++;
+      agg.set(key, a);
+
+      if (r.is_active) {
+        const reg = r.geo_region ?? "unknown";
+        regions[reg] = (regions[reg] ?? 0) + 1;
+        const c = r.country_code ?? "—";
+        countries[c] = (countries[c] ?? 0) + 1;
+      }
+    }
+
+    const providers = ((sources.data ?? []) as any[]).map((s) => {
+      const a = agg.get(s.id);
+      return {
+        id: s.id,
+        name: s.display_name,
+        tier: s.tier,
+        sourceType: s.source_type,
+        enabled: s.enabled,
+        health: s.health_status,
+        lastRunAt: s.last_run_at,
+        lastSuccessAt: s.last_success_at,
+        lastAttemptAt: s.last_attempt_at,
+        consecutiveFailures: s.consecutive_failures,
+        failureCount: s.failure_count,
+        lastFetchedCount: s.last_fetched_count,
+        avgResponseMs: s.avg_response_ms,
+        lastError: s.last_error,
+        disabledReason: s.disabled_reason,
+        totalJobs: a?.total ?? 0,
+        activeJobs: a?.active ?? 0,
+        jobs24h: a?.last24h ?? 0,
+        jobs7d: a?.last7d ?? 0,
+        indiaJobs: a?.india ?? 0,
+        applyUrlCoverage: a && a.total ? Math.round((a.withApplyUrl / a.total) * 100) : 0,
+      };
+    });
+
+    const topCountries = Object.entries(countries)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 15)
+      .map(([code, count]) => ({ code, count }));
+
+    return {
+      providers,
+      regions: Object.entries(regions)
+        .sort((a, b) => b[1] - a[1])
+        .map(([region, count]) => ({ region, count })),
+      topCountries,
+      summary: {
+        totalProviders: providers.length,
+        enabled: providers.filter((p) => p.enabled).length,
+        healthy: providers.filter((p) => p.health === "healthy").length,
+        degraded: providers.filter((p) => p.health === "degraded").length,
+        failing: providers.filter((p) => p.health === "failing" || p.consecutiveFailures >= 3).length,
+        jobs24h: providers.reduce((n, p) => n + p.jobs24h, 0),
+      },
+    };
+  });
+
+/* -------------------- ERROR MONITORING -------------------- */
+
+export const getErrorMonitoring = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const dayAgo = new Date(Date.now() - 86400_000).toISOString();
+
+    const [aiFail, sessFail, payFail, emailFail, staleJobs, providerFail] = await Promise.all([
+      supabaseAdmin
+        .from("ai_generation_history")
+        .select("id, kind, error, created_at")
+        .eq("status", "failed")
+        .order("created_at", { ascending: false })
+        .limit(25),
+      supabaseAdmin
+        .from("ai_application_sessions")
+        .select("id, status, current_step, error, started_at")
+        .eq("status", "failed")
+        .order("started_at", { ascending: false })
+        .limit(25),
+      supabaseAdmin
+        .from("payments")
+        .select("id, plan, amount, status, created_at")
+        .neq("status", "captured")
+        .order("created_at", { ascending: false })
+        .limit(25),
+      supabaseAdmin
+        .from("email_logs")
+        .select("id, template, status, error, created_at")
+        .neq("status", "sent")
+        .order("created_at", { ascending: false })
+        .limit(25),
+      supabaseAdmin.from("jobs").select("*", { count: "exact", head: true }).eq("is_active", false),
+      supabaseAdmin
+        .from("job_sources")
+        .select("id, display_name, health_status, consecutive_failures, last_error, last_attempt_at")
+        .gt("consecutive_failures", 0)
+        .order("consecutive_failures", { ascending: false })
+        .limit(25),
+    ]);
+
+    const aiFail24 = ((aiFail.data ?? []) as any[]).filter((r) => r.created_at >= dayAgo).length;
+
+    return {
+      counts: {
+        aiFailed: (aiFail.data ?? []).length,
+        aiFailed24h: aiFail24,
+        sessionsFailed: (sessFail.data ?? []).length,
+        paymentsNotCaptured: (payFail.data ?? []).length,
+        emailsFailed: (emailFail.data ?? []).length,
+        inactiveJobs: staleJobs.count ?? 0,
+        failingProviders: (providerFail.data ?? []).length,
+      },
+      aiFailures: aiFail.data ?? [],
+      sessionFailures: sessFail.data ?? [],
+      paymentFailures: payFail.data ?? [],
+      emailFailures: emailFail.data ?? [],
+      providerFailures: providerFail.data ?? [],
+    };
+  });

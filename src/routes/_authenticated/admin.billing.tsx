@@ -8,6 +8,7 @@ import { StatCard, Panel, money, StatusPill } from "@/features/admin/ui";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { downloadCSV, downloadXLSX } from "@/features/admin/export";
+import { ExportBar } from "@/features/admin/ExportMenu";
 import { buildInvoice } from "@/features/billing/invoice";
 import { downloadInvoicePDF } from "@/features/billing/invoice-pdf";
 import { toast } from "sonner";
@@ -45,6 +46,54 @@ function AdminBilling() {
 
   return (
     <div className="space-y-6">
+      <ExportBar
+        title="Billing & revenue"
+        description="Revenue totals, subscription mix and recent payment activity."
+        filenameBase="careeros-billing"
+        buildReport={() =>
+          d
+            ? {
+                title: "Billing & Revenue Report",
+                subtitle: "Revenue performance, plan distribution and recent payment ledger.",
+                filters: { Search: search || "none", "Payments listed": filtered.length },
+                filename: "careeros-billing-report",
+                kpis: [
+                  { label: "Total revenue", value: money(d.revenue.totalPaise), tone: "good" },
+                  { label: "Revenue (30 days)", value: money(d.revenue.monthPaise), tone: "good" },
+                  { label: "Revenue today", value: money(d.revenue.todayPaise) },
+                  { label: "Active subscriptions", value: String(d.subscriptions.active), tone: "good" },
+                  { label: "Captured payments", value: String(d.counts.captured), tone: "good" },
+                  { label: "Failed payments", value: String(d.counts.failed), tone: d.counts.failed ? "bad" : "default" },
+                  { label: "Refunded", value: String(d.counts.refunded) },
+                  { label: "Cancelled subs", value: String(d.subscriptions.cancelled) },
+                ],
+                barLists: [
+                  {
+                    title: "Active subscriptions by plan",
+                    items: Object.entries(d.subscriptions.planCounts ?? {}).map(([k, v]) => ({
+                      label: k,
+                      value: v as number,
+                    })),
+                  },
+                ],
+                tables: [
+                  {
+                    title: "Recent payments",
+                    columns: ["Invoice", "Customer", "Plan", "Amount", "Status", "Date"],
+                    rows: filtered.map((p: any) => [
+                      p.invoice_number ?? p.order_id ?? "—",
+                      p.email ?? p.user_id,
+                      p.plan,
+                      money(p.amount),
+                      p.status,
+                      new Date(p.created_at).toLocaleString(),
+                    ]),
+                  },
+                ],
+              }
+            : null
+        }
+      />
       <section className="grid gap-3 md:grid-cols-4">
         <StatCard label="Total revenue" value={d ? money(d.revenue.totalPaise) : "—"} icon={TrendingUp} tone="success" />
         <StatCard label="Revenue today" value={d ? money(d.revenue.todayPaise) : "—"} icon={TrendingUp} />

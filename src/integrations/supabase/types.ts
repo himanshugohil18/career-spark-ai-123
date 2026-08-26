@@ -2369,6 +2369,7 @@ export type Database = {
           application_url: string
           benefits: string[]
           company_id: string | null
+          country_code: string | null
           created_at: string
           description: string | null
           employment_type: Database["public"]["Enums"]["employment_type"]
@@ -2376,6 +2377,7 @@ export type Database = {
           expires_at: string | null
           fingerprint: string
           first_seen_at: string
+          geo_region: string | null
           id: string
           is_active: boolean
           last_seen_at: string
@@ -2403,6 +2405,7 @@ export type Database = {
           application_url: string
           benefits?: string[]
           company_id?: string | null
+          country_code?: string | null
           created_at?: string
           description?: string | null
           employment_type?: Database["public"]["Enums"]["employment_type"]
@@ -2410,6 +2413,7 @@ export type Database = {
           expires_at?: string | null
           fingerprint: string
           first_seen_at?: string
+          geo_region?: string | null
           id?: string
           is_active?: boolean
           last_seen_at?: string
@@ -2437,6 +2441,7 @@ export type Database = {
           application_url?: string
           benefits?: string[]
           company_id?: string | null
+          country_code?: string | null
           created_at?: string
           description?: string | null
           employment_type?: Database["public"]["Enums"]["employment_type"]
@@ -2444,6 +2449,7 @@ export type Database = {
           expires_at?: string | null
           fingerprint?: string
           first_seen_at?: string
+          geo_region?: string | null
           id?: string
           is_active?: boolean
           last_seen_at?: string
@@ -3567,6 +3573,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      country_region: { Args: { _code: string }; Returns: string }
       ensure_default_job_collections: {
         Args: { _user_id: string }
         Returns: undefined
@@ -3580,6 +3587,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      resolve_country_code: { Args: { _text: string }; Returns: string }
       sweep_stale_jobs: {
         Args: { _stale_days?: number }
         Returns: {

@@ -7,6 +7,7 @@ import { StatCard, Panel, StatusPill } from "@/features/admin/ui";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { downloadCSV, downloadXLSX } from "@/features/admin/export";
+import { ExportBar } from "@/features/admin/ExportMenu";
 
 export const Route = createFileRoute("/_authenticated/admin/users")({
   component: AdminUsers,
@@ -88,6 +89,54 @@ function AdminUsers() {
 
   return (
     <div className="space-y-6">
+      <ExportBar
+        title="User management"
+        description="Accounts, sign-in methods, activity and engagement across the platform."
+        filenameBase="careeros-users"
+        buildReport={() =>
+          d
+            ? {
+                title: "User Management Report",
+                subtitle: "Registered accounts, authentication methods, activity windows and per-user engagement.",
+                filters: { Search: search || "none", "Provider filter": provider, Page: page + 1 },
+                filename: "careeros-user-report",
+                kpis: [
+                  { label: "Total users", value: String(d.totals.users) },
+                  { label: "Google sign-in", value: String((d.totals as any).googleUsers ?? 0) },
+                  { label: "Email sign-in", value: String((d.totals as any).manualUsers ?? 0) },
+                  { label: "Active today", value: String(d.totals.activeToday), tone: "good" },
+                  { label: "Active this week", value: String(d.totals.activeWeek) },
+                  { label: "Active this month", value: String(d.totals.activeMonth) },
+                ],
+                barLists: [
+                  {
+                    title: "Sign-in provider breakdown",
+                    items: Object.entries(d.providers ?? {}).map(([k, v]) => ({
+                      label: k === "google" ? "Google" : "Email & password",
+                      value: v as number,
+                    })),
+                  },
+                ],
+                tables: [
+                  {
+                    title: `Users (page ${page + 1} of ${totalPages})`,
+                    columns: ["Name", "Email", "Plan", "Methods", "Apps", "AI", "Joined", "Last login"],
+                    rows: (d.rows ?? []).map((u: any) => [
+                      u.full_name || "—",
+                      u.email || "—",
+                      u.plan,
+                      (u.methods ?? [u.provider]).join(", "),
+                      u.applications,
+                      u.ai_generations,
+                      fmtIST(u.created_at),
+                      fmtIST(u.last_sign_in_at),
+                    ]),
+                  },
+                ],
+              }
+            : null
+        }
+      />
       <section className="grid gap-3 md:grid-cols-3 xl:grid-cols-6">
         <StatCard label="Total users" value={d?.totals.users ?? "—"} icon={Users} />
         <StatCard label="Google sign-in" value={(d?.totals as any)?.googleUsers ?? "—"} icon={UserCheck} />

@@ -12,6 +12,7 @@ import {
   BarChart3,
   Activity,
   Mail,
+  Radio,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -52,6 +53,7 @@ function AdminLayout() {
     { to: "/admin/users", label: "Users", icon: Users },
     { to: "/admin/billing", label: "Billing", icon: CreditCard },
     { to: "/admin/jobs", label: "Jobs", icon: Briefcase },
+    { to: "/admin/providers", label: "Providers", icon: Radio },
     { to: "/admin/ai", label: "AI Usage", icon: Sparkles },
     { to: "/admin/auto-apply", label: "Auto Apply", icon: Bot },
     { to: "/admin/analytics", label: "Analytics", icon: BarChart3 },

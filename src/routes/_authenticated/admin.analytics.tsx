@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { getAnalyticsSeries } from "@/lib/admin.functions";
 import { Panel } from "@/features/admin/ui";
+import { ExportBar } from "@/features/admin/ExportMenu";
+import { CHART_COLORS } from "@/features/admin/report-pdf";
 import {
   ResponsiveContainer,
   LineChart,
@@ -26,9 +28,68 @@ function AdminAnalytics() {
     refetchInterval: 60_000,
   });
   const data = q.data?.series ?? [];
+  const chartRows = data.map((r: any) => ({ ...r, label: String(r.date).slice(5) }));
 
   return (
     <div className="space-y-6">
+      <ExportBar
+        title="Growth analytics"
+        description="30-day trends for signups, AI usage, applications, revenue and job discovery."
+        filenameBase="careeros-analytics"
+        rows={data as unknown as Record<string, unknown>[]}
+        buildReport={() =>
+          data.length
+            ? {
+                title: "Growth & Performance Report",
+                subtitle: "Daily platform trends over the last 30 days.",
+                filters: { Window: "Last 30 days", "Data points": data.length },
+                filename: "careeros-growth-report",
+                kpis: [
+                  { label: "Signups (30d)", value: String(data.reduce((n, r: any) => n + r.signups, 0)) },
+                  { label: "AI requests (30d)", value: String(data.reduce((n, r: any) => n + r.ai, 0)) },
+                  { label: "Applications (30d)", value: String(data.reduce((n, r: any) => n + r.applications, 0)) },
+                  { label: "Revenue (30d)", value: `₹${data.reduce((n, r: any) => n + r.revenue, 0).toLocaleString()}`, tone: "good" },
+                  { label: "Jobs discovered (30d)", value: data.reduce((n, r: any) => n + r.jobs, 0).toLocaleString() },
+                  { label: "Peak signups / day", value: String(Math.max(...data.map((r: any) => r.signups))) },
+                ],
+                charts: [
+                  {
+                    title: "Signups, AI usage and applications",
+                    type: "line",
+                    xKey: "label",
+                    series: [
+                      { key: "signups", label: "Signups", color: CHART_COLORS.blue },
+                      { key: "ai", label: "AI requests", color: CHART_COLORS.green },
+                      { key: "applications", label: "Applications", color: CHART_COLORS.amber },
+                    ],
+                    data: chartRows,
+                  },
+                  {
+                    title: "Revenue per day (₹)",
+                    type: "bar",
+                    xKey: "label",
+                    series: [{ key: "revenue", label: "Revenue", color: CHART_COLORS.blue }],
+                    data: chartRows,
+                  },
+                  {
+                    title: "Jobs discovered per day",
+                    type: "bar",
+                    xKey: "label",
+                    series: [{ key: "jobs", label: "Jobs", color: CHART_COLORS.green }],
+                    data: chartRows,
+                  },
+                ],
+                tables: [
+                  {
+                    title: "Daily detail",
+                    columns: ["Date", "Signups", "AI", "Applications", "Jobs", "Revenue (₹)"],
+                    rows: data.map((r: any) => [r.date, r.signups, r.ai, r.applications, r.jobs, r.revenue]),
+                  },
+                ],
+              }
+            : null
+        }
+      />
       <Panel title="Signups & AI usage (30 days)">
         <div className="h-72 w-full px-3 py-3">
           <ResponsiveContainer>

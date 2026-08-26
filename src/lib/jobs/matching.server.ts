@@ -168,7 +168,7 @@ export async function persistMatch(
  * is recomputed on the next refresh, whatever its age. Bump this whenever the
  * scoring maths changes so cached scores never go stale-but-trusted.
  */
-const SCORING_EPOCH = Date.parse("2026-08-26T14:30:00Z");
+const SCORING_EPOCH = Date.parse("2026-08-26T15:30:00Z");
 
 /**
  * Refresh matches for a user against the newest jobs. Skips jobs already
