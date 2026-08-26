@@ -38,7 +38,7 @@ export const getJobSkillGap = createServerFn({ method: "GET" })
       getCareerBrainSnapshotFor(supabase, userId),
       supabase
         .from("jobs")
-        .select("id, title, location, remote_status, experience_level, required_skills, preferred_skills, keywords, description")
+        .select("id, title, location, remote_status, experience_level, required_skills, preferred_skills, description")
         .eq("id", data.jobId)
         .maybeSingle(),
     ]);
