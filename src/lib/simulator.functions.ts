@@ -17,6 +17,11 @@ export const startInterviewSim = createServerFn({ method: "POST" })
         targetRole: z.string().min(2).max(120),
         difficulty: z.enum(["easy", "mixed", "hard"]).default("mixed"),
         plannedQuestions: z.number().int().min(3).max(10).default(5),
+        interviewType: z
+          .enum(["technical", "behavioral", "hr", "system_design", "mixed"])
+          .default("mixed"),
+        targetCompany: z.string().max(120).nullable().optional(),
+        mode: z.enum(["practice", "teacher"]).default("teacher"),
       })
       .parse(input),
   )
