@@ -170,7 +170,7 @@ export function buildInterviewReportPdf(session: Session, turns: Turn[]) {
   if (answered.length) {
     rule(14);
     heading("Question by question");
-    for (const t of answered) {
+    answered.forEach((t, idx) => {
       need(70);
       y += 6;
       const label = [
@@ -206,8 +206,8 @@ export function buildInterviewReportPdf(session: Session, turns: Turn[]) {
         text("Model answer", { size: 8.5, bold: true, color: MUTED, gap: 1 });
         text(t.model_answer, { gap: 4 });
       }
-      rule(8);
-    }
+      if (idx < answered.length - 1) rule(8);
+    });
   }
 
   // ---- Footers ----
