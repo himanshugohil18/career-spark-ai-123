@@ -104,14 +104,36 @@ function SimulatorPage() {
   );
 }
 
+const INTERVIEW_TYPES = [
+  { id: "mixed", label: "Full loop", hint: "Behavioral + project + technical" },
+  { id: "technical", label: "Technical", hint: "Fundamentals, depth, problem solving" },
+  { id: "behavioral", label: "Behavioral", hint: "STAR stories, ownership, conflict" },
+  { id: "hr", label: "HR / Culture", hint: "Motivation, goals, expectations" },
+  { id: "system_design", label: "System design", hint: "Scale, data, trade-offs" },
+] as const;
+
+type InterviewTypeId = (typeof INTERVIEW_TYPES)[number]["id"];
+
 function SetupCard({ onStarted }: { onStarted: (id: string) => void }) {
   const [role, setRole] = useState("");
+  const [company, setCompany] = useState("");
+  const [type, setType] = useState<InterviewTypeId>("mixed");
   const [difficulty, setDifficulty] = useState<"easy" | "mixed" | "hard">("mixed");
   const [count, setCount] = useState(5);
+  const [mode, setMode] = useState<"teacher" | "practice">("teacher");
 
   const startMut = useMutation({
     mutationFn: () =>
-      startInterviewSim({ data: { targetRole: role.trim(), difficulty, plannedQuestions: count } }),
+      startInterviewSim({
+        data: {
+          targetRole: role.trim(),
+          difficulty,
+          plannedQuestions: count,
+          interviewType: type,
+          targetCompany: company.trim() || null,
+          mode,
+        },
+      }),
     onSuccess: (res) => onStarted(res.session.id),
     onError: (e: any) => toast.error(e?.message ?? "Could not start the interview."),
   });
@@ -119,9 +141,10 @@ function SetupCard({ onStarted }: { onStarted: (id: string) => void }) {
   return (
     <section className="surface-card p-6 md:p-7">
       <div className="flex items-center gap-2 text-sm font-medium text-foreground">
-        <Mic className="h-4 w-4 text-primary" /> New session
+        <Mic className="h-4 w-4 text-primary" /> Set up your interview
       </div>
-      <div className="mt-4 grid gap-4 md:grid-cols-[1fr_auto_auto_auto] md:items-end">
+
+      <div className="mt-4 grid gap-4 md:grid-cols-2">
         <label className="block">
           <span className="text-xs font-medium text-muted-foreground">Target role</span>
           <input
@@ -132,15 +155,77 @@ function SetupCard({ onStarted }: { onStarted: (id: string) => void }) {
           />
         </label>
         <label className="block">
-          <span className="text-xs font-medium text-muted-foreground">Difficulty</span>
+          <span className="text-xs font-medium text-muted-foreground">Company (optional)</span>
+          <input
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
+            placeholder="e.g. Zoho"
+            className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+          />
+        </label>
+      </div>
+
+      <div className="mt-5">
+        <p className="text-xs font-medium text-muted-foreground">Round type</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {INTERVIEW_TYPES.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              aria-pressed={type === t.id}
+              onClick={() => setType(t.id)}
+              title={t.hint}
+              className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                type === t.id
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+              }`}
+            >
+              <span className="block font-semibold">{t.label}</span>
+              <span className="block text-[11px] opacity-80">{t.hint}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <p className="text-xs font-medium text-muted-foreground">Mode</p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {(
+            [
+              { id: "teacher", label: "Teacher mode", hint: "Hints on demand + model answers after each question" },
+              { id: "practice", label: "Real interview", hint: "No hints — just questions and scoring" },
+            ] as const
+          ).map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              aria-pressed={mode === m.id}
+              onClick={() => setMode(m.id)}
+              className={`rounded-lg border px-3 py-2 text-left text-xs transition-colors ${
+                mode === m.id
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border text-muted-foreground hover:border-primary/40 hover:text-foreground"
+              }`}
+            >
+              <span className="block font-semibold">{m.label}</span>
+              <span className="block text-[11px] opacity-80">{m.hint}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 md:grid-cols-[auto_auto_1fr] md:items-end">
+        <label className="block">
+          <span className="text-xs font-medium text-muted-foreground">Starting difficulty</span>
           <select
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value as any)}
             className="mt-1 w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:border-primary"
           >
-            <option value="easy">Easy</option>
-            <option value="mixed">Mixed</option>
-            <option value="hard">Hard</option>
+            <option value="easy">Easy (stays easy)</option>
+            <option value="mixed">Adaptive (adjusts to your scores)</option>
+            <option value="hard">Hard (stays hard)</option>
           </select>
         </label>
         <label className="block">
@@ -155,11 +240,17 @@ function SetupCard({ onStarted }: { onStarted: (id: string) => void }) {
             ))}
           </select>
         </label>
-        <Button disabled={role.trim().length < 2 || startMut.isPending} onClick={() => startMut.mutate()}>
-          {startMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-          Start interview
-        </Button>
+        <div className="flex md:justify-end">
+          <Button disabled={role.trim().length < 2 || startMut.isPending} onClick={() => startMut.mutate()}>
+            {startMut.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
+            Start interview
+          </Button>
+        </div>
       </div>
+      <p className="mt-3 text-xs text-muted-foreground">
+        On adaptive difficulty the interviewer gets harder when you score well and easier when you
+        struggle — exactly like a real interviewer calibrating mid-round.
+      </p>
     </section>
   );
 }
