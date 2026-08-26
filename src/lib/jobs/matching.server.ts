@@ -30,7 +30,9 @@ import {
 } from "./role-synonyms";
 import { computeRelevance, brainTechVocabulary, jobDedupeKey } from "./relevance";
 import { locationAffinity, preferredLocations } from "./location";
+import { candidateSeniority, seniorityFit } from "@/lib/career-profile";
 import type { MatchScore, NormalizedJob } from "./types";
+
 
 const MODEL = "google/gemini-3.6-flash";
 const AI_REFINEMENT_TIMEOUT_MS = 2200;
@@ -166,7 +168,7 @@ export async function persistMatch(
  * is recomputed on the next refresh, whatever its age. Bump this whenever the
  * scoring maths changes so cached scores never go stale-but-trusted.
  */
-const SCORING_EPOCH = Date.parse("2026-08-26T13:00:00Z");
+const SCORING_EPOCH = Date.parse("2026-08-26T14:05:00Z");
 
 /**
  * Refresh matches for a user against the newest jobs. Skips jobs already
@@ -222,17 +224,33 @@ export async function refreshUserMatches(
     }),
   );
 
+  // Existing matches for this user, fetched once (previously one round-trip
+  // per candidate — the main reason a refresh timed out mid-way and left a
+  // partially rescored feed behind).
+  const existingMap = new Map<string, { computed_at: string; brain_version: number | null }>();
+  {
+    const ids = candidates.map((r) => String(r.id));
+    for (let i = 0; i < ids.length; i += 200) {
+      const { data: rows } = await supabase
+        .from("job_matches")
+        .select("job_id, computed_at, brain_version")
+        .eq("user_id", brain.userId)
+        .in("job_id", ids.slice(i, i + 200));
+      for (const r of rows ?? []) {
+        existingMap.set(String(r.job_id), {
+          computed_at: r.computed_at as string,
+          brain_version: (r.brain_version as number | null) ?? null,
+        });
+      }
+    }
+  }
+
   for (let index = 0; index < candidates.length; index++) {
     const row = candidates[index];
-    const { data: existing } = await supabase
-      .from("job_matches")
-      .select("computed_at, brain_version")
-      .eq("user_id", brain.userId)
-      .eq("job_id", row.id)
-      .maybeSingle();
+    const existing = existingMap.get(String(row.id)) ?? null;
 
     if (existing) {
-      const computedAt = new Date(existing.computed_at as string).getTime();
+      const computedAt = new Date(existing.computed_at).getTime();
       const age = Date.now() - computedAt;
       if (
         existing.brain_version === brainVersion &&
@@ -243,6 +261,8 @@ export async function refreshUserMatches(
         continue;
       }
     }
+
+
 
 
     const job = rowToNormalized(row);
@@ -342,7 +362,10 @@ function rankCandidateRows(
 ): Array<Record<string, any>> {
   const brainTech = brainTechVocabulary(brain);
   const prefLocations = preferredLocations(brain);
+  const candidateRung = candidateSeniority(brain);
+  const candidateYears = brain.identity.yearsOfExperience ?? 0;
   const scored = rows.map((row) => {
+
     const company = Array.isArray(row.company) ? row.company[0] : row.company;
     const jobLike = {
       title: row.title ?? "",
@@ -364,6 +387,16 @@ function rankCandidateRows(
       ...(row.preferred_skills ?? []),
       ...(company?.tech_stack ?? []),
     ]);
+    // Seniority appropriateness must influence the SHORTLIST, not just the
+    // final score — otherwise senior/architect postings consume every
+    // candidate slot and entry-level roles are never scored at all.
+    const sen = seniorityFit({
+      candidate: candidateRung,
+      candidateYears,
+      jobLevel: row.experience_level ?? null,
+      jobTitle: String(row.title ?? ""),
+      jobText: `${row.title ?? ""} ${(row.requirements ?? []).join(" ")} ${String(row.description ?? "").slice(0, 1500)}`,
+    });
     const score =
       (rel.vetoed || fit.excluded ? -500 : 0) +
       rel.relevance * 200 +
@@ -371,6 +404,8 @@ function rankCandidateRows(
       confidence.confidence * 60 +
       familyTitle * 0.5 +
       tech * 80 +
+      sen.score * 1.6 +
+      (sen.tier === "far-over" ? -70 : sen.tier === "over" ? -30 : 0) +
       (row.remote_status === "remote" ? 8 : 0) +
       locationAffinity({
         jobLocation: row.location,
@@ -378,6 +413,7 @@ function rankCandidateRows(
         remoteStatus: row.remote_status,
         preferred: prefLocations,
       }) * 55;
+
     return { row, score, ok: rel.gate && !fit.excluded, key: jobDedupeKey(String(row.title ?? ""), company?.name) };
   });
 

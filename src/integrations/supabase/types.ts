@@ -67,6 +67,48 @@ export type Database = {
           },
         ]
       }
+      admin_allowlist: {
+        Row: {
+          created_at: string
+          email: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+        }
+        Relationships: []
+      }
+      admin_audit_log: {
+        Row: {
+          action: string
+          actor_id: string
+          created_at: string
+          details: Json
+          id: string
+          target: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          target?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          target?: string | null
+        }
+        Relationships: []
+      }
       ai_application_sessions: {
         Row: {
           approval_required_at: string | null
@@ -3545,6 +3587,7 @@ export type Database = {
           stale_count: number
         }[]
       }
+      sync_admin_role: { Args: never; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "user"

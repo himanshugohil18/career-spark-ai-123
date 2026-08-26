@@ -103,9 +103,11 @@ export function seniorityFitFor(brain: CareerBrainSnapshot, job: NormalizedJob) 
     candidate: candidateSeniority(brain),
     candidateYears: brain.identity.yearsOfExperience ?? 0,
     jobLevel: job.experienceLevel,
+    jobTitle: job.title,
     jobText: `${job.title} ${job.requirements.join(" ")} ${job.description.slice(0, 2500)}`,
   });
 }
+
 
 export function experienceScore(brain: CareerBrainSnapshot, job: NormalizedJob): number {
   const years = brain.identity.yearsOfExperience ?? 0;
