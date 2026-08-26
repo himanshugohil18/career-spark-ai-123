@@ -88,7 +88,7 @@ export function CinematicVideo({ ctaTo = "/auth" }: { ctaTo?: string }) {
         {/* readability gradient */}
         <div
           aria-hidden
-          className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,25,0.82)_0%,rgba(8,12,25,0.45)_38%,rgba(8,12,25,0.88)_100%)]"
+          className="absolute inset-0 bg-black/55"
         />
 
         {/* live indicator */}

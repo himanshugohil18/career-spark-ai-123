@@ -74,7 +74,7 @@ function AuthPage() {
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 opacity-90"
-        style={{ backgroundImage: "var(--gradient-hero)" }}
+        className="bg-accent"
       />
       <div aria-hidden className="bg-grid grid-fade-mask absolute inset-0 -z-10" />
 
@@ -185,7 +185,7 @@ function BrandingPanel({ mode }: { mode: Mode }) {
             <div
               aria-hidden
               className="grid h-8 w-8 place-items-center rounded-full text-xs font-semibold text-primary-foreground"
-              style={{ background: "var(--gradient-brand-glow)" }}
+              className="bg-primary"
             >
               A
             </div>
@@ -475,12 +475,12 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card via-elevated to-background/95 p-7 sm:p-8 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.6)]">
+    <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card p-7 sm:p-8 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.6)]">
       {/* subtle inner glow */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 -top-24 h-48 opacity-40 blur-3xl"
-        style={{ background: "var(--gradient-brand-glow)" }}
+        className="bg-primary"
       />
 
       <div className="relative">
@@ -501,7 +501,7 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
             "mt-6 w-full transition-all",
             isSignup
               ? "bg-background text-foreground hover:bg-muted"
-              : "bg-gradient-to-r from-primary to-accent text-primary-foreground hover:brightness-110 hover:shadow-[0_8px_28px_-10px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+              : "bg-primary text-primary-foreground hover:bg-primary-hover"
           )}
           disabled={loading !== false}
           onClick={handleOAuth}
@@ -642,7 +642,7 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
             type="submit"
             variant="primary"
             size="lg"
-            className="mt-2 w-full bg-gradient-to-r from-primary to-accent hover:brightness-110 transition-all"
+            className="mt-2 w-full bg-primary transition-colors hover:bg-primary-hover"
             disabled={loading !== false}
           >
             {loading === "email" ? (

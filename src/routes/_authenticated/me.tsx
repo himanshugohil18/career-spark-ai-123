@@ -132,10 +132,6 @@ function MePage() {
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 opacity-70"
-          style={{
-            background:
-              "radial-gradient(600px 200px at 20% 0%, color-mix(in oklab, var(--primary) 22%, transparent), transparent 70%), radial-gradient(500px 200px at 80% 100%, color-mix(in oklab, #7C5CFF 20%, transparent), transparent 70%)",
-          }}
         />
         <div className="relative grid grid-cols-[minmax(0,1fr)_auto] items-center gap-6 sm:flex sm:flex-wrap sm:justify-between">
           <div className="flex min-w-0 items-center gap-4">
@@ -330,7 +326,7 @@ function MePage() {
                 className="relative"
               >
                 <span className="absolute -left-[29px] top-2 grid h-4 w-4 place-items-center rounded-full border border-primary/40 bg-background">
-                  <span className="h-1.5 w-1.5 rounded-full bg-[image:var(--gradient-primary)]" />
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" />
                 </span>
                 <div className="surface-card card-interactive p-5">
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
