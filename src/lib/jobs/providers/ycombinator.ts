@@ -46,7 +46,7 @@ export const ycombinatorProvider: JobProvider = {
           const yc: YcHit = {
             objectID: h.objectID,
             title: h.title,
-            company_name: h.author ?? "YC Company",
+            company_name: parseCompanyFromHnTitle(h.title) ?? h.author ?? "YC Company",
             description: h.story_text ?? h.title,
             application_url: h.url ?? `https://news.ycombinator.com/item?id=${h.objectID}`,
             posted_at: h.created_at,
@@ -61,6 +61,23 @@ export const ycombinatorProvider: JobProvider = {
     return dedupe(out);
   },
 };
+
+/**
+ * HN "Who is hiring" job posts are titled
+ *   "Morph (YC S23) Is Hiring Member of Technical Staff".
+ * The Algolia mirror exposes no company field, so the real employer is parsed
+ * out of the title. The HN submitter handle (`author`) is NEVER a company name,
+ * so a failed parse falls back to a neutral label instead of a username.
+ */
+export function parseCompanyFromHnTitle(title: string | undefined): string | null {
+  if (!title) return null;
+  const cleaned = title.trim();
+  const withBatch = cleaned.match(/^(.+?)\s*\((?:YC\s*)[^)]*\)/i);
+  if (withBatch?.[1]) return withBatch[1].trim();
+  const hiring = cleaned.match(/^(.+?)\s+(?:is|are)\s+hiring\b/i);
+  if (hiring?.[1]) return hiring[1].replace(/\s*\([^)]*\)\s*$/, "").trim();
+  return null;
+}
 
 function dedupe(jobs: NormalizedJob[]): NormalizedJob[] {
   const seen = new Set<string>();
@@ -81,8 +98,8 @@ function mapJob(j: YcHit): NormalizedJob {
   return {
     title: j.title!,
     company: {
-      name: j.company_name ?? "YC Company",
-      slug: slugify(j.company_name ?? "yc-company"),
+      name: j.company_name ?? "YC Startup",
+      slug: slugify(j.company_name ?? "yc-startup"),
       domain: null, logoUrl: null, website: null,
       industry: "Startup", size: null, remotePolicy: null,
       techStack: skills.slice(0, 12),
