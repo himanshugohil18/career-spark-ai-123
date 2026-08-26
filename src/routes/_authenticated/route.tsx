@@ -1,5 +1,5 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { createFileRoute, Outlet, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppShell } from "@/features/app-shell/app-shell";
 import { WorkspaceBoot } from "@/components/ai/workspace-boot";
@@ -7,23 +7,37 @@ import { useCrossModuleSync } from "@/hooks/use-cross-module-sync";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
-  beforeLoad: async () => {
-    // Client-only: the session lives in browser storage, so the server can
-    // never see a user. Redirecting here during SSR renders /auth inside the
-    // ssr:false shell and causes a hydration mismatch on the client.
-    if (typeof window === "undefined") {
-      // SSR never renders this subtree (ssr: false); the cast keeps the
-      // route-context type stable for child routes.
-      return { user: null as unknown as import("@supabase/supabase-js").User };
-    }
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
-    return { user: data.user };
-  },
   component: AuthenticatedLayout,
 });
 
 function AuthenticatedLayout() {
+  const navigate = useNavigate();
+  // Session lives in browser storage; resolve it after hydration. Redirecting
+  // in beforeLoad fires mid-hydration on a hard refresh (server rendered the
+  // ssr:false shell, client's first render would be /auth) and triggers a
+  // React hydration-mismatch error, so the gate runs in an effect instead.
+  const [checked, setChecked] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    supabase.auth.getUser().then(({ data, error }) => {
+      if (cancelled) return;
+      if (error || !data.user) {
+        navigate({ to: "/auth", replace: true });
+        return;
+      }
+      setChecked(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate]);
+
+  if (!checked) return null;
+
+  return <AuthenticatedWorkspace />;
+}
+
+function AuthenticatedWorkspace() {
   useCrossModuleSync();
   useLoginAlertOnce();
   return (
