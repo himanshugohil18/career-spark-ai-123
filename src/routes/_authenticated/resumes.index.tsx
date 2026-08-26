@@ -6,6 +6,8 @@ import { Copy, FileText, Plus, Star, Trash2, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ai/skeleton";
+import { PageHeader, PageShell } from "@/components/product/page-header";
+import { EmptyState } from "@/components/product/empty-state";
 import { TEMPLATES } from "@/lib/resume-studio/document";
 import {
   createStudioResume,
@@ -211,6 +213,6 @@ function ResumeStudioList() {
           })}
         </ul>
       )}
-    </div>
+    </PageShell>
   );
 }

@@ -107,14 +107,12 @@ function OutreachPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 p-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Recruiter outreach</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Drafts are grounded in your Career Brain — real roles, real projects, real skills. The
-          assistant is instructed never to invent mutual connections, metrics or history.
-        </p>
-      </header>
+    <PageShell>
+      <PageHeader
+        eyebrow="AI Tools"
+        title="Recruiter outreach"
+        description="Drafts are grounded in your Career Brain — real roles, real projects, real skills. The assistant is instructed never to invent mutual connections, metrics or history."
+      />
 
       <section className="space-y-4 rounded-xl border border-border bg-card/60 p-5">
         <div className="flex flex-wrap gap-2">
