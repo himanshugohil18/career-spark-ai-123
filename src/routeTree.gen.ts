@@ -37,7 +37,6 @@ import { Route as AuthenticatedAgentRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as AuthenticatedResumesIndexRouteImport } from './routes/_authenticated/resumes.index'
 import { Route as AuthenticatedJobsIndexRouteImport } from './routes/_authenticated/jobs.index'
-import { Route as AuthenticatedInterviewIndexRouteImport } from './routes/_authenticated/interview.index'
 import { Route as AuthenticatedApplicationsIndexRouteImport } from './routes/_authenticated/applications.index'
 import { Route as AuthenticatedAdminIndexRouteImport } from './routes/_authenticated/admin.index'
 import { Route as AuthenticatedResumesResumeIdRouteImport } from './routes/_authenticated/resumes.$resumeId'
@@ -207,12 +206,6 @@ const AuthenticatedJobsIndexRoute = AuthenticatedJobsIndexRouteImport.update({
   path: '/jobs/',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedInterviewIndexRoute =
-  AuthenticatedInterviewIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => AuthenticatedInterviewRoute,
-  } as any)
 const AuthenticatedApplicationsIndexRoute =
   AuthenticatedApplicationsIndexRouteImport.update({
     id: '/applications/',
@@ -418,7 +411,6 @@ export interface FileRoutesByFullPath {
   '/resumes/$resumeId': typeof AuthenticatedResumesResumeIdRoute
   '/admin/': typeof AuthenticatedAdminIndexRoute
   '/applications/': typeof AuthenticatedApplicationsIndexRoute
-  '/interview/': typeof AuthenticatedInterviewIndexRoute
   '/jobs/': typeof AuthenticatedJobsIndexRoute
   '/resumes/': typeof AuthenticatedResumesIndexRoute
   '/applications/$workspaceId/agent': typeof AuthenticatedApplicationsWorkspaceIdAgentRoute
@@ -447,6 +439,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatRoute
   '/coach': typeof AuthenticatedCoachRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/interview': typeof AuthenticatedInterviewRouteWithChildren
   '/learning': typeof AuthenticatedLearningRoute
   '/me': typeof AuthenticatedMeRoute
   '/outreach': typeof AuthenticatedOutreachRoute
@@ -474,7 +467,6 @@ export interface FileRoutesByTo {
   '/resumes/$resumeId': typeof AuthenticatedResumesResumeIdRoute
   '/admin': typeof AuthenticatedAdminIndexRoute
   '/applications': typeof AuthenticatedApplicationsIndexRoute
-  '/interview': typeof AuthenticatedInterviewIndexRoute
   '/jobs': typeof AuthenticatedJobsIndexRoute
   '/resumes': typeof AuthenticatedResumesIndexRoute
   '/applications/$workspaceId/agent': typeof AuthenticatedApplicationsWorkspaceIdAgentRoute
@@ -534,7 +526,6 @@ export interface FileRoutesById {
   '/_authenticated/resumes/$resumeId': typeof AuthenticatedResumesResumeIdRoute
   '/_authenticated/admin/': typeof AuthenticatedAdminIndexRoute
   '/_authenticated/applications/': typeof AuthenticatedApplicationsIndexRoute
-  '/_authenticated/interview/': typeof AuthenticatedInterviewIndexRoute
   '/_authenticated/jobs/': typeof AuthenticatedJobsIndexRoute
   '/_authenticated/resumes/': typeof AuthenticatedResumesIndexRoute
   '/_authenticated/applications/$workspaceId/agent': typeof AuthenticatedApplicationsWorkspaceIdAgentRoute
@@ -594,7 +585,6 @@ export interface FileRouteTypes {
     | '/resumes/$resumeId'
     | '/admin/'
     | '/applications/'
-    | '/interview/'
     | '/jobs/'
     | '/resumes/'
     | '/applications/$workspaceId/agent'
@@ -623,6 +613,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/coach'
     | '/dashboard'
+    | '/interview'
     | '/learning'
     | '/me'
     | '/outreach'
@@ -650,7 +641,6 @@ export interface FileRouteTypes {
     | '/resumes/$resumeId'
     | '/admin'
     | '/applications'
-    | '/interview'
     | '/jobs'
     | '/resumes'
     | '/applications/$workspaceId/agent'
@@ -709,7 +699,6 @@ export interface FileRouteTypes {
     | '/_authenticated/resumes/$resumeId'
     | '/_authenticated/admin/'
     | '/_authenticated/applications/'
-    | '/_authenticated/interview/'
     | '/_authenticated/jobs/'
     | '/_authenticated/resumes/'
     | '/_authenticated/applications/$workspaceId/agent'
@@ -943,13 +932,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedJobsIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/interview/': {
-      id: '/_authenticated/interview/'
-      path: '/'
-      fullPath: '/interview/'
-      preLoaderRoute: typeof AuthenticatedInterviewIndexRouteImport
-      parentRoute: typeof AuthenticatedInterviewRoute
-    }
     '/_authenticated/applications/': {
       id: '/_authenticated/applications/'
       path: '/applications'
@@ -1178,13 +1160,11 @@ const AuthenticatedAdminRouteWithChildren =
 
 interface AuthenticatedInterviewRouteChildren {
   AuthenticatedInterviewSimulatorRoute: typeof AuthenticatedInterviewSimulatorRoute
-  AuthenticatedInterviewIndexRoute: typeof AuthenticatedInterviewIndexRoute
 }
 
 const AuthenticatedInterviewRouteChildren: AuthenticatedInterviewRouteChildren =
   {
     AuthenticatedInterviewSimulatorRoute: AuthenticatedInterviewSimulatorRoute,
-    AuthenticatedInterviewIndexRoute: AuthenticatedInterviewIndexRoute,
   }
 
 const AuthenticatedInterviewRouteWithChildren =
