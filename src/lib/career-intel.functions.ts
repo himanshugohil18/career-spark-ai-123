@@ -10,7 +10,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { getCareerBrainSnapshot, type CareerBrainSnapshot } from "./career-brain.service";
+import type { CareerBrainSnapshot } from "./career-brain.service";
+import { getCareerBrainSnapshotFor } from "./career-brain-logic.server";
 import { familiesFromBrain } from "./jobs/role-synonyms";
 
 // ---------- Coach ----------
@@ -25,7 +26,7 @@ export type CoachAdvice = {
 export const getCoachBriefing = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const brain = (await getCareerBrainSnapshot()) as CareerBrainSnapshot;
+    const brain = (await getCareerBrainSnapshotFor(context.supabase, context.userId)) as CareerBrainSnapshot;
     if (!brain.ready) {
       return {
         ready: false,
@@ -181,7 +182,7 @@ export const getCoachBriefing = createServerFn({ method: "GET" })
 export const getLearningPaths = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const brain = (await getCareerBrainSnapshot()) as CareerBrainSnapshot;
+    const brain = (await getCareerBrainSnapshotFor(context.supabase, context.userId)) as CareerBrainSnapshot;
     if (!brain.ready) return { ready: false, paths: [] as any[], families: [] as any[] };
 
     const [{ data: matches }, { data: gaps }] = await Promise.all([
@@ -252,7 +253,7 @@ export const getLearningPaths = createServerFn({ method: "GET" })
 export const getCareerAnalytics = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const brain = (await getCareerBrainSnapshot()) as CareerBrainSnapshot;
+    const brain = (await getCareerBrainSnapshotFor(context.supabase, context.userId)) as CareerBrainSnapshot;
 
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -409,7 +410,7 @@ export const getInterviewHub = createServerFn({ method: "GET" })
 export const getAgentActivity = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const brain = (await getCareerBrainSnapshot()) as CareerBrainSnapshot;
+    const brain = (await getCareerBrainSnapshotFor(context.supabase, context.userId)) as CareerBrainSnapshot;
 
     const [
       { count: matchCount },

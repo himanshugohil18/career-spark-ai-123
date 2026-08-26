@@ -38,7 +38,7 @@ export async function computeCareerReadiness(
   userId: string,
   brain: CareerBrainSnapshot,
 ): Promise<CareerReadiness> {
-  const [matches, applications, interviews, roadmapItems] = await Promise.all([
+  const [matches, applications, interviewPacks, mockInterviews, roadmapItems] = await Promise.all([
     supabase
       .from("job_matches")
       .select("overall_score")
@@ -49,7 +49,8 @@ export async function computeCareerReadiness(
       .from("application_workspaces")
       .select("id, status, current_stage, created_at")
       .eq("user_id", userId),
-    supabase.from("interview_sessions").select("id, status, created_at").eq("user_id", userId),
+    supabase.from("interview_sessions").select("id, completed_questions, total_questions, created_at").eq("user_id", userId),
+    supabase.from("interview_sim_sessions").select("id, status, answered_questions, planned_questions, created_at").eq("user_id", userId),
     supabase.from("career_roadmap_items").select("id, status").eq("user_id", userId),
   ]);
 
@@ -182,8 +183,12 @@ export async function computeCareerReadiness(
 
   // --- Interview readiness ---
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const sessions = (interviews.data ?? []) as any[];
-  const interviewScore = clamp(sessions.length * 25);
+  const sessions = [...((interviewPacks.data ?? []) as any[]), ...((mockInterviews.data ?? []) as any[])];
+  const completedSessions = sessions.filter((s) => {
+    if (typeof s.status === "string") return s.status === "completed";
+    return Number(s.completed_questions ?? 0) >= Number(s.total_questions ?? 1);
+  }).length;
+  const interviewScore = clamp(sessions.length * 18 + completedSessions * 12);
   const interviewCat: ReadinessCategory = {
     key: "interview",
     label: "Interview Readiness",
@@ -192,14 +197,14 @@ export async function computeCareerReadiness(
     explanation:
       sessions.length === 0
         ? "No interview practice sessions yet."
-        : `${sessions.length} interview session${sessions.length === 1 ? "" : "s"} completed or started.`,
+        : `${sessions.length} interview session${sessions.length === 1 ? "" : "s"} started, with ${completedSessions} completed.`,
     recommendation:
       sessions.length === 0
         ? "Run an AI interview simulation for your target role."
         : sessions.length < 3
           ? "Practice a technical and a behavioral round before your next interview."
           : null,
-    source: "interview_sessions",
+    source: "interview_sessions + interview_sim_sessions",
   };
 
   // --- Learning progress (roadmap completion) ---

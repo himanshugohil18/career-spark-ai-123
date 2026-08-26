@@ -18,7 +18,7 @@ const DAY = 24 * 60 * 60 * 1000;
 export async function getNextBestActions(supabase: any, userId: string): Promise<NextAction[]> {
   const staleBefore = new Date(Date.now() - 7 * DAY).toISOString();
 
-  const [topMatches, staleApps, gaps, interviews, roadmapNext, brain] = await Promise.all([
+  const [topMatches, staleApps, gaps, interviewPacks, mockInterviews, roadmapNext, brain] = await Promise.all([
     supabase
       .from("job_matches")
       .select("overall_score, job:jobs(id, title, company:companies(name))")
@@ -33,14 +33,20 @@ export async function getNextBestActions(supabase: any, userId: string): Promise
       .limit(5),
     supabase
       .from("gap_analysis")
-      .select("missing, high_priority, created_at")
+      .select("missing_skills, high_priority, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle(),
     supabase
       .from("interview_sessions")
-      .select("id, status, created_at")
+      .select("id, completed_questions, total_questions, created_at")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(5),
+    supabase
+      .from("interview_sim_sessions")
+      .select("id, status, answered_questions, planned_questions, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(5),
@@ -107,7 +113,7 @@ export async function getNextBestActions(supabase: any, userId: string): Promise
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const gap = gaps.data as any;
   const highPriority = Array.isArray(gap?.high_priority) ? gap.high_priority : [];
-  const missing = Array.isArray(gap?.missing) ? gap.missing : [];
+  const missing = Array.isArray(gap?.missing_skills) ? gap.missing_skills : [];
   const topGap = highPriority[0]?.skill ?? missing.find((m: { impact?: string }) => m.impact === "high")?.skill ?? missing[0]?.skill;
   if (topGap) {
     actions.push({
@@ -121,16 +127,23 @@ export async function getNextBestActions(supabase: any, userId: string): Promise
 
   // Interview practice
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const inProgressInterview = ((interviews.data ?? []) as any[]).find((s) =>
-    ["in_progress", "active", "started"].includes(s.status ?? ""),
+  const unfinishedPack = ((interviewPacks.data ?? []) as any[]).find(
+    (s) => Number(s.completed_questions ?? 0) < Number(s.total_questions ?? 0),
   );
-  if (inProgressInterview) {
+  const unfinishedMock = ((mockInterviews.data ?? []) as any[]).find(
+    (s) =>
+      ["active", "in_progress", "started"].includes(String(s.status ?? "")) ||
+      Number(s.answered_questions ?? 0) < Number(s.planned_questions ?? 0),
+  );
+  if (unfinishedMock || unfinishedPack) {
     actions.push({
       kind: "interview",
       priority: "medium",
-      title: "Finish your interview practice session",
-      detail: "You have an unfinished AI interview session.",
-      link: "/interview",
+      title: unfinishedMock ? "Finish your mock interview" : "Finish interview practice",
+      detail: unfinishedMock
+        ? "You have an unfinished AI mock interview session."
+        : "You have generated interview questions that still need practice.",
+      link: unfinishedMock ? "/interview/simulator" : "/interview",
     });
   }
 
