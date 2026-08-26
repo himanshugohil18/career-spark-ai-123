@@ -1,1 +1,0 @@
-ALTER TYPE notification_kind ADD VALUE IF NOT EXISTS 'career_brain_activated';

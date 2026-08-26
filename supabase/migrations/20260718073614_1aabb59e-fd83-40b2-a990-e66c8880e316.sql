@@ -1,1 +1,0 @@
-REVOKE EXECUTE ON FUNCTION public.grant_admin_for_allowlisted_email() FROM PUBLIC, anon, authenticated;
