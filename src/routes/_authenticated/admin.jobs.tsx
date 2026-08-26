@@ -4,6 +4,7 @@ import { getJobsOverview } from "@/lib/admin.functions";
 import { Briefcase, CheckCircle2, XCircle, Copy } from "lucide-react";
 import { StatCard, Panel } from "@/features/admin/ui";
 import { TIER_LABELS, providerMeta } from "@/lib/jobs/provider-registry";
+import { ExportBar } from "@/features/admin/ExportMenu";
 
 export const Route = createFileRoute("/_authenticated/admin/jobs")({
   component: AdminJobs,
@@ -19,6 +20,52 @@ function AdminJobs() {
 
   return (
     <div className="space-y-6">
+      <ExportBar
+        title="Job catalogue"
+        description="Catalogue size, duplicate detection and per-provider crawl reliability."
+        filenameBase="careeros-jobs"
+        buildReport={() =>
+          d
+            ? {
+                title: "Job Catalogue Report",
+                subtitle: "Catalogue volume, duplication sampling and provider reliability tiers.",
+                filename: "careeros-job-catalogue",
+                kpis: [
+                  { label: "Total jobs", value: d.totals.total.toLocaleString() },
+                  { label: "Active jobs", value: d.totals.active.toLocaleString(), tone: "good" },
+                  { label: "Duplicates (sample)", value: String(d.totals.duplicatesInSample) },
+                  { label: "Providers", value: String((d.sources ?? []).length) },
+                ],
+                barLists: [
+                  {
+                    title: "Jobs per provider (top 15)",
+                    items: Object.entries(d.perProvider ?? {})
+                      .sort((a, b) => (b[1] as number) - (a[1] as number))
+                      .slice(0, 15)
+                      .map(([id, n]) => ({ label: providerMeta(id).name, value: n as number })),
+                  },
+                ],
+                tables: [
+                  {
+                    title: "Provider reliability",
+                    columns: ["Provider", "Tier", "Type", "Health", "On", "Jobs", "Fails", "Avg ms", "Last success"],
+                    rows: (d.sources ?? []).map((s: any) => [
+                      providerMeta(s.id).name,
+                      `T${providerMeta(s.id).tier}`,
+                      providerMeta(s.id).sourceType,
+                      s.health_status ?? "unknown",
+                      s.enabled ? "yes" : "no",
+                      d.perProvider[s.id] ?? 0,
+                      `${s.consecutive_failures ?? 0}/${s.failure_count ?? 0}`,
+                      s.avg_response_ms ?? "—",
+                      s.last_success_at ? new Date(s.last_success_at).toLocaleString() : "never",
+                    ]),
+                  },
+                ],
+              }
+            : null
+        }
+      />
       <section className="grid gap-3 md:grid-cols-3">
         <StatCard label="Total jobs" value={d?.totals.total ?? "—"} icon={Briefcase} />
         <StatCard label="Active jobs" value={d?.totals.active ?? "—"} icon={CheckCircle2} tone="success" />
