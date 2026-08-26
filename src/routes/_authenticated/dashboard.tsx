@@ -20,7 +20,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Route as AuthRoute } from "./route";
+import { useSession } from "@/hooks/use-session";
 import { AgentGrid, deriveAgents } from "@/components/ai/agent-status";
 import { Skeleton } from "@/components/ai/skeleton";
 import { ResumeUpload } from "@/features/resume/resume-upload";

@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ai/skeleton";
 import { clearCareerChat, listCareerChat, sendCareerChat } from "@/lib/career-chat.functions";
 import { getAgentActivity } from "@/lib/career-intel.functions";
-import { Route as AuthRoute } from "./route";
+import { useSession } from "@/hooks/use-session";
 
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
