@@ -75,7 +75,7 @@ export async function getTodayMissions(
 
   // Verify completion against real activity today
   const startOfDay = `${today}T00:00:00.000Z`;
-  const [appsToday, interviewsToday, roadmapToday] = await Promise.all([
+  const [appsToday, interviewPacksToday, practicedQuestionsToday, mockSessionsToday, mockAnswersToday, roadmapToday] = await Promise.all([
     supabase
       .from("application_workspaces")
       .select("id", { count: "exact", head: true })
@@ -87,6 +87,23 @@ export async function getTodayMissions(
       .eq("user_id", userId)
       .gte("created_at", startOfDay),
     supabase
+      .from("interview_questions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .eq("practiced", true)
+      .gte("updated_at", startOfDay),
+    supabase
+      .from("interview_sim_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .gte("created_at", startOfDay),
+    supabase
+      .from("interview_sim_turns")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .not("answer", "is", null)
+      .gte("created_at", startOfDay),
+    supabase
       .from("career_roadmap_items")
       .select("id", { count: "exact", head: true })
       .eq("user_id", userId)
@@ -96,7 +113,12 @@ export async function getTodayMissions(
 
   const realCounts: Record<string, number> = {
     apply: appsToday.count ?? 0,
-    interview: interviewsToday.count ?? 0,
+    interview: Math.max(
+      interviewPacksToday.count ?? 0,
+      practicedQuestionsToday.count ?? 0,
+      mockSessionsToday.count ?? 0,
+      mockAnswersToday.count ?? 0,
+    ),
     roadmap: roadmapToday.count ?? 0,
   };
 

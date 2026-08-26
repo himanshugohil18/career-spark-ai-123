@@ -5,11 +5,27 @@ import { MessagesSquare, Building2, GraduationCap, CheckCircle2, Circle } from "
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ai/skeleton";
 import { PageHeader } from "@/components/product/page-header";
+import { Button } from "@/components/ui/button";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { getInterviewHub, toggleQuestionPracticed } from "@/lib/career-intel.functions";
 
 export const Route = createFileRoute("/_authenticated/interview")({
-  head: () => ({ meta: [{ title: "Interview Prep · CareerOS" }] }),
+  head: () => ({
+    meta: [
+      { title: "Interview Prep · CareerOS" },
+      {
+        name: "description",
+        content: "Practice interview questions, track readiness, and review CareerOS interview preparation progress.",
+      },
+      { property: "og:title", content: "Interview Prep · CareerOS" },
+      {
+        property: "og:description",
+        content: "Practice interview questions, track readiness, and review CareerOS interview preparation progress.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: InterviewPage,
 });
 
@@ -56,12 +72,11 @@ function InterviewPage() {
         title="Practice hub"
         description="Interview sessions are generated inside each Application Workspace. This is your central practice history and question bank."
         meta={
-          <Link
-            to="/interview/simulator"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
-          >
-            <MessagesSquare className="h-3.5 w-3.5" /> Start AI mock interview
-          </Link>
+          <Button asChild size="sm">
+            <Link to="/interview/simulator">
+              <MessagesSquare className="h-3.5 w-3.5" /> Start AI mock interview
+            </Link>
+          </Button>
         }
       />
 

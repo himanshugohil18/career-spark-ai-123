@@ -54,29 +54,36 @@ async function candidateContext(c: Ctx): Promise<string> {
 
 async function generateQuestion(c: Ctx, session: any, priorQuestions: string[]): Promise<string> {
   const context = await candidateContext(c);
-  const raw = await callLovableAI({
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a senior interviewer conducting a realistic mock interview. Ask ONE focused question. Return JSON: {\"question\": string}. Mix behavioral and technical based on difficulty. Never repeat prior questions.",
-      },
-      {
-        role: "user",
-        content: `${context}\nTarget role: ${session.target_role}\nDifficulty: ${session.difficulty}\nThis is question ${priorQuestions.length + 1} of ${session.planned_questions}.\nPrior questions: ${JSON.stringify(priorQuestions)}`,
-      },
-    ],
-    responseFormat: "json_object",
-    temperature: 0.7,
-    maxTokens: 400,
-  });
   try {
+    const raw = await callLovableAI({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a senior interviewer conducting a realistic mock interview. Ask ONE focused question. Return JSON: {\"question\": string}. Mix behavioral and technical based on difficulty. Never repeat prior questions.",
+        },
+        {
+          role: "user",
+          content: `${context}\nTarget role: ${session.target_role}\nDifficulty: ${session.difficulty}\nThis is question ${priorQuestions.length + 1} of ${session.planned_questions}.\nPrior questions: ${JSON.stringify(priorQuestions)}`,
+        },
+      ],
+      responseFormat: "json_object",
+      temperature: 0.7,
+      maxTokens: 400,
+    });
     const parsed = JSON.parse(extractJson(raw));
     if (parsed.question && typeof parsed.question === "string") return parsed.question.trim();
   } catch {
-    /* fall through */
+    /* deterministic fallback keeps the simulator usable if AI is briefly unavailable */
   }
-  return `Tell me about your most relevant experience for the ${session.target_role} role.`;
+  const fallbackQuestions = [
+    `Tell me about your most relevant experience for the ${session.target_role} role.`,
+    `Walk me through a project that proves you can succeed as a ${session.target_role}.`,
+    `Describe a difficult technical or teamwork challenge you solved, and what result you achieved.`,
+    `Which skills make you strongest for ${session.target_role}, and where are you still improving?`,
+    `Why should this company choose you for a ${session.target_role} position?`,
+  ];
+  return fallbackQuestions[priorQuestions.length % fallbackQuestions.length];
 }
 
 export async function startSimSession(
@@ -135,30 +142,30 @@ export async function submitSimAnswer(c: Ctx, input: { sessionId: string; turnId
   if (session.status !== "active") throw new Error("This interview session is already completed.");
   const turn = turns.find((t) => t.id === input.turnId);
   if (!turn) throw new Error("Question not found in this session.");
+  if (turn.answer !== null) throw new Error("This question has already been answered.");
 
   const context = await candidateContext(c);
-  const raw = await callLovableAI({
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are a senior interviewer scoring a mock interview answer. Be honest but constructive. Return JSON: {\"score\": number 0-10, \"feedback\": string (2-3 sentences), \"points_hit\": string[], \"points_missed\": string[]}.",
-      },
-      {
-        role: "user",
-        content: `${context}\nTarget role: ${session.target_role}\nQuestion: ${turn.question}\nCandidate answer: ${input.answer}`,
-      },
-    ],
-    responseFormat: "json_object",
-    temperature: 0.3,
-    maxTokens: 700,
-  });
-
   let score = 5;
-  let feedback = "Answer recorded.";
-  let pointsHit: string[] = [];
-  let pointsMissed: string[] = [];
+  let feedback = "Answer recorded. Add stronger examples, clearer impact, and measurable results to improve this response.";
+  let pointsHit: string[] = ["Answered the question directly"];
+  let pointsMissed: string[] = ["Quantified business impact", "Concrete example using situation-action-result structure"];
   try {
+    const raw = await callLovableAI({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are a senior interviewer scoring a mock interview answer. Be honest but constructive. Return JSON: {\"score\": number 0-10, \"feedback\": string (2-3 sentences), \"points_hit\": string[], \"points_missed\": string[]}.",
+        },
+        {
+          role: "user",
+          content: `${context}\nTarget role: ${session.target_role}\nQuestion: ${turn.question}\nCandidate answer: ${input.answer}`,
+        },
+      ],
+      responseFormat: "json_object",
+      temperature: 0.3,
+      maxTokens: 700,
+    });
     const parsed = JSON.parse(extractJson(raw));
     if (typeof parsed.score === "number") score = Math.max(0, Math.min(10, parsed.score));
     if (typeof parsed.feedback === "string") feedback = parsed.feedback;
@@ -168,19 +175,21 @@ export async function submitSimAnswer(c: Ctx, input: { sessionId: string; turnId
     /* keep defaults */
   }
 
-  await c.supabase
+  const saved = await c.supabase
     .from("interview_sim_turns")
     .update({ answer: input.answer, score, feedback, points_hit: pointsHit, points_missed: pointsMissed })
     .eq("id", input.turnId)
     .eq("user_id", c.userId);
+  if (saved.error) throw new Error(saved.error.message);
 
-  const answered = session.answered_questions + 1;
+  const answered = turns.filter((t) => t.answer !== null).length + 1;
   const isLast = answered >= session.planned_questions;
-  await c.supabase
+  const updatedSession = await c.supabase
     .from("interview_sim_sessions")
     .update({ answered_questions: answered })
     .eq("id", session.id)
     .eq("user_id", c.userId);
+  if (updatedSession.error) throw new Error(updatedSession.error.message);
 
   if (isLast) {
     const finished = await finishSimSession(c, session.id);
@@ -232,7 +241,8 @@ export async function finishSimSession(c: Ctx, sessionId: string) {
       if (Array.isArray(parsed.strengths)) strengths = parsed.strengths.map(String).slice(0, 4);
       if (Array.isArray(parsed.improvements)) improvements = parsed.improvements.map(String).slice(0, 4);
     } catch {
-      /* keep defaults */
+      strengths = ["Completed the full mock interview", "Built practice momentum", "Created a transcript for review"];
+      improvements = ["Use more measurable outcomes", "Structure answers with Situation, Action, Result", "Connect examples more tightly to the target role"];
     }
   }
 

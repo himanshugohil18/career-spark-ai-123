@@ -7,16 +7,16 @@
 import type { ResumeDoc, SectionKey, TemplateId } from "@/lib/resume-studio/document";
 import { SECTION_LABELS, docToPlainText, sectionIsEmpty } from "@/lib/resume-studio/document";
 
-const PAGE = { w: 595.28, h: 841.89, margin: 48 };
+const PAGE = { w: 595.28, h: 841.89, marginX: 46, marginY: 42, footerY: 820 };
 
-type Font = { family: "helvetica" | "times" | "courier"; accentSize: number };
+type Font = { family: "helvetica" | "times" | "courier"; nameSize: number; bodySize: number };
 
 const FONTS: Record<TemplateId, Font> = {
-  ats_classic: { family: "helvetica", accentSize: 20 },
-  modern_professional: { family: "helvetica", accentSize: 24 },
-  technical: { family: "courier", accentSize: 19 },
-  minimal: { family: "helvetica", accentSize: 18 },
-  executive: { family: "times", accentSize: 25 },
+  ats_classic: { family: "helvetica", nameSize: 20, bodySize: 9.8 },
+  modern_professional: { family: "helvetica", nameSize: 23, bodySize: 10 },
+  technical: { family: "courier", nameSize: 18, bodySize: 9.4 },
+  minimal: { family: "helvetica", nameSize: 18, bodySize: 9.6 },
+  executive: { family: "times", nameSize: 24, bodySize: 10.2 },
 };
 
 function safeName(name: string): string {
@@ -32,124 +32,193 @@ export async function downloadResumePdf(
   const { jsPDF } = await import("jspdf");
   const font = FONTS[template] ?? FONTS.ats_classic;
   const pdf = new jsPDF({ unit: "pt", format: "a4" });
-  const maxWidth = PAGE.w - PAGE.margin * 2;
-  let y = PAGE.margin;
+  const maxWidth = PAGE.w - PAGE.marginX * 2;
+  const black: [number, number, number] = [28, 31, 36];
+  const muted: [number, number, number] = [84, 91, 102];
+  const rule: [number, number, number] = template === "modern_professional" ? [47, 92, 255] : [150, 156, 166];
+  let y = PAGE.marginY;
+
+  const lineHeight = (size: number) => Math.round(size * 1.34);
+  const setTextColor = (rgb: [number, number, number]) => pdf.setTextColor(rgb[0], rgb[1], rgb[2]);
+  const setDrawColor = (rgb: [number, number, number]) => pdf.setDrawColor(rgb[0], rgb[1], rgb[2]);
+
+  const addFooter = () => {
+    const pages = pdf.getNumberOfPages();
+    if (pages <= 1) return;
+    for (let page = 1; page <= pages; page += 1) {
+      pdf.setPage(page);
+      pdf.setFont(font.family, "normal");
+      pdf.setFontSize(7.5);
+      setTextColor(muted);
+      pdf.text(String(page), PAGE.w / 2, PAGE.footerY, { align: "center" });
+    }
+    pdf.setPage(pages);
+  };
 
   const ensure = (needed: number) => {
-    if (y + needed > PAGE.h - PAGE.margin) {
+    if (y + needed > PAGE.footerY - 12) {
       pdf.addPage();
-      y = PAGE.margin;
+      y = PAGE.marginY;
     }
   };
 
-  const text = (
+  const clean = (value: string) => value.replace(/[•]/g, "-").replace(/[\u2013\u2014]/g, "-").replace(/\s+/g, " ").trim();
+
+  const writeText = (
     value: string,
-    opts: { size?: number; style?: "normal" | "bold" | "italic"; indent?: number; gap?: number } = {},
+    opts: {
+      size?: number;
+      style?: "normal" | "bold" | "italic";
+      indent?: number;
+      gap?: number;
+      color?: [number, number, number];
+      width?: number;
+      align?: "left" | "right" | "center";
+    } = {},
   ) => {
-    const size = opts.size ?? 10;
+    const normalized = clean(value);
+    if (!normalized) return;
+    const size = opts.size ?? font.bodySize;
+    const indent = opts.indent ?? 0;
+    const width = opts.width ?? maxWidth - indent;
     pdf.setFont(font.family, opts.style ?? "normal");
     pdf.setFontSize(size);
-    const indent = opts.indent ?? 0;
-    const lines = pdf.splitTextToSize(value, maxWidth - indent) as string[];
+    setTextColor(opts.color ?? black);
+    const lines = pdf.splitTextToSize(normalized, width) as string[];
     for (const line of lines) {
-      ensure(size + 3);
-      pdf.text(line, PAGE.margin + indent, y);
-      y += size + 3;
+      ensure(lineHeight(size));
+      const x = opts.align === "right" ? PAGE.w - PAGE.marginX : PAGE.marginX + indent;
+      pdf.text(line, x, y, { align: opts.align ?? "left" });
+      y += lineHeight(size);
     }
     y += opts.gap ?? 0;
   };
 
-  const rule = () => {
-    ensure(8);
-    pdf.setDrawColor(120);
-    pdf.line(PAGE.margin, y, PAGE.w - PAGE.margin, y);
-    y += 10;
+  const writeHeaderLine = (left: string, right: string) => {
+    if (!left && !right) return;
+    ensure(18);
+    pdf.setFont(font.family, "bold");
+    pdf.setFontSize(font.bodySize + 0.7);
+    setTextColor(black);
+    const rightWidth = right ? Math.min(140, pdf.getTextWidth(right) + 4) : 0;
+    const leftLines = pdf.splitTextToSize(clean(left), maxWidth - rightWidth - 16) as string[];
+    for (let i = 0; i < leftLines.length; i += 1) {
+      ensure(lineHeight(font.bodySize + 0.7));
+      pdf.text(leftLines[i] ?? "", PAGE.marginX, y);
+      if (i === 0 && right) {
+        pdf.setFont(font.family, "normal");
+        pdf.setFontSize(8.8);
+        setTextColor(muted);
+        pdf.text(clean(right), PAGE.w - PAGE.marginX, y, { align: "right" });
+        pdf.setFont(font.family, "bold");
+        pdf.setFontSize(font.bodySize + 0.7);
+        setTextColor(black);
+      }
+      y += lineHeight(font.bodySize + 0.7);
+    }
   };
 
-  // Header
-  if (doc.header.fullName) text(doc.header.fullName, { size: font.accentSize, style: "bold" });
-  if (doc.header.headline) text(doc.header.headline, { size: 11, style: "italic" });
-  const contact = [doc.header.email, doc.header.phone, doc.header.location].filter(Boolean);
-  if (contact.length) text(contact.join("  |  "), { size: 9 });
-  if (doc.header.links.length) {
-    text(doc.header.links.map((l) => l.url).join("  |  "), { size: 9, gap: 4 });
-  }
-  rule();
+  const sectionTitle = (label: string) => {
+    ensure(28);
+    y += y > PAGE.marginY + 26 ? 7 : 0;
+    pdf.setFont(font.family, "bold");
+    pdf.setFontSize(9.5);
+    setTextColor(black);
+    pdf.text(label.toUpperCase(), PAGE.marginX, y);
+    setDrawColor(rule);
+    pdf.setLineWidth(template === "modern_professional" ? 1.1 : 0.7);
+    pdf.line(PAGE.marginX, y + 5, PAGE.w - PAGE.marginX, y + 5);
+    y += 15;
+  };
+
+  const bullet = (value: string) => {
+    const body = clean(value);
+    if (!body) return;
+    writeText(`- ${body}`, { indent: 12, width: maxWidth - 12, gap: 1 });
+  };
+
+  if (doc.header.fullName) writeText(doc.header.fullName, { size: font.nameSize, style: "bold", gap: 1 });
+  if (doc.header.headline) writeText(doc.header.headline, { size: 10.8, style: "italic", color: muted, gap: 2 });
+  const contact = [doc.header.email, doc.header.phone, doc.header.location, ...doc.header.links.map((l) => l.url)].filter(Boolean);
+  if (contact.length) writeText(contact.join("  |  "), { size: 8.6, color: muted, gap: 8 });
+  setDrawColor(rule);
+  pdf.setLineWidth(template === "modern_professional" ? 1.4 : 0.8);
+  pdf.line(PAGE.marginX, y, PAGE.w - PAGE.marginX, y);
+  y += 16;
 
   for (const key of order) {
     if (sectionIsEmpty(doc, key)) continue;
-    ensure(30);
-    text(SECTION_LABELS[key].toUpperCase(), { size: 10.5, style: "bold", gap: 2 });
+    sectionTitle(SECTION_LABELS[key]);
 
-    if (key === "summary") text(doc.summary, { size: 10, gap: 6 });
+    if (key === "summary") writeText(doc.summary, { gap: 2 });
 
     if (key === "experience") {
       for (const e of doc.experience) {
         const dates = [e.startDate, e.isCurrent ? "Present" : e.endDate].filter(Boolean).join(" - ");
-        text([e.role, e.company].filter(Boolean).join(" | "), { size: 10.5, style: "bold" });
-        const meta = [e.location, e.employmentType, dates].filter(Boolean).join(" | ");
-        if (meta) text(meta, { size: 9, style: "italic" });
-        for (const b of e.bullets) text(`•  ${b}`, { size: 10, indent: 10 });
-        if (e.technologies.length) text(`Tech: ${e.technologies.join(", ")}`, { size: 9, indent: 10 });
-        y += 6;
+        writeHeaderLine([e.role, e.company].filter(Boolean).join(" — "), dates);
+        const meta = [e.location, e.employmentType].filter(Boolean).join(" | ");
+        if (meta) writeText(meta, { size: 8.8, style: "italic", color: muted, gap: 2 });
+        for (const b of e.bullets) bullet(b);
+        if (e.technologies.length) writeText(`Tech: ${e.technologies.join(", ")}`, { size: 8.7, indent: 12, color: muted });
+        y += 5;
       }
     }
 
     if (key === "projects") {
       for (const p of doc.projects) {
-        text(p.name, { size: 10.5, style: "bold" });
-        if (p.description) text(p.description, { size: 10 });
-        for (const b of p.bullets) text(`•  ${b}`, { size: 10, indent: 10 });
-        if (p.technologies.length) text(`Tech: ${p.technologies.join(", ")}`, { size: 9, indent: 10 });
+        writeHeaderLine(p.name, "");
+        if (p.description) writeText(p.description, { gap: 1 });
+        for (const b of p.bullets) bullet(b);
+        if (p.technologies.length) writeText(`Tech: ${p.technologies.join(", ")}`, { size: 8.7, indent: 12, color: muted });
         const urls = [p.githubUrl, p.liveUrl].filter(Boolean);
-        if (urls.length) text(urls.join("  |  "), { size: 9, indent: 10 });
-        y += 6;
+        if (urls.length) writeText(urls.join("  |  "), { size: 8.5, indent: 12, color: muted });
+        y += 5;
       }
     }
 
     if (key === "skills") {
       for (const g of doc.skills) {
         if (!g.items.length) continue;
-        text(`${g.category}: ${g.items.join(", ")}`, { size: 10 });
+        writeText(`${g.category}: ${g.items.join(", ")}`, { gap: 1 });
       }
-      y += 6;
+      y += 2;
     }
 
     if (key === "education") {
       for (const e of doc.education) {
-        text([e.degree, e.fieldOfStudy].filter(Boolean).join(", "), { size: 10.5, style: "bold" });
-        const meta = [e.institution, [e.startDate, e.endDate].filter(Boolean).join(" - "), e.grade]
-          .filter(Boolean)
-          .join(" | ");
-        if (meta) text(meta, { size: 9, style: "italic" });
+        const dates = [e.startDate, e.endDate].filter(Boolean).join(" - ");
+        writeHeaderLine([e.degree, e.fieldOfStudy].filter(Boolean).join(", "), dates);
+        const meta = [e.institution, e.grade].filter(Boolean).join(" | ");
+        if (meta) writeText(meta, { size: 8.8, style: "italic", color: muted });
         y += 4;
       }
     }
 
     if (key === "certifications") {
       for (const c of doc.certifications) {
-        text(
+        writeText(
           [c.name, c.organization, c.issueDate].filter(Boolean).join(" — ") +
             (c.credentialUrl ? `  (${c.credentialUrl})` : ""),
-          { size: 10 },
+          { gap: 1 },
         );
       }
-      y += 6;
+      y += 2;
     }
 
     if (key === "achievements") {
-      for (const a of doc.achievements) text(`•  ${a}`, { size: 10, indent: 10 });
-      y += 6;
+      for (const a of doc.achievements) bullet(a);
+      y += 2;
     }
 
     if (key === "languages") {
-      text(
+      writeText(
         doc.languages.map((l) => (l.proficiency ? `${l.name} (${l.proficiency})` : l.name)).join(", "),
-        { size: 10, gap: 6 },
+        { gap: 2 },
       );
     }
   }
 
+  addFooter();
   pdf.save(`${safeName(fileName)}.pdf`);
 }
 

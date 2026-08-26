@@ -36,7 +36,7 @@ export async function computeCareerInsights(
       .eq("user_id", userId),
     supabase
       .from("gap_analysis")
-      .select("missing, created_at")
+      .select("missing_skills, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
       .limit(5),
@@ -116,7 +116,7 @@ export async function computeCareerInsights(
   if (gapRows.length >= 2) {
     const freq = new Map<string, number>();
     for (const g of gapRows) {
-      for (const m of Array.isArray(g.missing) ? g.missing : []) {
+      for (const m of Array.isArray(g.missing_skills) ? g.missing_skills : []) {
         const name = m?.skill ?? m?.name;
         if (name) freq.set(String(name), (freq.get(String(name)) ?? 0) + 1);
       }
