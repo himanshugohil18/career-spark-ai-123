@@ -82,6 +82,7 @@ const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "Overview", to: "/dashboard", icon: LayoutDashboard },
       { label: "Career Brain", to: "/profile", icon: Brain },
+      { label: "Roadmap", to: "/roadmap", icon: Target },
       { label: "Analytics", to: "/analytics", icon: BarChart3 },
     ],
   },
