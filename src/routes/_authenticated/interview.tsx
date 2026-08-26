@@ -1,6 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 import { MessagesSquare, Building2, GraduationCap, CheckCircle2, Circle } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ai/skeleton";
@@ -26,8 +25,14 @@ export const Route = createFileRoute("/_authenticated/interview")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: InterviewPage,
+  component: InterviewRoute,
 });
+
+function InterviewRoute() {
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  if (pathname.startsWith("/interview/simulator")) return <Outlet />;
+  return <InterviewPage />;
+}
 
 const CATEGORY_LABEL: Record<string, string> = {
   behavioral: "Behavioral",
@@ -57,8 +62,6 @@ function InterviewPage() {
     },
     onError: (e) => toast.error("Could not update", { description: String(e) }),
   });
-
-
 
   const cats = data?.byCategory ?? {};
   const totalPct = data && data.totals.totalQ > 0
@@ -217,7 +220,6 @@ function InterviewPage() {
             );
           })()}
 
-
           <section>
             <h3 className="mb-3 font-display text-lg font-semibold">Practice from a workspace</h3>
             {data!.workspaces.length === 0 ? (
@@ -269,4 +271,3 @@ function Stat({ label, value, suffix }: { label: string; value: number | string;
     </div>
   );
 }
-
