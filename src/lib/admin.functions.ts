@@ -685,18 +685,21 @@ export const getProviderMonitoring = createServerFn({ method: "GET" })
     const sources = await supabaseAdmin.from("job_sources").select("*").order("tier").order("id");
 
     // PostgREST caps a single response, so page through the catalogue.
-    const jobRowsData: any[] = [];
-    for (let from = 0; from < 60000; from += 1000) {
-      const { data, error } = await supabaseAdmin
-        .from("jobs")
-        .select("provider, is_active, created_at, application_url, country_code, geo_region")
-        .order("id")
-        .range(from, from + 999);
-      if (error) throw error;
-      jobRowsData.push(...(data ?? []));
-      if (!data || data.length < 1000) break;
-    }
-    const jobRows = { data: jobRowsData };
+    const { count: jobCount } = await supabaseAdmin
+      .from("jobs")
+      .select("*", { count: "exact", head: true });
+    const pageSize = 1000;
+    const pages = Math.min(40, Math.ceil((jobCount ?? 0) / pageSize));
+    const chunks = await Promise.all(
+      Array.from({ length: pages }, (_, i) =>
+        supabaseAdmin
+          .from("jobs")
+          .select("provider, is_active, created_at, application_url, country_code, geo_region")
+          .order("id")
+          .range(i * pageSize, i * pageSize + pageSize - 1),
+      ),
+    );
+    const jobRows = { data: chunks.flatMap((c) => c.data ?? []) };
 
     type Agg = {
       provider: string;
