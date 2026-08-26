@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { MessagesSquare, Building2, GraduationCap, CheckCircle2, Circle } from "lucide-react";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ai/skeleton";
+import { PageHeader } from "@/components/product/page-header";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { getInterviewHub, toggleQuestionPracticed } from "@/lib/career-intel.functions";
 

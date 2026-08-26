@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Sparkles, TrendingUp, Wallet, GraduationCap, Compass, Radar, Wrench } from "lucide-react";
 import { Skeleton } from "@/components/ai/skeleton";
+import { PageHeader } from "@/components/product/page-header";
 import { getCoachBriefing } from "@/lib/career-intel.functions";
 
 export const Route = createFileRoute("/_authenticated/coach")({
