@@ -4,7 +4,7 @@
  */
 
 import { slugify } from "../fingerprint";
-import { companyDisplayName, companyLogoUrl, companyWebsite } from "./company-names";
+import { companyDisplayName, companyDomain, companyLogoUrl, companyWebsite } from "./company-names";
 import {
   detectCountry,
   detectExperience,
@@ -82,9 +82,9 @@ function mapJob(board: string, j: GhJob): NormalizedJob {
     company: {
       name: companyDisplayName(board),
       slug: slugify(board),
-      domain: null,
+      domain: companyDomain(board),
       logoUrl: companyLogoUrl(board),
-      website: `https://boards.greenhouse.io/${board}`,
+      website: companyWebsite(board) ?? `https://boards.greenhouse.io/${board}`,
       industry: null,
       size: null,
       remotePolicy: null,

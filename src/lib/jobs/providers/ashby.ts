@@ -4,7 +4,7 @@
  */
 
 import { slugify } from "../fingerprint";
-import { companyDisplayName, companyLogoUrl, companyWebsite } from "./company-names";
+import { companyDisplayName, companyDomain, companyLogoUrl, companyWebsite } from "./company-names";
 import {
   detectCountry,
   detectExperience,
@@ -78,8 +78,8 @@ function mapJob(company: string, j: AshbyJob): NormalizedJob {
     company: {
       name: companyDisplayName(company),
       slug: slugify(company),
-      domain: null, logoUrl: null,
-      website: `https://jobs.ashbyhq.com/${company}`,
+      domain: companyDomain(company), logoUrl: companyLogoUrl(company),
+      website: companyWebsite(company) ?? `https://jobs.ashbyhq.com/${company}`,
       industry: null, size: null, remotePolicy: null,
       techStack: skills.slice(0, 12),
       description: null,
