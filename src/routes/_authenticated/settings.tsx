@@ -12,6 +12,8 @@ import {
   Camera,
   Loader2,
   Brain,
+  Bell,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +24,11 @@ import { getCareerBrainSnapshot } from "@/lib/career-brain.service";
 import { regenerateCareerBrain } from "@/lib/resume.functions";
 import { updateProfilePrefs } from "@/lib/career-intel.functions";
 import { getWorkspace, updateProfile } from "@/lib/profile.functions";
+import {
+  getNotificationPreferences,
+  updateNotificationPreferences,
+} from "@/lib/notifications.functions";
+import { updateSharingSettings } from "@/lib/public-profile.functions";
 import {
   listLoginEvents,
   signOutEverywhere,
@@ -97,7 +104,10 @@ function SettingsPage() {
 
         <div className="min-w-0 space-y-6">
           {tab === "account" && (
-            <AccountSection profile={workspace?.profile ?? null} onSignOut={signOut} />
+            <>
+              <AccountSection profile={workspace?.profile ?? null} onSignOut={signOut} />
+              <SharingSection />
+            </>
           )}
           {tab === "appearance" && (
             <SettingsSection
@@ -112,7 +122,12 @@ function SettingsPage() {
             </SettingsSection>
           )}
           {tab === "security" && <SecuritySection />}
-          {tab === "preferences" && <PreferencesSection brain={brain} />}
+          {tab === "preferences" && (
+            <>
+              <PreferencesSection brain={brain} />
+              <NotificationsSection />
+            </>
+          )}
         </div>
       </div>
     </PageShell>
