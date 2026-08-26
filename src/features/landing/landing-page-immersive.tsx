@@ -93,7 +93,7 @@ function ImmersiveNav() {
     <header className="fixed inset-x-0 top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 md:px-8">
         <Link to="/" className="flex items-center gap-2.5" aria-label="CareerOS home">
-          <Logo className="h-7 w-7" />
+          <Logo size={28} />
           <span className="font-display text-[15px] font-bold uppercase tracking-[0.18em]">
             CareerOS
           </span>
@@ -150,7 +150,7 @@ function Hero() {
           loop
           playsInline
           preload="metadata"
-          poster={journeyPoster.src ?? (journeyPoster as unknown as string)}
+          poster={journeyPoster}
         >
           <source src={heroBg.url} type="video/mp4" />
         </video>
@@ -535,7 +535,7 @@ function Journey() {
     <section className="relative overflow-hidden border-t border-border bg-card">
       <video
         className="pointer-events-none absolute inset-0 h-full w-full object-cover opacity-15"
-        autoPlay muted loop playsInline preload="none" poster={journeyPoster.src ?? (journeyPoster as unknown as string)}
+        autoPlay muted loop playsInline preload="none" poster={journeyPoster}
       >
         <source src={journeyVideo.url} type="video/mp4" />
       </video>
@@ -726,7 +726,7 @@ function ImmersiveFooter() {
     <footer className="border-t border-border bg-card">
       <div className="mx-auto flex max-w-7xl flex-col gap-8 px-5 py-14 md:flex-row md:items-center md:justify-between md:px-8">
         <div className="flex items-center gap-2.5">
-          <Logo className="h-6 w-6" />
+          <Logo size={24} />
           <span className="font-display text-sm font-bold uppercase tracking-[0.18em] text-foreground">CareerOS</span>
           <span className="ml-2 rounded-full border border-primary/50 px-2.5 py-0.5 font-mono text-[10px] uppercase tracking-widest text-primary">Immersive</span>
         </div>
