@@ -548,7 +548,7 @@ function NavItem({
       to={to}
       aria-label={collapsed ? label : undefined}
       className={cn(
-        "group relative flex h-9 items-center gap-3 rounded-lg text-[13px] font-medium transition-colors duration-150",
+        "group relative flex h-9 items-center gap-3 rounded-md text-[13px] font-medium transition-colors duration-150",
         collapsed ? "justify-center px-0" : "px-3",
         active
           ? "bg-sidebar-accent text-sidebar-accent-foreground"
@@ -559,7 +559,7 @@ function NavItem({
         <motion.span
           layoutId="nav-active"
           transition={{ type: "spring", stiffness: 380, damping: 34 }}
-          className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-primary"
+          className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 bg-primary"
         />
       )}
       <Icon className={cn("h-[17px] w-[17px] shrink-0", active && "text-primary-foreground")} strokeWidth={active ? 2.1 : 1.8} />
