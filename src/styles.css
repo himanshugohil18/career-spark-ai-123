@@ -466,3 +466,139 @@
   mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
   -webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
 }
+
+/* ===========================================================================
+ * THEME 2 — CAREEROS IMMERSIVE
+ * Cinematic dark editorial system. SOLID colors only — no gradients.
+ * Activated by <html data-theme="immersive">. Classic theme is untouched.
+ * ======================================================================== */
+[data-theme="immersive"] {
+  color-scheme: dark;
+
+  /* Surfaces & text — warm near-black, bone text */
+  --background: oklch(0.16 0.008 60); /* #100F0D */
+  --foreground: oklch(0.95 0.012 90); /* #F2F0E9 */
+  --card: oklch(0.2 0.009 60); /* #171613 */
+  --card-foreground: oklch(0.95 0.012 90);
+  --elevated: oklch(0.225 0.01 60); /* #1D1C18 */
+  --muted: oklch(0.23 0.01 60);
+  --muted-foreground: oklch(0.68 0.015 80); /* #A5A29A */
+  --subtle: oklch(0.56 0.012 70);
+
+  /* Borders */
+  --border: oklch(0.29 0.01 60); /* #2A2823 */
+  --input: oklch(0.32 0.01 60);
+
+  /* Brand — solid signal orange, never a gradient */
+  --primary: oklch(0.68 0.2 42); /* #FF5A1F */
+  --primary-foreground: oklch(0.17 0.02 50);
+  --primary-hover: oklch(0.73 0.19 45);
+  --primary-pressed: oklch(0.6 0.19 40);
+  --secondary: oklch(0.23 0.01 60);
+  --secondary-foreground: oklch(0.95 0.012 90);
+  --accent: oklch(0.27 0.035 45); /* warm ember tint surface */
+  --accent-foreground: oklch(0.78 0.15 50);
+  --ring: oklch(0.68 0.2 42);
+
+  /* Status — tuned for dark surfaces */
+  --success: oklch(0.72 0.16 160);
+  --success-foreground: oklch(0.14 0.02 160);
+  --warning: oklch(0.78 0.14 75);
+  --warning-foreground: oklch(0.2 0.04 70);
+  --danger: oklch(0.66 0.2 25);
+  --danger-foreground: oklch(0.15 0.02 25);
+  --info: oklch(0.72 0.11 235);
+  --info-foreground: oklch(0.15 0.02 235);
+
+  /* Sidebar — deepest black */
+  --sidebar: oklch(0.13 0.006 60);
+  --sidebar-foreground: oklch(0.95 0.012 90);
+  --sidebar-muted: oklch(0.6 0.012 70);
+  --sidebar-accent: oklch(0.21 0.01 60);
+  --sidebar-accent-foreground: oklch(0.97 0.01 90);
+  --sidebar-border: oklch(0.25 0.01 60);
+
+  /* Typography — editorial display face */
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+
+  /* Elevation — deep soft shadows for dark surfaces */
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.35), 0 12px 32px -16px rgba(0, 0, 0, 0.55);
+  --shadow-elevated: 0 2px 8px rgba(0, 0, 0, 0.4), 0 24px 56px -20px rgba(0, 0, 0, 0.65);
+  --shadow-float: 0 32px 80px -24px rgba(0, 0, 0, 0.75);
+
+  /* Solid tints */
+  --surface-tint-blue: oklch(0.22 0.02 55);
+  --tint-mint: oklch(0.22 0.02 160);
+
+  /* Legacy gradient aliases resolve to the solid accent — never a gradient */
+  --brand-glow: var(--primary);
+  --brand-violet: var(--primary);
+  --gradient-primary: linear-gradient(135deg, #ff5a1f, #ff5a1f);
+  --gradient-brand-glow: linear-gradient(135deg, #ff5a1f, #ff5a1f);
+  --gradient-hero: linear-gradient(180deg, #100f0d, #100f0d);
+}
+
+[data-theme="immersive"] body {
+  background: var(--background);
+}
+
+[data-theme="immersive"] ::selection {
+  background: color-mix(in oklab, var(--primary) 35%, transparent);
+}
+
+[data-theme="immersive"] ::-webkit-scrollbar-thumb {
+  background: #3a382f;
+  border-color: var(--background);
+}
+[data-theme="immersive"] ::-webkit-scrollbar-thumb:hover {
+  background: #4c4a40;
+}
+[data-theme="immersive"] * {
+  scrollbar-color: #3a382f transparent;
+}
+
+/* Immersive editorial type utilities */
+@utility display-hero {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.035em;
+  line-height: 0.98;
+  text-transform: uppercase;
+}
+
+@utility display-section {
+  font-family: var(--font-display);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  text-transform: uppercase;
+}
+
+@utility eyebrow-tag {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+/* Immersive word/line reveal (driven by framer-motion or IO) */
+.immersive-mask-line {
+  display: block;
+  overflow: hidden;
+}
+.immersive-mask-line > span {
+  display: block;
+  transform: translateY(110%);
+  transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.immersive-mask-line.revealed > span {
+  transform: translateY(0);
+}
+
+/* Theme transition — subtle cross-fade when switching experiences */
+html.theme-animating body {
+  transition: background-color 0.35s ease;
+}
