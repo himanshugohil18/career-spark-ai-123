@@ -94,7 +94,7 @@ function ApplicationsIndex() {
           icon={Sparkles}
           title="No applications yet"
           description="Open any job and choose Prepare Application to spin up a workspace."
-          action={{ label: "Browse jobs", href: "/jobs" }}
+          action={{ label: "Browse jobs", to: "/jobs" }}
         />
       )}
 
