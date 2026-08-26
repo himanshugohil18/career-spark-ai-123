@@ -328,6 +328,11 @@ export const listJobs = createServerFn({ method: "POST" })
       });
     }
 
+    // Company diversity: large employers publish hundreds of roles each, so a
+    // pure score sort fills page 1 with the same brands. Round-robin across
+    // companies (nothing is dropped) so the feed reads like live aggregation.
+    const { diversifyByCompany } = await import("./jobs/diversity");
+    items = diversifyByCompany(items, 2);
 
     let paged = items;
     let totalOut = count ?? items.length;
@@ -335,6 +340,8 @@ export const listJobs = createServerFn({ method: "POST" })
       totalOut = items.length;
       const start = (page - 1) * pageSize;
       paged = items.slice(start, start + pageSize);
+    } else {
+      paged = diversifyByCompany(items, 2);
     }
 
     return {
