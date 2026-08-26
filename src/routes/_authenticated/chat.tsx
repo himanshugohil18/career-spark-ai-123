@@ -53,9 +53,9 @@ function CareerChatPage() {
   const endRef = useRef<HTMLDivElement | null>(null);
 
   const displayName =
-    (user.user_metadata?.display_name as string | undefined) ||
-    (user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
-    (user.email?.split("@")[0] ?? "there");
+    (user?.user_metadata?.display_name as string | undefined) ||
+    (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
+    (user?.email?.split("@")[0] ?? "there");
 
   const { data, isLoading } = useQuery({
     queryKey: ["career-chat"],
