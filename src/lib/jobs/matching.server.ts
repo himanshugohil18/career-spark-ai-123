@@ -29,7 +29,8 @@ import {
   type RoleFamily,
 } from "./role-synonyms";
 import { computeRelevance, brainTechVocabulary, jobDedupeKey } from "./relevance";
-import { locationAffinity, preferredLocations } from "./location";
+import { candidateIsIndian, isIndiaJob, locationAffinity, preferredLocations } from "./location";
+import { isEarlyCareer } from "./providers/queries";
 import { candidateSeniority, seniorityFit } from "@/lib/career-profile";
 import type { MatchScore, NormalizedJob } from "./types";
 
@@ -364,6 +365,8 @@ function rankCandidateRows(
   const prefLocations = preferredLocations(brain);
   const candidateRung = candidateSeniority(brain);
   const candidateYears = brain.identity.yearsOfExperience ?? 0;
+  const candidateIndia = candidateIsIndian(prefLocations);
+  const earlyCareer = isEarlyCareer(profile.seniority, brain.identity.yearsOfExperience);
   const scored = rows.map((row) => {
 
     const company = Array.isArray(row.company) ? row.company[0] : row.company;
@@ -407,6 +410,16 @@ function rankCandidateRows(
       sen.score * 1.6 +
       (sen.tier === "far-over" ? -70 : sen.tier === "over" ? -30 : 0) +
       (row.remote_status === "remote" ? 8 : 0) +
+      // India supply bias: an India-based candidate should see India roles (and
+      // India-eligible remote roles) ahead of otherwise-similar foreign roles,
+      // and early-career India openings ahead of everything else.
+      (candidateIndia && isIndiaJob(row.location, row.location_country) ? 30 : 0) +
+      (candidateIndia &&
+      earlyCareer &&
+      isIndiaJob(row.location, row.location_country) &&
+      ["intern", "entry", "junior", "unknown"].includes(String(row.experience_level ?? "unknown"))
+        ? 25
+        : 0) +
       locationAffinity({
         jobLocation: row.location,
         jobCountry: row.location_country,

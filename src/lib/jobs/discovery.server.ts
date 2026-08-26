@@ -33,6 +33,7 @@ import {
   type CandidateProfile,
 } from "./role-synonyms";
 import { resolveTitleRole } from "./relevance";
+import { expandRoleQueries } from "./providers/queries";
 import type { NormalizedJob } from "./types";
 
 export type PerQueryStat = { query: string; matched: number };
@@ -172,6 +173,13 @@ export async function runDiscovery(
   const { data: sources, error } = await query;
   if (error) throw new Error(`Failed to load sources: ${error.message}`);
 
+  // Early-career candidates get India's fresher/trainee vocabulary added to
+  // their role queries, otherwise query-first providers only ever return the
+  // senior postings that dominate plain title search.
+  const fetchQueries = profile
+    ? expandRoleQueries(profile.roleQueries, profile.seniority, profile.yearsOfExperience)
+    : undefined;
+
   const collected: NormalizedJob[] = [];
   const queryStats = new Map(stats.perQuery.map((q) => [q.query.toLowerCase(), q] as const));
 
@@ -207,7 +215,7 @@ export async function runDiscovery(
     stats.perProvider.push(perProv);
     try {
       const jobs = await provider.fetch(src.config ?? {}, {
-        queries: profile?.roleQueries,
+        queries: fetchQueries,
         locations: profile?.locations,
         limit: 260,
       });

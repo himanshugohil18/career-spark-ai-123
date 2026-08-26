@@ -63,6 +63,16 @@ const META: ProviderMeta[] = [
     integrationNote: "Official Ashby public posting API (api.ashbyhq.com/posting-api) per organisation.",
   },
   {
+    id: "smartrecruiters",
+    name: "SmartRecruiters",
+    tier: 1,
+    sourceType: "company_ats",
+    uiLabel: "SmartRecruiters",
+    integrationNote:
+      "Official SmartRecruiters public postings API (api.smartrecruiters.com/v1/companies) per employer, crawled India-first (country=in) before global pages.",
+  },
+
+  {
     id: "workable",
     name: "Workable",
     tier: 1,

@@ -36,7 +36,11 @@ export const GREENHOUSE_BOARDS: string[] = [
   "liftoff", "taskrabbit", "udacity", "modernhealth", "truebill", "yotpo",
   "suki", "typeform", "topsort", "zenput", "watershed", "weave", "upwork",
   "motive", "outschool", "postscript", "narvar", "tigergraph", "netlify",
+  // India-first expansion — probed live, all returning postings
+  "thoughtworks", "zenoti", "glance", "inmobi", "metropolis", "springboard",
+  "affle",
 ];
+
 
 /** Lever company slugs — https://api.lever.co/v0/postings/{slug} */
 export const LEVER_COMPANIES: string[] = [
@@ -55,6 +59,9 @@ export const LEVER_COMPANIES: string[] = [
   // validated expansion — EU + India employers (probed live)
   "aircall", "ro", "qonto", "contentsquare", "zeta", "jobandtalent", "swile",
   "younited", "ledger",
+  // India-first expansion — probed live, all returning postings
+  "paytm", "meesho", "cred", "mindtickle", "hevodata", "fampay", "fi",
+  "porter", "safe", "vogo",
 ];
 
 /** Ashby organisation slugs — https://api.ashbyhq.com/posting-api/job-board/{slug} */
@@ -71,6 +78,21 @@ export const ASHBY_COMPANIES: string[] = [
   "codeium", "baseten", "fireworksai", "lambdalabs", "groq", "hume",
   "assemblyai", "pinecone", "chroma", "weaviate", "llamaindex",
   "cresta", "moderntreasury", "unit", "column", "increase", "highnote",
+  // India-first expansion — probed live
+  "sarvam", "tekion", "navi", "atlan", "skyflow", "velocity", "safe",
+  "bounce", "artemis",
+];
+
+/**
+ * SmartRecruiters company identifiers —
+ * https://api.smartrecruiters.com/v1/companies/{id}/postings
+ * These are large employers with deep India hiring (including graduate,
+ * trainee and associate roles), crawled India-first by the provider.
+ */
+export const SMARTRECRUITERS_COMPANIES: string[] = [
+  "BoschGroup", "Nagarro1", "Continental", "Sandisk", "Sutherland",
+  "ServiceNow", "Endava", "Expeditors", "Gerresheimer", "SaintGobain",
+  "Lonza", "WTW", "Zomato1",
 ];
 
 /**
@@ -81,7 +103,9 @@ export const ATS_DEFAULT_BOARDS: Record<string, string[]> = {
   greenhouse: GREENHOUSE_BOARDS,
   lever: LEVER_COMPANIES,
   ashby: ASHBY_COMPANIES,
+  smartrecruiters: SMARTRECRUITERS_COMPANIES,
 };
+
 
 /** Merge configured slugs with registry defaults, de-duplicated and stable. */
 export function mergeBoards(configured: string[] | undefined, defaults: string[]): string[] {

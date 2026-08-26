@@ -10,6 +10,7 @@ import { ashbyProvider } from "./ashby";
 import { remoteokProvider } from "./remoteok";
 import { ycombinatorProvider } from "./ycombinator";
 import { workableProvider } from "./workable";
+import { smartrecruitersProvider } from "./smartrecruiters";
 import { customProvider } from "./custom";
 import {
   builtinProvider,
@@ -51,6 +52,7 @@ const REGISTRY: Record<string, JobProvider> = {
   [remoteokProvider.id]: remoteokProvider,
   [ycombinatorProvider.id]: ycombinatorProvider,
   [workableProvider.id]: workableProvider,
+  [smartrecruitersProvider.id]: smartrecruitersProvider,
   [wellfoundProvider.id]: wellfoundProvider,
   [linkedInJobsProvider.id]: linkedInJobsProvider,
   [naukriProvider.id]: naukriProvider,
