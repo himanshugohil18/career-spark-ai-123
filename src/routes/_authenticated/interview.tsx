@@ -50,17 +50,11 @@ function InterviewPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 p-6 md:p-10">
-      <motion.header
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Interview Prep</p>
-        <h1 className="mt-1 font-display text-3xl font-semibold">Practice hub</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Interview sessions are generated inside each Application Workspace. This is your central practice history and question bank.
-        </p>
-      </motion.header>
+      <PageHeader
+        eyebrow="Interview Prep"
+        title="Practice hub"
+        description="Interview sessions are generated inside each Application Workspace. This is your central practice history and question bank."
+      />
 
       {isLoading ? (
         <div className="grid gap-3 md:grid-cols-3">

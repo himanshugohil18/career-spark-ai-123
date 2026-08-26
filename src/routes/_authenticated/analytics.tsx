@@ -20,17 +20,11 @@ function AnalyticsPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 p-6 md:p-10">
-      <motion.header
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Analytics</p>
-        <h1 className="mt-1 font-display text-3xl font-semibold">Your search, quantified</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Every number on this page is real — pulled from your Career Brain, persisted matches, and application workspaces.
-        </p>
-      </motion.header>
+      <PageHeader
+        eyebrow="Analytics"
+        title="Your search, quantified"
+        description="Every number on this page is real — pulled from your Career Brain, persisted matches, and application workspaces."
+      />
 
       {isLoading ? (
         <div className="grid gap-3 md:grid-cols-4">
