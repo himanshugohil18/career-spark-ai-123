@@ -96,6 +96,21 @@ function LearningPage() {
                 </p>
               )}
               <div className="mt-auto flex flex-wrap gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={toggleMut.isPending}
+                  onClick={() =>
+                    toggleMut.mutate({ skill: p.skill, completed: !doneSet.has(p.skill.toLowerCase()) })
+                  }
+                  className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs transition-all ${
+                    doneSet.has(p.skill.toLowerCase())
+                      ? "border-primary/40 bg-primary/10 text-primary"
+                      : "border-border bg-elevated text-foreground hover:border-primary/40 hover:text-primary"
+                  }`}
+                >
+                  <CheckCircle2 className="h-3 w-3" />
+                  {doneSet.has(p.skill.toLowerCase()) ? "Learned" : "Mark learned"}
+                </button>
                 <a
                   href={`https://www.google.com/search?q=${p.resourceQuery}`}
                   target="_blank"
