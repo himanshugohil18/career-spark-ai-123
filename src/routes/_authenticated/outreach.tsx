@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ai/skeleton";
+import { PageHeader, PageShell } from "@/components/product/page-header";
+import { EmptyState } from "@/components/product/empty-state";
 import {
   createOutreachMessage,
   deleteOutreachMessage,
@@ -185,10 +187,12 @@ function OutreachPage() {
         {isLoading ? (
           <Skeleton className="h-32 w-full" />
         ) : (data ?? []).length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-8 text-center">
-            <Mail className="mx-auto mb-2 h-7 w-7 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No drafts yet.</p>
-          </div>
+          <EmptyState
+            icon={Mail}
+            title="No drafts yet"
+            body="Pick a message type above and draft your first recruiter note — grounded in your Career Brain."
+            compact
+          />
         ) : (
           <ul className="space-y-3">
             {(data ?? []).map((m) => (
