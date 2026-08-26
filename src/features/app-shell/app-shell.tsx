@@ -32,6 +32,7 @@ import {
   Shield,
   Menu,
   Home,
+  Target,
   Bookmark,
   Palette,
 } from "lucide-react";
