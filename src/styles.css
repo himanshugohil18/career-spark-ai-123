@@ -558,6 +558,53 @@
   scrollbar-color: #3a382f transparent;
 }
 
+/* ===========================================================================
+ * THEME 1 — CAREEROS CLASSIC (same editorial design, light colors)
+ * Same layout, typography, and motion as Immersive — only the color system
+ * differs: the original light surfaces + solid brand blue (#2F5CFF).
+ * ======================================================================== */
+[data-theme="classic"] {
+  color-scheme: light;
+
+  /* Editorial display face — same style as Immersive */
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+
+  /* Keep the original classic palette; only reaffirm brand blue accents */
+  --primary: oklch(0.5 0.2 266); /* #2F5CFF */
+  --primary-hover: oklch(0.44 0.17 266);
+  --primary-pressed: oklch(0.39 0.15 266);
+  --ring: oklch(0.5 0.2 266);
+  --accent: oklch(0.955 0.018 255);
+  --accent-foreground: oklch(0.4 0.15 266);
+
+  /* Solid tints for editorial bands on light surfaces */
+  --surface-tint-blue: oklch(0.965 0.014 255);
+  --tint-mint: oklch(0.972 0.015 165);
+
+  --gradient-primary: linear-gradient(135deg, #2f5cff, #2f5cff);
+  --gradient-brand-glow: linear-gradient(135deg, #2f5cff, #2f5cff);
+  --gradient-hero: linear-gradient(180deg, #f8fafc, #f8fafc);
+}
+
+[data-theme="classic"] body {
+  background: var(--background);
+}
+
+[data-theme="classic"] ::selection {
+  background: color-mix(in oklab, var(--primary) 25%, transparent);
+}
+
+[data-theme="classic"] ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-color: var(--background);
+}
+[data-theme="classic"] ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+[data-theme="classic"] * {
+  scrollbar-color: #cbd5e1 transparent;
+}
+
 /* Immersive editorial type utilities */
 @utility display-hero {
   font-family: var(--font-display);

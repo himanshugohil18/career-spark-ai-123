@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { LandingPage } from "@/features/landing/landing-page";
 import { LandingPageImmersive } from "@/features/landing/landing-page-immersive";
 import { useTheme } from "@/lib/theme";
 
@@ -35,5 +34,8 @@ function HomePage() {
   if (!ready) {
     return <div className="min-h-screen bg-background" aria-hidden />;
   }
-  return theme === "immersive" ? <LandingPageImmersive /> : <LandingPage />;
+  // Both themes share the same editorial design; only the color system
+  // differs (applied via data-theme tokens in styles.css).
+  void theme;
+  return <LandingPageImmersive />;
 }
