@@ -239,7 +239,7 @@ function JobsFeed() {
               disabled={refreshMutation.isPending}
             >
               <RefreshCw className={cn("h-4 w-4", refreshMutation.isPending && "animate-spin")} />
-              {refreshMutation.isPending ? "Refreshing…" : "Refresh matches"}
+              {refreshMutation.isPending ? (stage ?? "Refreshing…") : "Refresh matches"}
             </Button>
           </>
         }
