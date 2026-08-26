@@ -180,13 +180,11 @@ function BillingPage() {
         <SuccessModal paymentId={successPaymentId} onClose={() => setSuccessPaymentId(null)} onDownload={downloadInvoice} />
       )}
 
-      <header className="space-y-2">
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Billing</p>
-        <h1 className="font-display text-3xl font-semibold">Plans & subscription</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Manage your CareerOS subscription, download invoices, and review payment history.
-        </p>
-      </header>
+      <PageHeader
+        eyebrow="Billing"
+        title="Plans & subscription"
+        description="Manage your CareerOS subscription, download invoices, and review payment history."
+      />
 
       {/* Current subscription */}
       <section className="surface-card p-6">
