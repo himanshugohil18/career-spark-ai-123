@@ -2,19 +2,19 @@ import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { Building2, ChevronDown, Search, Sparkles } from "lucide-react";
+import { Building2, ChevronDown, RefreshCw, Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ai/skeleton";
 import { JobCard, type JobCardData } from "@/features/jobs/job-card";
 import { Stagger, StaggerItem } from "@/components/motion/reveal";
-
 import { JobSection, type JobSectionData } from "@/features/jobs/job-section";
 import { JobFiltersPanel, type FeedFilters } from "@/features/jobs/job-filters";
 import { NLSearchBar } from "@/features/jobs/nl-search";
 import { EmptyFeed } from "@/features/jobs/empty-feed";
 import { FeedPulse, type FeedPulseData } from "@/features/jobs/feed-pulse";
 import { CareerSignal } from "@/features/jobs/career-signal";
+import { PageHeader, PageShell, SectionHeading } from "@/components/product/page-header";
 import {
   ensureInitialMatches,
   getFeedPulse,
@@ -27,6 +27,7 @@ import {
   unsaveJob,
 } from "@/lib/jobs.functions";
 import { getCareerBrainSnapshot } from "@/lib/career-brain.service";
+import { cn } from "@/lib/utils";
 
 const SORT_LABELS: Record<string, string> = {
   match: "Overall Match",
@@ -80,7 +81,6 @@ function JobsFeed() {
     enabled: searchOpen || !!filters.q || !!filters.role,
   });
 
-  // Idempotent bootstrap: personalize sections on first visit.
   useEffect(() => {
     if (!hasBrain) return;
     let cancelled = false;
@@ -131,8 +131,6 @@ function JobsFeed() {
     },
   });
 
-  // A job can be rendered from the search feed OR from a recommendation
-  // section, so resolve its saved state from whichever list holds it.
   const isJobSaved = (jobId: string) => {
     const inFeed = feed.data?.items.find((i) => i.id === jobId) as { savedStatus?: string | null } | undefined;
     if (inFeed) return !!inFeed.savedStatus;
@@ -197,7 +195,33 @@ function JobsFeed() {
   const suggestedCompanies = sections.data?.companies ?? [];
 
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-8 p-6 md:p-10">
+    <PageShell width="wide">
+      <PageHeader
+        eyebrow="Job discovery"
+        title="Find your next role"
+        description="Live opportunities from verified sources, ranked against your Career Brain. Freshness-first: every listing shows when we last verified it."
+        actions={
+          <>
+            <Button
+              variant="outline"
+              onClick={() => setSearchOpen((v) => !v)}
+            >
+              <Search className="h-4 w-4" />
+              {showSearchResults ? "Hide search" : "Search & filter"}
+              <ChevronDown className={cn("h-4 w-4 transition-transform", searchOpen && "rotate-180")} />
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => refreshMutation.mutate()}
+              disabled={refreshMutation.isPending}
+            >
+              <RefreshCw className={cn("h-4 w-4", refreshMutation.isPending && "animate-spin")} />
+              {refreshMutation.isPending ? "Refreshing…" : "Refresh matches"}
+            </Button>
+          </>
+        }
+      />
+
       <FeedPulse
         data={pulse.data as FeedPulseData | undefined}
         loading={pulse.isLoading}
@@ -206,23 +230,6 @@ function JobsFeed() {
       />
 
       {hasBrain && <CareerSignal brain={brainQuery.data} />}
-
-      {/* Command bar */}
-      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => setSearchOpen((v) => !v)}
-          className="w-full justify-start md:w-auto"
-        >
-          <Search className="h-4 w-4" />
-          {showSearchResults ? "Hide search" : "Search & filter jobs"}
-          <ChevronDown className={"h-4 w-4 transition-transform " + (searchOpen ? "rotate-180" : "")} />
-        </Button>
-        <p className="text-xs text-muted-foreground">
-          Freshness-first: every listing shows when we last verified it with the source.
-        </p>
-      </div>
 
       {/* Search panel */}
       {searchOpen && (
@@ -238,13 +245,11 @@ function JobsFeed() {
               className="flex-1"
             />
             <div className="flex items-center gap-2">
-              <label className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-                Sort
-              </label>
+              <label className="section-label">Sort</label>
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value as typeof sort)}
-                className="rounded-md border border-border bg-elevated px-2.5 py-1.5 text-sm outline-none focus:border-primary"
+                className="h-10 rounded-lg border border-border bg-card px-3 text-sm outline-none focus:border-primary"
               >
                 {Object.entries(SORT_LABELS).map(([v, l]) => (
                   <option key={v} value={v}>
@@ -256,21 +261,21 @@ function JobsFeed() {
           </div>
           {(activeQuery || roleFamily) && (
             <div className="flex flex-wrap items-center gap-2 text-xs">
-              <span className="rounded-full border border-primary/30 bg-primary/10 px-2.5 py-1 font-mono uppercase tracking-widest text-primary">
+              <span className="stage-chip border-primary/25 bg-accent text-accent-foreground">
                 {roleFamily ? `${roleFamily.label} family` : "Search"}
               </span>
               {activeQuery && (
                 <span className="text-muted-foreground">Query: “{activeQuery}”</span>
               )}
               <button
-                className="ml-auto text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+                className="ml-auto font-medium text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
                 onClick={() => setFilters({})}
               >
                 Clear search
               </button>
             </div>
           )}
-          <div className="grid gap-6 md:grid-cols-[280px_1fr]">
+          <div className="grid gap-6 md:grid-cols-[280px_minmax(0,1fr)]">
             <JobFiltersPanel value={filters} onChange={setFilters} />
             <div className="space-y-4">
               {feed.isLoading ? (
@@ -289,7 +294,7 @@ function JobsFeed() {
                 <>
                   <div className="flex items-center justify-between text-xs text-muted-foreground">
                     <span>{feed.data?.total ?? items.length} opportunities</span>
-                    <span className="inline-flex items-center gap-1 text-primary">
+                    <span className="inline-flex items-center gap-1 font-medium text-primary">
                       <Sparkles className="h-3 w-3" /> AI-ranked
                     </span>
                   </div>
@@ -342,34 +347,29 @@ function JobsFeed() {
                 />
               ))}
               {suggestedCompanies.length > 0 && (
-                <section className="space-y-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-4 w-4 text-accent" />
-                      <h2 className="font-display text-lg font-semibold">Companies You May Like</h2>
-                    </div>
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                      Companies with multiple open roles that match your Career Brain.
-                    </p>
-                  </div>
+                <section>
+                  <SectionHeading
+                    title="Companies you may like"
+                    description="Companies with multiple open roles that match your Career Brain."
+                  />
                   <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                     {suggestedCompanies.map((c) => (
                       <Link
                         key={c.id}
                         to="/jobs"
                         search={{}}
-                        className="surface-card flex items-center gap-3 p-4 transition-colors hover:border-primary/30"
+                        className="surface-card card-interactive flex items-center gap-3 p-4"
                       >
-                        <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-lg border border-border bg-elevated">
+                        <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-border bg-muted">
                           {c.logo_url ? (
-                            <img src={c.logo_url} alt={c.name} className="h-full w-full object-cover" />
+                            <img src={c.logo_url} alt={c.name} className="h-full w-full object-cover" loading="lazy" />
                           ) : (
                             <Building2 className="h-5 w-5 text-muted-foreground" />
                           )}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <p className="line-clamp-1 font-display text-sm font-semibold">{c.name}</p>
-                          <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          <p className="line-clamp-1 text-sm font-semibold">{c.name}</p>
+                          <p className="mt-0.5 text-xs text-muted-foreground">
                             {c.matchedCount} matched roles · top match {Math.round(c.topScore)}%
                           </p>
                         </div>
@@ -382,6 +382,6 @@ function JobsFeed() {
           )}
         </>
       )}
-    </div>
+    </PageShell>
   );
 }
