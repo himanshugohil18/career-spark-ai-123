@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { LandingPage } from "@/features/landing/landing-page";
+import { LandingPageImmersive } from "@/features/landing/landing-page-immersive";
+import { useTheme } from "@/lib/theme";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -22,5 +24,16 @@ export const Route = createFileRoute("/")({
     ],
     links: [{ rel: "canonical", href: "https://careerosai.site/" }],
   }),
-  component: LandingPage,
+  component: HomePage,
 });
+
+function HomePage() {
+  const { theme, ready } = useTheme();
+  // Render a neutral surface until the client theme is known — the head
+  // script has already painted the correct background via data-theme, so
+  // there is no flash of the wrong experience.
+  if (!ready) {
+    return <div className="min-h-screen bg-background" aria-hidden />;
+  }
+  return theme === "immersive" ? <LandingPageImmersive /> : <LandingPage />;
+}
