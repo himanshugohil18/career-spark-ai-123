@@ -58,21 +58,15 @@ function Reveal({
   );
 }
 
-/** Masked line reveal for giant display type */
+/** Masked line reveal for giant display type (IO + CSS transition — deterministic) */
 function MaskLines({ lines, className }: { lines: React.ReactNode[]; className?: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-60px" });
   return (
-    <span className={className}>
+    <span ref={ref} className={className}>
       {lines.map((line, i) => (
-        <span key={i} className="block overflow-hidden">
-          <motion.span
-            className="block"
-            initial={{ y: "110%" }}
-            whileInView={{ y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.9, delay: i * 0.12, ease: EASE }}
-          >
-            {line}
-          </motion.span>
+        <span key={i} className={cn("immersive-mask-line", inView && "revealed")}>
+          <span style={{ transitionDelay: `${i * 120}ms` }}>{line}</span>
         </span>
       ))}
     </span>
