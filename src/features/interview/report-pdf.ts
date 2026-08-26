@@ -40,7 +40,7 @@ function slug(s: string) {
   return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "interview";
 }
 
-export function downloadInterviewReportPdf(session: Session, turns: Turn[]) {
+export function buildInterviewReportPdf(session: Session, turns: Turn[]) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   let y = M;
 
@@ -224,5 +224,10 @@ export function downloadInterviewReportPdf(session: Session, turns: Turn[]) {
   const name = `careeros-interview-report-${slug(session.target_role)}${
     session.target_company ? `-${slug(session.target_company)}` : ""
   }.pdf`;
+  return { doc, name };
+}
+
+export function downloadInterviewReportPdf(session: Session, turns: Turn[]) {
+  const { doc, name } = buildInterviewReportPdf(session, turns);
   doc.save(name);
 }
