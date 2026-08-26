@@ -527,3 +527,82 @@ function SnapshotRow({ icon: Icon, label, title, body }: {
     </div>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Immersive theme — Career Command Center header                       */
+/* Rendered only when the Immersive experience is active; the Classic   */
+/* dashboard below is untouched.                                        */
+/* ------------------------------------------------------------------ */
+function ImmersiveCommandHeader({
+  displayName,
+  healthScore,
+  priorities,
+  matchCount,
+  highMatchCount,
+}: {
+  displayName: string;
+  healthScore: number;
+  priorities: Priority[];
+  matchCount: number;
+  highMatchCount: number;
+}) {
+  const { theme } = useTheme();
+  if (theme !== "immersive") return null;
+
+  const next = priorities[0];
+  return (
+    <motion.section
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease }}
+      className="relative overflow-hidden border border-border bg-card"
+    >
+      <div className="grid gap-0 lg:grid-cols-[1.4fr_1fr]">
+        {/* Left — command statement */}
+        <div className="border-b border-border p-8 md:p-10 lg:border-b-0 lg:border-r">
+          <p className="eyebrow-tag">Career Command Center</p>
+          <h2 className="display-section mt-4 text-4xl text-foreground md:text-5xl">
+            {displayName}, your system is{" "}
+            <span className="text-primary">{healthScore >= 70 ? "strong." : healthScore >= 40 ? "building." : "starting."}</span>
+          </h2>
+          <p className="mt-4 max-w-md text-sm leading-relaxed text-muted-foreground">
+            {priorities.length > 0
+              ? `You are ${priorities.length} action${priorities.length === 1 ? "" : "s"} away from improving your career health.`
+              : "No pending priorities — your career system is fully calibrated."}
+          </p>
+          {next && (
+            <Link
+              to={next.to}
+              className="group mt-7 inline-flex h-12 items-center gap-2 rounded-full bg-primary px-6 text-sm font-semibold text-primary-foreground transition-transform duration-300 hover:scale-[1.04]"
+            >
+              Next best action: {next.cta}
+              <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
+            </Link>
+          )}
+        </div>
+
+        {/* Right — live signals strip */}
+        <div className="grid grid-cols-3 divide-x divide-border lg:grid-cols-1 lg:divide-x-0 lg:divide-y">
+          {[
+            { label: "Career Health", value: healthScore, suffix: "" },
+            { label: "Live Matches", value: matchCount, suffix: "" },
+            { label: "High Matches", value: highMatchCount, suffix: "" },
+          ].map((s, i) => (
+            <motion.div
+              key={s.label}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.15 + i * 0.1, duration: 0.5 }}
+              className="flex flex-col justify-center gap-1 px-5 py-6 lg:flex-row lg:items-center lg:justify-between lg:px-8"
+            >
+              <span className="font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground">{s.label}</span>
+              <span className="font-display text-3xl font-bold text-foreground">
+                <AnimatedCounter value={s.value} />{s.suffix}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </motion.section>
+  );
+}
