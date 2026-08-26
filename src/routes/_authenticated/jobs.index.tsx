@@ -49,6 +49,7 @@ function JobsFeed() {
   const [filters, setFilters] = useState<FeedFilters>({});
   const [sort, setSort] = useState<"match" | "newest" | "salary" | "remote" | "updated">("match");
   const [searchOpen, setSearchOpen] = useState(false);
+  const [stage, setStage] = useState<string | null>(null);
 
   const brainQuery = useQuery({
     queryKey: ["career-brain"],
