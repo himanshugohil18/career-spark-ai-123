@@ -20,7 +20,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ai/skeleton";
 import { clearCareerChat, listCareerChat, sendCareerChat } from "@/lib/career-chat.functions";
 import { getAgentActivity } from "@/lib/career-intel.functions";
-import { Route as AuthRoute } from "./route";
+import { useSession } from "@/hooks/use-session";
 
 export const Route = createFileRoute("/_authenticated/chat")({
   head: () => ({
@@ -46,15 +46,16 @@ export const Route = createFileRoute("/_authenticated/chat")({
 const ease = [0.22, 1, 0.36, 1] as const;
 
 function CareerChatPage() {
-  const { user } = AuthRoute.useRouteContext();
+  const { session } = useSession();
+  const user = session?.user;
   const queryClient = useQueryClient();
   const [input, setInput] = useState("");
   const endRef = useRef<HTMLDivElement | null>(null);
 
   const displayName =
-    (user.user_metadata?.display_name as string | undefined) ||
-    (user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
-    (user.email?.split("@")[0] ?? "there");
+    (user?.user_metadata?.display_name as string | undefined) ||
+    (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
+    (user?.email?.split("@")[0] ?? "there");
 
   const { data, isLoading } = useQuery({
     queryKey: ["career-chat"],

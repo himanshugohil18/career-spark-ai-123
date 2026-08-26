@@ -20,7 +20,7 @@ import {
   Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Route as AuthRoute } from "./route";
+import { useSession } from "@/hooks/use-session";
 import { AgentGrid, deriveAgents } from "@/components/ai/agent-status";
 import { Skeleton } from "@/components/ai/skeleton";
 import { ResumeUpload } from "@/features/resume/resume-upload";
@@ -60,7 +60,8 @@ type Priority = {
 };
 
 function Dashboard() {
-  const { user } = AuthRoute.useRouteContext();
+  const { session } = useSession();
+  const user = session?.user;
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
@@ -71,9 +72,9 @@ function Dashboard() {
   const profile = data?.profile;
   const displayName =
     profile?.full_name?.split(" ")[0] ||
-    (user.user_metadata?.display_name as string | undefined) ||
-    (user.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
-    (user.email?.split("@")[0] ?? "there");
+    (user?.user_metadata?.display_name as string | undefined) ||
+    (user?.user_metadata?.full_name as string | undefined)?.split(" ")[0] ||
+    (user?.email?.split("@")[0] ?? "there");
 
   const hasResume = !!data?.resumes?.some((r) => r.status === "approved");
   const parsedResume = data?.resumes?.find((r) => r.status === "parsed");
