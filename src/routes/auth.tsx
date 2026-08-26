@@ -168,8 +168,7 @@ function BrandingPanel({ mode }: { mode: Mode }) {
           <figcaption className="mt-3 flex items-center gap-3">
             <div
               aria-hidden
-              className="grid h-8 w-8 place-items-center rounded-full text-xs font-semibold text-primary-foreground"
-              className="bg-primary"
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground"
             >
               A
             </div>
