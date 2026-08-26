@@ -11,7 +11,11 @@ export const Route = createFileRoute("/_authenticated")({
     // Client-only: the session lives in browser storage, so the server can
     // never see a user. Redirecting here during SSR renders /auth inside the
     // ssr:false shell and causes a hydration mismatch on the client.
-    if (typeof window === "undefined") return;
+    if (typeof window === "undefined") {
+      // SSR never renders this subtree (ssr: false); the cast keeps the
+      // route-context type stable for child routes.
+      return { user: null as unknown as import("@supabase/supabase-js").User };
+    }
     const { data, error } = await supabase.auth.getUser();
     if (error || !data.user) throw redirect({ to: "/auth" });
     return { user: data.user };
