@@ -52,15 +52,15 @@
   --sidebar-accent-foreground: oklch(0.99 0.005 250);
   --sidebar-border: oklch(0.34 0.045 258);
 
-  /* Radius */
-  --radius-sm: 0.5rem;
-  --radius-md: 0.75rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
+  /* Radius — intentional, structured. No pill-default UI. */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.75rem;
 
-  /* Typography */
+  /* Typography — Inter body, Space Grotesk display (editorial, technical) */
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 
   /* Elevation — soft neutral shadows only */
