@@ -284,13 +284,16 @@ export function AppShell({ children }: { children: ReactNode }) {
               </div>
             </Link>
           )}
-          <button
-            onClick={() => setCollapsed((v) => !v)}
-            className="mt-2.5 flex h-8 w-full items-center justify-center rounded-lg text-sidebar-muted transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
-            aria-label="Toggle sidebar"
-          >
-            <ChevronLeft className={cn("h-4 w-4 transition-transform duration-300", collapsed && "rotate-180")} />
-          </button>
+          <div className={cn("mt-2.5 flex gap-1.5", collapsed && "flex-col")}>
+            <button
+              onClick={() => setCollapsed((v) => !v)}
+              className="flex h-8 flex-1 items-center justify-center rounded-lg text-sidebar-muted transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+              aria-label="Toggle sidebar"
+            >
+              <ChevronLeft className={cn("h-4 w-4 transition-transform duration-300", collapsed && "rotate-180")} />
+            </button>
+            <ThemeQuickSwitch collapsed={collapsed} />
+          </div>
         </div>
       </aside>
 

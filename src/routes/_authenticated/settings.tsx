@@ -28,6 +28,7 @@ import {
   getAvatarUrl,
 } from "@/lib/account.functions";
 import { PageHeader, PageShell } from "@/components/product/page-header";
+import { ThemeSwitcher } from "@/components/theme/theme-switcher";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/settings")({
@@ -35,10 +36,11 @@ export const Route = createFileRoute("/_authenticated/settings")({
   component: SettingsPage,
 });
 
-type SettingsTab = "account" | "security" | "preferences";
+type SettingsTab = "account" | "appearance" | "security" | "preferences";
 
 const TABS: { key: SettingsTab; label: string; description: string; icon: typeof UserIcon }[] = [
   { key: "account", label: "Account", description: "Profile, avatar & session", icon: UserIcon },
+  { key: "appearance", label: "Appearance", description: "Classic or Immersive experience", icon: Monitor },
   { key: "security", label: "Security", description: "Password, email & sign-ins", icon: ShieldCheck },
   { key: "preferences", label: "Preferences", description: "Job ranking & Career Brain", icon: Sparkles },
 ];
@@ -96,6 +98,18 @@ function SettingsPage() {
         <div className="min-w-0 space-y-6">
           {tab === "account" && (
             <AccountSection profile={workspace?.profile ?? null} onSignOut={signOut} />
+          )}
+          {tab === "appearance" && (
+            <SettingsSection
+              icon={Monitor}
+              title="Appearance"
+              description="Choose your CareerOS experience. This is a complete visual system — not just a color mode — and it applies across the homepage, dashboard, and every workspace page."
+            >
+              <ThemeSwitcher />
+              <p className="meta-text mt-4 leading-relaxed">
+                Your selection is saved on this device and restored automatically on your next visit.
+              </p>
+            </SettingsSection>
           )}
           {tab === "security" && <SecuritySection />}
           {tab === "preferences" && <PreferencesSection brain={brain} />}
