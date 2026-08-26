@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { z } from "zod";
+import { generateSmartNotifications, getOrCreatePrefs, updatePrefs } from "./notifications.server";
 
 export type NotificationRow = {
   id: string;
@@ -52,3 +53,27 @@ export const markAllNotificationsRead = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const getNotificationPreferences = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => getOrCreatePrefs(context));
+
+export const updateNotificationPreferences = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) =>
+    z
+      .object({
+        job_matches: z.boolean().optional(),
+        follow_ups: z.boolean().optional(),
+        skill_gaps: z.boolean().optional(),
+        interview_reminders: z.boolean().optional(),
+        roadmap_progress: z.boolean().optional(),
+        career_insights: z.boolean().optional(),
+      })
+      .parse(d),
+  )
+  .handler(async ({ data, context }) => updatePrefs(context, data));
+
+export const runSmartNotifications = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => generateSmartNotifications(context));

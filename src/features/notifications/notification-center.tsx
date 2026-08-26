@@ -1,3 +1,4 @@
+import { useEffect, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { Bell, Check, CheckCheck } from "lucide-react";
@@ -10,6 +11,7 @@ import {
   listNotifications,
   markNotificationRead,
   markAllNotificationsRead,
+  runSmartNotifications,
   type NotificationRow,
 } from "@/lib/notifications.functions";
 import { cn } from "@/lib/utils";
@@ -42,6 +44,21 @@ export function NotificationCenter() {
     mutationFn: () => markAllNotificationsRead(),
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
+
+  // Smart notification generation — runs at most once every 15 min per session.
+  const generatedRef = useRef(false);
+  useEffect(() => {
+    if (generatedRef.current) return;
+    const last = Number(sessionStorage.getItem("smart-notifs-at") ?? 0);
+    if (Date.now() - last < 15 * 60_000) return;
+    generatedRef.current = true;
+    sessionStorage.setItem("smart-notifs-at", String(Date.now()));
+    runSmartNotifications()
+      .then((r) => {
+        if (r.created > 0) qc.invalidateQueries({ queryKey: ["notifications"] });
+      })
+      .catch(() => {});
+  }, [qc]);
 
   const items: NotificationRow[] = q.data?.items ?? [];
   const unread = q.data?.unread ?? 0;

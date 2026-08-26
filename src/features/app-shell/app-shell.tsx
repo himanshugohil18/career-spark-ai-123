@@ -35,6 +35,7 @@ import {
   Target,
   Bookmark,
   Palette,
+  Banknote,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -85,6 +86,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Career Brain", to: "/profile", icon: Brain },
       { label: "Roadmap", to: "/roadmap", icon: Target },
       { label: "Analytics", to: "/analytics", icon: BarChart3 },
+      { label: "Salary", to: "/salary", icon: Banknote },
     ],
   },
   {
@@ -104,6 +106,7 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Assistant", to: "/chat", icon: Sparkles },
       { label: "AI Agent", to: "/agent", icon: Bot },
       { label: "Interview", to: "/interview", icon: Mic },
+      { label: "Mock interview", to: "/interview/simulator", icon: MessagesSquare },
       { label: "Coach", to: "/coach", icon: Users },
       { label: "Learning", to: "/learning", icon: GraduationCap },
     ],

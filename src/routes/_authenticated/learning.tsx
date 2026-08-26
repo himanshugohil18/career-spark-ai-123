@@ -1,10 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { motion } from "framer-motion";
-import { GraduationCap, ExternalLink, Sparkles } from "lucide-react";
+import { GraduationCap, ExternalLink, Sparkles, CheckCircle2 } from "lucide-react";
 import { Skeleton } from "@/components/ai/skeleton";
 import { PageHeader } from "@/components/product/page-header";
 import { getLearningPaths } from "@/lib/career-intel.functions";
+import { getLearningProgress, toggleLearningSkill } from "@/lib/learning.functions";
 
 export const Route = createFileRoute("/_authenticated/learning")({
   head: () => ({ meta: [{ title: "Learning · CareerOS" }] }),
@@ -12,11 +13,21 @@ export const Route = createFileRoute("/_authenticated/learning")({
 });
 
 function LearningPage() {
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["learning-paths"],
     queryFn: () => getLearningPaths(),
     staleTime: 60_000,
   });
+  const { data: completed } = useQuery({
+    queryKey: ["learning-progress"],
+    queryFn: () => getLearningProgress(),
+  });
+  const toggleMut = useMutation({
+    mutationFn: (v: { skill: string; completed: boolean }) => toggleLearningSkill({ data: v }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["learning-progress"] }),
+  });
+  const doneSet = new Set((completed ?? []).map((s: string) => s));
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 p-6 md:p-10">
@@ -85,6 +96,21 @@ function LearningPage() {
                 </p>
               )}
               <div className="mt-auto flex flex-wrap gap-2 pt-2">
+                <button
+                  type="button"
+                  disabled={toggleMut.isPending}
+                  onClick={() =>
+                    toggleMut.mutate({ skill: p.skill, completed: !doneSet.has(p.skill.toLowerCase()) })
+                  }
+                  className={`inline-flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-xs transition-all ${
+                    doneSet.has(p.skill.toLowerCase())
+                      ? "border-primary/40 bg-primary/10 text-primary"
+                      : "border-border bg-elevated text-foreground hover:border-primary/40 hover:text-primary"
+                  }`}
+                >
+                  <CheckCircle2 className="h-3 w-3" />
+                  {doneSet.has(p.skill.toLowerCase()) ? "Learned" : "Mark learned"}
+                </button>
                 <a
                   href={`https://www.google.com/search?q=${p.resourceQuery}`}
                   target="_blank"

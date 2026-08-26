@@ -12,6 +12,8 @@ import {
   Camera,
   Loader2,
   Brain,
+  Bell,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +24,11 @@ import { getCareerBrainSnapshot } from "@/lib/career-brain.service";
 import { regenerateCareerBrain } from "@/lib/resume.functions";
 import { updateProfilePrefs } from "@/lib/career-intel.functions";
 import { getWorkspace, updateProfile } from "@/lib/profile.functions";
+import {
+  getNotificationPreferences,
+  updateNotificationPreferences,
+} from "@/lib/notifications.functions";
+import { updateSharingSettings } from "@/lib/public-profile.functions";
 import {
   listLoginEvents,
   signOutEverywhere,
@@ -97,7 +104,10 @@ function SettingsPage() {
 
         <div className="min-w-0 space-y-6">
           {tab === "account" && (
-            <AccountSection profile={workspace?.profile ?? null} onSignOut={signOut} />
+            <>
+              <AccountSection profile={workspace?.profile ?? null} onSignOut={signOut} />
+              <SharingSection />
+            </>
           )}
           {tab === "appearance" && (
             <SettingsSection
@@ -112,7 +122,12 @@ function SettingsPage() {
             </SettingsSection>
           )}
           {tab === "security" && <SecuritySection />}
-          {tab === "preferences" && <PreferencesSection brain={brain} />}
+          {tab === "preferences" && (
+            <>
+              <PreferencesSection brain={brain} />
+              <NotificationsSection />
+            </>
+          )}
         </div>
       </div>
     </PageShell>
@@ -664,5 +679,165 @@ function PreferencesSection({
         </div>
       </SettingsSection>
     </>
+  );
+}
+
+/* ------------------------ Smart notifications ------------------------ */
+
+const NOTIF_TOGGLES: { key: string; label: string; hint: string }[] = [
+  { key: "job_matches", label: "High-match jobs", hint: "When a new role scores 80%+ against your Career Brain" },
+  { key: "follow_ups", label: "Application reminders", hint: "Saved roles you haven't applied to after a week" },
+  { key: "skill_gaps", label: "Skill gaps", hint: "When a new gap is detected in top matches" },
+  { key: "interview_reminders", label: "Interview reminders", hint: "Practice nudges before interviews" },
+  { key: "roadmap_progress", label: "Roadmap progress", hint: "Milestones and streaks on your roadmap" },
+  { key: "career_insights", label: "Career insights", hint: "Weekly market and profile insights" },
+];
+
+function NotificationsSection() {
+  const qc = useQueryClient();
+  const { data: prefs } = useQuery({
+    queryKey: ["notification-preferences"],
+    queryFn: () => getNotificationPreferences(),
+  });
+  const mut = useMutation({
+    mutationFn: (patch: Record<string, boolean>) => updateNotificationPreferences({ data: patch }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notification-preferences"] }),
+    onError: (e: any) => toast.error(e?.message ?? "Could not save preferences."),
+  });
+
+  return (
+    <SettingsSection
+      icon={Bell}
+      title="Smart notifications"
+      description="CareerOS watches your matches, saved jobs and roadmap, and only notifies you about what you enable here."
+    >
+      <ul className="divide-y divide-border">
+        {NOTIF_TOGGLES.map((t) => {
+          const on = (prefs as any)?.[t.key] ?? true;
+          return (
+            <li key={t.key} className="flex items-center justify-between gap-4 py-3">
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-foreground">{t.label}</p>
+                <p className="text-xs text-muted-foreground">{t.hint}</p>
+              </div>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={on}
+                disabled={mut.isPending}
+                onClick={() => mut.mutate({ [t.key]: !on })}
+                className={cn(
+                  "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+                  on ? "bg-primary" : "bg-muted",
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute top-0.5 h-5 w-5 rounded-full bg-primary-foreground shadow transition-all",
+                    on ? "left-[22px]" : "left-0.5",
+                  )}
+                />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+    </SettingsSection>
+  );
+}
+
+/* ------------------------ Public profile sharing ------------------------ */
+
+function SharingSection() {
+  const qc = useQueryClient();
+  const { data } = useQuery({
+    queryKey: ["sharing-settings"],
+    queryFn: async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user) return null;
+      const { data: p } = await supabase
+        .from("profiles")
+        .select("public_handle, is_public")
+        .eq("user_id", u.user.id)
+        .maybeSingle();
+      return p;
+    },
+  });
+
+  const [handle, setHandle] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
+  const hydrated = useRef(false);
+  useEffect(() => {
+    if (data && !hydrated.current) {
+      hydrated.current = true;
+      setHandle(data.public_handle ?? "");
+      setIsPublic(Boolean(data.is_public));
+    }
+  }, [data]);
+
+  const mut = useMutation({
+    mutationFn: () =>
+      updateSharingSettings({ data: { isPublic, handle: handle.trim().toLowerCase() || null } }),
+    onSuccess: (r) => {
+      toast.success(isPublic ? "Your public profile is live." : "Sharing turned off.");
+      void qc.invalidateQueries({ queryKey: ["sharing-settings"] });
+      if (r.url && isPublic) toast.message(`Share link: ${window.location.origin}${r.url}`);
+    },
+    onError: (e: any) => toast.error(e?.message ?? "Could not save sharing settings."),
+  });
+
+  const publicUrl = handle ? `${typeof window !== "undefined" ? window.location.origin : ""}/p/${handle.trim().toLowerCase()}` : null;
+
+  return (
+    <SettingsSection
+      icon={Globe}
+      title="Public career profile"
+      description="Share a read-only profile page with recruiters — your name, title, summary and links. Nothing else is exposed."
+    >
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="public-handle">Public handle</Label>
+          <Input
+            id="public-handle"
+            value={handle}
+            onChange={(e) => setHandle(e.target.value.replace(/[^a-z0-9-]/gi, "").toLowerCase())}
+            placeholder="e.g. darshan-dev"
+            className="mt-1.5"
+          />
+          <p className="mt-1 text-xs text-muted-foreground">Lowercase letters, numbers and dashes.</p>
+        </div>
+        <label className="flex items-center justify-between gap-4">
+          <span className="text-sm text-foreground">Profile is public</span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={isPublic}
+            onClick={() => setIsPublic((v) => !v)}
+            className={cn(
+              "relative h-6 w-11 shrink-0 rounded-full transition-colors",
+              isPublic ? "bg-primary" : "bg-muted",
+            )}
+          >
+            <span
+              className={cn(
+                "absolute top-0.5 h-5 w-5 rounded-full bg-primary-foreground shadow transition-all",
+                isPublic ? "left-[22px]" : "left-0.5",
+              )}
+            />
+          </button>
+        </label>
+        {isPublic && publicUrl && (
+          <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
+            Your link: <span className="font-medium text-foreground">{publicUrl}</span>
+          </p>
+        )}
+        <div className="flex justify-end">
+          <Button onClick={() => mut.mutate()} disabled={mut.isPending || (isPublic && handle.trim().length < 3)}>
+            {mut.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save sharing settings
+          </Button>
+        </div>
+      </div>
+    </SettingsSection>
   );
 }
