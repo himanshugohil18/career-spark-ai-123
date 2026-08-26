@@ -21,7 +21,6 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Logo } from "@/components/landing/logo";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { cn } from "@/lib/utils";
 
 const searchSchema = z.object({
@@ -29,6 +28,7 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/auth")({
+  ssr: false,
   validateSearch: searchSchema,
   beforeLoad: async () => {
     // Client-only: session lives in browser storage; on the server there is
@@ -236,6 +236,18 @@ function getAuthRedirectOrigin() {
   return window.location.origin;
 }
 
+function getSupportedOAuthOrigins() {
+  const origins = new Set([
+    "https://oauth.lovable.app",
+    "https://lovable.dev",
+    "https://career-spark-ai-123.lovable.app",
+    "https://careerosai.site",
+    "https://www.careerosai.site",
+  ]);
+  if (typeof window !== "undefined") origins.add(window.location.origin);
+  return Array.from(origins);
+}
+
 function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }) {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
@@ -265,7 +277,11 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
       } catch {
         /* ignore */
       }
-      const result = await lovable.auth.signInWithOAuth("google", {
+      const { createLovableAuth } = await import("@lovable.dev/cloud-auth-js");
+      const lovableAuth = createLovableAuth({
+        supportedOAuthOrigins: getSupportedOAuthOrigins(),
+      });
+      const result = await lovableAuth.signInWithOAuth("google", {
         redirect_uri: getAuthRedirectOrigin(),
 
         // Always show the Google account chooser instead of silently
@@ -278,6 +294,7 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
         return;
       }
       if (result.redirected) return;
+      await supabase.auth.setSession(result.tokens);
       toast.success("Signed in successfully", { description: "Taking you to your dashboard…" });
       navigate({ to: "/dashboard" });
     } catch (e) {
