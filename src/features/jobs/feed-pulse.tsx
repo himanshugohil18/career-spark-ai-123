@@ -71,14 +71,6 @@ export function FeedPulse({
       transition={{ type: "spring", stiffness: 220, damping: 26 }}
       className="surface-card relative overflow-hidden p-6 md:p-7"
     >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-24 h-48 opacity-60 blur-3xl"
-        style={{
-          background:
-            "radial-gradient(50% 60% at 50% 50%, color-mix(in oklab, var(--color-primary) 22%, transparent), transparent 70%)",
-        }}
-      />
       <div className="relative flex flex-col gap-5">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="min-w-0">

@@ -7,7 +7,6 @@ import { MatchExplain } from "./match-explain";
 import { ApplyWithAiButton } from "@/features/auto-apply/apply-with-ai-button";
 import { cn } from "@/lib/utils";
 import { openExternal, isValidExternalUrl } from "@/lib/open-external";
-import { BurstButton } from "@/components/motion/burst-button";
 import { jobFreshness, FRESHNESS_STYLES } from "@/lib/jobs/freshness";
 import { providerMeta, providerSourceLabel } from "@/lib/jobs/provider-registry";
 
@@ -200,20 +199,20 @@ export function JobCard({
               ) : null}
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
-              <BurstButton
-                active={Boolean(job.savedStatus)}
+              <button
+                type="button"
                 onClick={(e) => {
                   e.preventDefault();
                   onSave?.(job.id);
                 }}
-                ariaLabel="Save job"
+                aria-label="Save job"
                 className={cn(
                   "flex h-8 w-8 items-center justify-center rounded-md border border-border text-muted-foreground transition-colors hover:text-foreground",
                   job.savedStatus && "border-primary/40 text-primary",
                 )}
               >
                 <Bookmark className={cn("h-3.5 w-3.5", job.savedStatus && "fill-current")} />
-              </BurstButton>
+              </button>
               <button
                 type="button"
                 aria-label={hasApplyUrl ? "Open original job posting" : "Application link unavailable"}
