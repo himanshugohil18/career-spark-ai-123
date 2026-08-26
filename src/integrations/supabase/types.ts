@@ -1827,6 +1827,104 @@ export type Database = {
           },
         ]
       }
+      interview_sim_sessions: {
+        Row: {
+          answered_questions: number
+          created_at: string
+          difficulty: string
+          feedback_summary: string | null
+          id: string
+          improvements: string[] | null
+          overall_score: number | null
+          planned_questions: number
+          status: string
+          strengths: string[] | null
+          target_role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          answered_questions?: number
+          created_at?: string
+          difficulty?: string
+          feedback_summary?: string | null
+          id?: string
+          improvements?: string[] | null
+          overall_score?: number | null
+          planned_questions?: number
+          status?: string
+          strengths?: string[] | null
+          target_role: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          answered_questions?: number
+          created_at?: string
+          difficulty?: string
+          feedback_summary?: string | null
+          id?: string
+          improvements?: string[] | null
+          overall_score?: number | null
+          planned_questions?: number
+          status?: string
+          strengths?: string[] | null
+          target_role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      interview_sim_turns: {
+        Row: {
+          answer: string | null
+          created_at: string
+          feedback: string | null
+          id: string
+          points_hit: string[] | null
+          points_missed: string[] | null
+          question: string
+          score: number | null
+          session_id: string
+          turn_index: number
+          user_id: string
+        }
+        Insert: {
+          answer?: string | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          points_hit?: string[] | null
+          points_missed?: string[] | null
+          question: string
+          score?: number | null
+          session_id: string
+          turn_index: number
+          user_id: string
+        }
+        Update: {
+          answer?: string | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          points_hit?: string[] | null
+          points_missed?: string[] | null
+          question?: string
+          score?: number | null
+          session_id?: string
+          turn_index?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interview_sim_turns_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "interview_sim_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       job_collection_items: {
         Row: {
           added_at: string
@@ -2295,6 +2393,33 @@ export type Database = {
           },
         ]
       }
+      learning_progress: {
+        Row: {
+          created_at: string
+          id: string
+          skill: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          skill: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          skill?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       login_events: {
         Row: {
           created_at: string
@@ -2495,6 +2620,7 @@ export type Database = {
           expected_salary: string | null
           full_name: string | null
           github_url: string | null
+          is_public: boolean
           linkedin_url: string | null
           location: string | null
           onboarding_completed: boolean
@@ -2503,6 +2629,7 @@ export type Database = {
           preferred_location: string | null
           preferred_role: string | null
           professional_summary: string | null
+          public_handle: string | null
           updated_at: string
           user_id: string
           verified_fields: string[]
@@ -2519,6 +2646,7 @@ export type Database = {
           expected_salary?: string | null
           full_name?: string | null
           github_url?: string | null
+          is_public?: boolean
           linkedin_url?: string | null
           location?: string | null
           onboarding_completed?: boolean
@@ -2527,6 +2655,7 @@ export type Database = {
           preferred_location?: string | null
           preferred_role?: string | null
           professional_summary?: string | null
+          public_handle?: string | null
           updated_at?: string
           user_id: string
           verified_fields?: string[]
@@ -2543,6 +2672,7 @@ export type Database = {
           expected_salary?: string | null
           full_name?: string | null
           github_url?: string | null
+          is_public?: boolean
           linkedin_url?: string | null
           location?: string | null
           onboarding_completed?: boolean
@@ -2551,6 +2681,7 @@ export type Database = {
           preferred_location?: string | null
           preferred_role?: string | null
           professional_summary?: string | null
+          public_handle?: string | null
           updated_at?: string
           user_id?: string
           verified_fields?: string[]
