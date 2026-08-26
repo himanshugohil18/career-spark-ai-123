@@ -32,7 +32,6 @@ import { setActiveResume } from "@/lib/resume.functions";
 import { PageHeader, PageShell } from "@/components/product/page-header";
 import { cn } from "@/lib/utils";
 
-const ease = [0.22, 1, 0.36, 1] as const;
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({ meta: [{ title: "Profile · CareerOS" }] }),
