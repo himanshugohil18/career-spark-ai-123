@@ -95,8 +95,20 @@ export async function computeMatch(
     return Math.round(Math.max(0, Math.min(100, base + Math.max(-maxDelta, Math.min(maxDelta, ai - base)))));
   };
 
+  // The AI may refine sub-scores, but it can NEVER lift a job past the
+  // seniority ceiling computed deterministically from the resume.
+  const capOverall = (n: number) =>
+    baseline.seniorityTier === "match" || baseline.seniorityTier === "under"
+      ? n
+      : Math.min(n, baseline.overall);
+
   const score: MatchScore = {
-    overall: adjust(baseline.overall, aiRefinement?.overall),
+    overall: capOverall(adjust(baseline.overall, aiRefinement?.overall)),
+    seniority: baseline.seniority,
+    seniorityTier: baseline.seniorityTier,
+    seniorityLabel: baseline.seniorityLabel,
+    stretch: baseline.stretch,
+    requiredYears: baseline.requiredYears,
     skill: adjust(baseline.skill, aiRefinement?.skill),
     experience: adjust(baseline.experience, aiRefinement?.experience),
     education: adjust(baseline.education, aiRefinement?.education),
@@ -134,6 +146,9 @@ export async function persistMatch(
       career_goal_score: score.careerGoal,
       location_score: score.location,
       salary_score: score.salary,
+      seniority_score: score.seniority,
+      seniority_tier: score.seniorityTier,
+      required_years: score.requiredYears,
       strengths: score.strengths,
       weaknesses: score.weaknesses,
       missing_skills: score.missingSkills,

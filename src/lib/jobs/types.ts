@@ -84,6 +84,13 @@ export type MatchScore = {
   careerGoal: number;
   location: number;
   salary: number;
+  /** Seniority compatibility 0..100 (hard constraint sub-score). */
+  seniority: number;
+  seniorityTier: "under" | "match" | "stretch" | "over" | "far-over";
+  seniorityLabel: string;
+  /** True when the posting sits exactly one level above the candidate. */
+  stretch: boolean;
+  requiredYears: number | null;
   strengths: string[];
   weaknesses: string[];
   missingSkills: MissingSkill[];

@@ -36,7 +36,15 @@ export type JobCardData = {
     weaknesses?: string[] | null;
     missing_skills?: Array<{ skill: string; priority: "high" | "medium" | "low" }> | null;
     explanation?: string | null;
+    seniority_tier?: string | null;
+    seniority_label?: string | null;
+    required_years?: number | null;
   } | null;
+  seniorityTier?: string;
+  seniorityLabel?: string | null;
+  stretch?: boolean;
+  remoteLabel?: string | null;
+  remoteEligible?: boolean;
   savedStatus?: string | null;
   /** Location proximity, computed server-side against the resume location. */
   locationTier?: "same-city" | "nearby-city" | "same-country" | "remote" | "far" | null;
@@ -159,10 +167,32 @@ export function JobCard({
                   </span>
                 )}
                 {job.remote_status && job.remote_status !== "unknown" && (
-                  <span className="rounded-full border border-border bg-elevated px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-widest">
+                  <span
+                    className="rounded-full border border-border bg-elevated px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-widest"
+                    title={job.remoteLabel ?? undefined}
+                  >
                     {job.remote_status}
                   </span>
                 )}
+                {(() => {
+                  const tier = job.seniorityTier ?? job.match?.seniority_tier ?? null;
+                  const label = job.seniorityLabel ?? job.match?.seniority_label ?? null;
+                  if (!tier || tier === "match" || !label) return null;
+                  const style =
+                    tier === "stretch"
+                      ? "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                      : tier === "under"
+                        ? "border-border bg-elevated text-muted-foreground"
+                        : "border-destructive/40 bg-destructive/10 text-destructive";
+                  return (
+                    <span
+                      className={`rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${style}`}
+                      title={label}
+                    >
+                      {tier === "stretch" ? "Stretch" : tier === "under" ? "Below your level" : "Above your level"}
+                    </span>
+                  );
+                })()}
 
                 {salary && <span className="text-foreground/70">{salary}</span>}
                 <span

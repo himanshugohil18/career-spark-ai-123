@@ -233,3 +233,165 @@ export function candidateSeniority(
 ): Seniority | null {
   return deriveCareerProfile(brain).seniority;
 }
+
+// ---------------------------------------------------------------------------
+// Seniority compatibility (hard recommendation constraint)
+// ---------------------------------------------------------------------------
+
+/** Years-of-experience band a job rung implies: [min, max]. */
+export const LEVEL_YEARS: Record<Seniority, [number, number]> = {
+  intern: [0, 1],
+  entry: [0, 2],
+  junior: [0.5, 3],
+  mid: [3, 6],
+  senior: [5, 9],
+  staff: [7, 13],
+  lead: [6, 12],
+  principal: [10, 20],
+  executive: [10, 30],
+};
+
+/**
+ * Minimum years a posting demands. Prefers an explicit number in the text
+ * ("5+ years", "3-5 years of experience"); falls back to the level band.
+ */
+export function requiredYears(
+  jobLevel: string | null | undefined,
+  text?: string | null,
+): number | null {
+  const blob = (text ?? "").toLowerCase();
+  const m =
+    blob.match(/(\d{1,2})\s*(?:\+|plus)?\s*(?:-|–|to)?\s*(\d{1,2})?\s*(?:\+)?\s*years?\b/) ?? null;
+  if (m) {
+    const a = Number(m[1]);
+    if (Number.isFinite(a) && a >= 0 && a <= 25) return a;
+  }
+  const lvl = seniorityFromJobLevel(jobLevel);
+  return lvl ? LEVEL_YEARS[lvl][0] : null;
+}
+
+export type SeniorityTier = "under" | "match" | "stretch" | "over" | "far-over";
+
+export type SeniorityFit = {
+  /** 0..100 — how appropriate this rung is for the candidate. */
+  score: number;
+  tier: SeniorityTier;
+  /** Ladder distance: job rung index minus candidate rung index. */
+  delta: number;
+  /** Hard ceiling applied to the overall match score, or null. */
+  cap: number | null;
+  label: string;
+  candidate: Seniority | null;
+  job: Seniority | null;
+  requiredYears: number | null;
+  candidateYears: number;
+};
+
+/**
+ * The seniority compatibility filter. This is intentionally strict: a 0-year
+ * candidate applying to a "5-8 years" senior posting must never be able to
+ * reach the recommended band, no matter how good the skill overlap is.
+ */
+export function seniorityFit(args: {
+  candidate: Seniority | null;
+  candidateYears: number;
+  jobLevel: string | null | undefined;
+  jobText?: string | null;
+}): SeniorityFit {
+  const job = seniorityFromJobLevel(args.jobLevel);
+  const cYears = Math.max(0, args.candidateYears ?? 0);
+  const reqYears = requiredYears(args.jobLevel, args.jobText);
+  const base: Omit<SeniorityFit, "score" | "tier" | "delta" | "cap" | "label"> = {
+    candidate: args.candidate,
+    job,
+    requiredYears: reqYears,
+    candidateYears: cYears,
+  };
+
+  if (!args.candidate || !job) {
+    // Unknown rung on either side: fall back to the years gap when we have it.
+    if (reqYears != null && reqYears - cYears >= 3) {
+      const gap = reqYears - cYears;
+      return {
+        ...base,
+        score: Math.max(8, 100 - gap * 18),
+        tier: gap >= 5 ? "far-over" : "over",
+        delta: 2,
+        cap: gap >= 5 ? 32 : 48,
+        label: `Needs ~${reqYears}+ yrs, you have ${cYears.toFixed(0)}`,
+      };
+    }
+    return { ...base, score: 70, tier: "match", delta: 0, cap: null, label: "Level not specified" };
+  }
+
+  const ci = LADDER.indexOf(args.candidate);
+  const ji = LADDER.indexOf(job);
+  const delta = ji - ci;
+  const yearGap = reqYears != null ? Math.max(0, reqYears - cYears) : Math.max(0, delta * 2);
+
+  // Reaching DOWN (over-qualified) — mildly penalised, never capped.
+  if (delta <= 0) {
+    const score = delta === 0 ? 100 : Math.max(45, 100 - Math.abs(delta) * 12);
+    return {
+      ...base,
+      score,
+      tier: delta === 0 ? "match" : "under",
+      delta,
+      cap: null,
+      label: delta === 0 ? "Matches your level" : "Below your level",
+    };
+  }
+
+  // Reaching UP.
+  if (delta === 1 && yearGap <= 2.5) {
+    return {
+      ...base,
+      score: 74,
+      tier: "stretch",
+      delta,
+      cap: 82,
+      label: "Stretch — one level above you",
+    };
+  }
+  if (delta === 1) {
+    return {
+      ...base,
+      score: 58,
+      tier: "stretch",
+      delta,
+      cap: 72,
+      label: `Stretch — asks for ~${reqYears ?? "more"} yrs`,
+    };
+  }
+  if (delta === 2) {
+    return {
+      ...base,
+      score: Math.max(12, 40 - yearGap * 4),
+      tier: "over",
+      delta,
+      cap: 46,
+      label: `Two levels above you${reqYears != null ? ` (~${reqYears}+ yrs)` : ""}`,
+    };
+  }
+  return {
+    ...base,
+    score: Math.max(4, 22 - yearGap * 3),
+    tier: "far-over",
+    delta,
+    cap: 30,
+    label: `Far above your level${reqYears != null ? ` (~${reqYears}+ yrs)` : ""}`,
+  };
+}
+
+/** Experience-level filter buckets exposed in the Jobs UI. */
+export const EXPERIENCE_FILTER_LEVELS: Array<{ id: Seniority; label: string }> = LADDER.map((l) => ({
+  id: l,
+  label: SENIORITY_LABELS[l],
+}));
+
+/** Rungs considered "primary" recommendations for a candidate rung. */
+export function primaryLevelsFor(candidate: Seniority | null): Seniority[] {
+  if (!candidate) return [];
+  const ci = LADDER.indexOf(candidate);
+  return LADDER.filter((_, i) => i <= ci);
+}

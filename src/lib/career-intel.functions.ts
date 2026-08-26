@@ -362,7 +362,8 @@ export const getCareerAnalytics = createServerFn({ method: "GET" })
 export const getInterviewHub = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const [{ data: sessions }, { data: questions }, { data: workspaces }] = await Promise.all([
+    const [{ data: sessions }, { data: questions }, { data: workspaces }, { data: mockSessions }] =
+      await Promise.all([
       context.supabase
         .from("interview_sessions")
         .select("id, workspace_id, focus, total_questions, completed_questions, created_at, workspace:application_workspaces(id, job:jobs(title, company:companies(name)))")
@@ -381,6 +382,15 @@ export const getInterviewHub = createServerFn({ method: "GET" })
         .eq("user_id", context.userId)
         .order("last_opened_at", { ascending: false })
         .limit(20),
+      // Mock interview simulator history so the hub shows one unified record.
+      context.supabase
+        .from("interview_sim_sessions")
+        .select(
+          "id, target_role, target_company, interview_type, mode, difficulty, status, planned_questions, answered_questions, overall_score, created_at",
+        )
+        .eq("user_id", context.userId)
+        .order("created_at", { ascending: false })
+        .limit(10),
     ]);
 
 
@@ -402,6 +412,18 @@ export const getInterviewHub = createServerFn({ method: "GET" })
       byCategory,
       totals: { totalQ, totalPracticed },
       workspaces: workspaces ?? [],
+      mockSessions: mockSessions ?? [],
+      mockStats: (() => {
+        const done = (mockSessions ?? []).filter((m: any) => m.status === "completed");
+        const avg = done.length
+          ? done.reduce((sum: number, m: any) => sum + Number(m.overall_score ?? 0), 0) / done.length
+          : null;
+        return {
+          total: (mockSessions ?? []).length,
+          completed: done.length,
+          averageScore: avg == null ? null : Math.round(avg * 10) / 10,
+        };
+      })(),
     };
   });
 
