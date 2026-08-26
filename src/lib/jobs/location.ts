@@ -7,7 +7,13 @@
  * correctly no matter which provider column they arrived in.
  */
 
-import { resolveCountryCode, resolveGeo, isIndiaText, type Region } from "./geo";
+import {
+  resolveCountryCode,
+  resolveGeo,
+  isIndiaText,
+  COUNTRY_REGION,
+  type Region,
+} from "./geo";
 
 const CITY_ALIASES: Record<string, string[]> = {
   bengaluru: ["bangalore", "blr", "bengaluru"],
@@ -90,6 +96,12 @@ export function remoteRestriction(input: LocationAffinityInput): string | null {
   return code;
 }
 
+/** Region of an ISO country code (never re-parse a code as free text). */
+function regionOfCode(code: string | null): Region | null {
+  if (!code) return null;
+  return COUNTRY_REGION[code] ?? null;
+}
+
 /** Macro region of a posting. */
 function jobRegion(input: LocationAffinityInput): Region {
   return resolveGeo(`${input.jobLocation ?? ""} , ${input.jobCountry ?? ""}`).region;
@@ -109,7 +121,7 @@ export function locationAffinity(input: LocationAffinityInput): number {
     const restrictedTo = remoteRestriction(input);
     if (restrictedTo && prefCountry) {
       if (restrictedTo === prefCountry) return 1;
-      const sameRegion = resolveGeo(restrictedTo).region === resolveGeo(prefCountry).region;
+      const sameRegion = regionOfCode(restrictedTo) === regionOfCode(prefCountry);
       return sameRegion ? 0.4 : 0.22;
     }
     if (restrictedTo && !prefCountry) return 0.6;
@@ -132,7 +144,7 @@ export function locationAffinity(input: LocationAffinityInput): number {
   if (jobCountry && prefCountry) {
     // Different country: same macro region is still far more plausible than
     // a different continent (relocation/timezone reality).
-    const sameRegion = jobRegion(input) === resolveGeo(prefCountry).region;
+    const sameRegion = jobRegion(input) === regionOfCode(prefCountry);
     if (sameRegion) return remote === "hybrid" ? 0.42 : 0.36;
     return remote === "hybrid" ? 0.2 : 0.12;
   }
@@ -247,7 +259,7 @@ export function locationProximity(input: LocationAffinityInput): ProximityResult
   if (jobCountry && prefCountry && jobCountry === prefCountry) {
     return { score: Math.max(base, 0.8), tier: "same-country", label: "In your country" };
   }
-  if (jobCountry && prefCountry && jobRegion(input) === resolveGeo(prefCountry).region) {
+  if (jobCountry && prefCountry && jobRegion(input) === regionOfCode(prefCountry)) {
     return { score: base, tier: "same-region", label: "Same region" };
   }
 
