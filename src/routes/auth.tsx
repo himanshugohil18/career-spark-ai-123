@@ -73,8 +73,7 @@ function AuthPage() {
       {/* Ambient global background */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 opacity-90"
-        style={{ backgroundImage: "var(--gradient-hero)" }}
+        className="pointer-events-none absolute inset-0 -z-10 bg-accent"
       />
       <div aria-hidden className="bg-grid grid-fade-mask absolute inset-0 -z-10" />
 
@@ -91,21 +90,6 @@ function AuthPage() {
 function BrandingPanel({ mode }: { mode: Mode }) {
   return (
     <div className="relative hidden overflow-hidden border-r border-border/50 lg:flex lg:flex-col lg:justify-between lg:p-12">
-      {/* orb */}
-      <motion.div
-        aria-hidden
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-        className="pointer-events-none absolute -left-24 top-1/4 h-[520px] w-[520px] rounded-full blur-3xl"
-        style={{ background: "var(--gradient-brand-glow)", opacity: 0.35 }}
-      />
-      <motion.div
-        aria-hidden
-        animate={{ y: [0, -18, 0] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
-        className="pointer-events-none absolute right-10 top-24 h-64 w-64 rounded-full bg-accent/20 blur-3xl"
-      />
 
       {/* header */}
       <div className="relative z-10">
@@ -184,8 +168,7 @@ function BrandingPanel({ mode }: { mode: Mode }) {
           <figcaption className="mt-3 flex items-center gap-3">
             <div
               aria-hidden
-              className="grid h-8 w-8 place-items-center rounded-full text-xs font-semibold text-primary-foreground"
-              style={{ background: "var(--gradient-brand-glow)" }}
+              className="grid h-8 w-8 place-items-center rounded-full bg-primary text-xs font-semibold text-primary-foreground"
             >
               A
             </div>
@@ -475,13 +458,7 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
   }
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-gradient-to-br from-card via-elevated to-background/95 p-7 sm:p-8 shadow-[0_30px_80px_-40px_rgba(0,0,0,0.6)]">
-      {/* subtle inner glow */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-24 h-48 opacity-40 blur-3xl"
-        style={{ background: "var(--gradient-brand-glow)" }}
-      />
+    <div className="relative overflow-hidden rounded-2xl border border-border/60 bg-card p-7 sm:p-8 shadow-[var(--shadow-elevated)]">
 
       <div className="relative">
         <h2 className="font-display text-2xl font-semibold tracking-tight sm:text-[26px]">
@@ -501,7 +478,7 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
             "mt-6 w-full transition-all",
             isSignup
               ? "bg-background text-foreground hover:bg-muted"
-              : "bg-gradient-to-r from-primary to-accent text-primary-foreground hover:brightness-110 hover:shadow-[0_8px_28px_-10px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+              : "bg-primary text-primary-foreground hover:bg-primary-hover"
           )}
           disabled={loading !== false}
           onClick={handleOAuth}
@@ -642,7 +619,7 @@ function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void })
             type="submit"
             variant="primary"
             size="lg"
-            className="mt-2 w-full bg-gradient-to-r from-primary to-accent hover:brightness-110 transition-all"
+            className="mt-2 w-full bg-primary transition-colors hover:bg-primary-hover"
             disabled={loading !== false}
           >
             {loading === "email" ? (

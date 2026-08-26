@@ -46,7 +46,7 @@ export function NLSearchBar({
       {value && (
         <button
           type="submit"
-          className="rounded-md bg-[image:var(--gradient-primary)] px-3 py-1 text-xs font-medium text-white shadow-sm"
+          className="rounded-md bg-primary px-3 py-1 text-xs font-medium text-primary-foreground shadow-sm"
         >
           Search
         </button>

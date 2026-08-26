@@ -1,7 +1,6 @@
-import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RadarSweep } from "@/components/motion/radar-sweep";
+import { Radar } from "lucide-react";
 
 export function EmptyFeed({
   hasBrain,
@@ -17,13 +16,9 @@ export function EmptyFeed({
   if (!hasBrain) {
     return (
       <div className="surface-card flex flex-col items-center gap-4 p-12 text-center">
-        <motion.div
-          animate={{ y: [0, -6, 0], rotate: [0, 4, -4, 0] }}
-          transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-          className="flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/30 bg-primary/10 text-primary shadow-[0_0_36px_-10px_var(--color-primary)]"
-        >
+        <span className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-primary">
           <Sparkles className="h-7 w-7" />
-        </motion.div>
+        </span>
         <div>
           <h3 className="font-display text-xl font-semibold">Approve your Career Brain to see matches</h3>
           <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
@@ -36,7 +31,7 @@ export function EmptyFeed({
   if (roleLabel) {
     return (
       <div className="surface-card flex flex-col items-center gap-4 p-12 text-center">
-        <RadarSweep />
+        <span className="grid h-14 w-14 place-items-center rounded-2xl bg-accent text-primary"><Radar className="h-6 w-6" /></span>
         <div>
           <h3 className="font-display text-xl font-semibold">
             No matching {roleLabel} roles were found from your enabled providers.
@@ -53,7 +48,7 @@ export function EmptyFeed({
   }
   return (
     <div className="surface-card flex flex-col items-center gap-4 p-12 text-center">
-      <RadarSweep />
+      <span className="grid h-14 w-14 place-items-center rounded-2xl bg-accent text-primary"><Radar className="h-6 w-6" /></span>
       <div>
         <h3 className="font-display text-xl font-semibold">No jobs matched yet</h3>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">

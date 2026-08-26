@@ -117,13 +117,8 @@ function Dashboard() {
         initial={{ opacity: 0, y: 6 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease }}
-        className="relative overflow-hidden rounded-3xl border border-border/60 bg-gradient-to-br from-elevated/40 via-card/30 to-transparent p-6 md:p-8"
+        className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 md:p-8"
       >
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full opacity-70 blur-3xl"
-          style={{ background: "radial-gradient(closest-side, rgba(79,140,255,0.35), transparent 70%)" }}
-        />
         <div className="relative flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-3">
@@ -153,8 +148,8 @@ function Dashboard() {
               {secondary}
             </p>
           </div>
-          <div className="hero-orb hidden h-24 w-24 shrink-0 md:grid">
-            <Sparkles className="h-8 w-8 text-primary drop-shadow-[0_0_18px_rgba(79,140,255,0.9)]" />
+          <div className="hidden h-24 w-24 shrink-0 place-items-center rounded-3xl bg-accent text-primary md:grid">
+            <Sparkles className="h-8 w-8" />
           </div>
         </div>
       </motion.div>
@@ -465,7 +460,7 @@ function StatCard({
           {eyebrow}
         </p>
         {Icon && (
-          <span className={"icon-halo h-8 w-8 " + (breathe ? "animate-breathe" : "")}>
+          <span className="icon-halo h-8 w-8">
             <Icon className="h-4 w-4" />
           </span>
         )}

@@ -147,8 +147,7 @@ export function ResumeUpload({
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 opacity-70"
-        style={{ backgroundImage: "var(--gradient-hero)" }}
+        className="pointer-events-none absolute inset-0 -z-10 bg-accent"
       />
 
       <input
@@ -234,7 +233,7 @@ export function ResumeUpload({
             </div>
             <div className="h-1.5 overflow-hidden rounded-full bg-border">
               <motion.div
-                className="h-full rounded-full bg-[image:var(--gradient-primary)]"
+                className="h-full rounded-full bg-primary"
                 initial={{ width: 0 }}
                 animate={{
                   width:

@@ -88,11 +88,7 @@ export function CinematicVideo({ ctaTo = "/auth" }: { ctaTo?: string }) {
         {/* readability gradient */}
         <div
           aria-hidden
-          className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,12,25,0.82)_0%,rgba(8,12,25,0.45)_38%,rgba(8,12,25,0.88)_100%)]"
-        />
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-[radial-gradient(70%_60%_at_50%_45%,rgba(79,140,255,0.18)_0%,transparent_70%)]"
+          className="absolute inset-0 bg-black/55"
         />
 
         {/* live indicator */}
@@ -120,9 +116,7 @@ export function CinematicVideo({ ctaTo = "/auth" }: { ctaTo?: string }) {
             className="max-w-4xl font-display text-4xl font-semibold leading-[1.08] tracking-tight text-white md:text-6xl"
           >
             Your career is always moving.{" "}
-            <span className="bg-[linear-gradient(90deg,#8FB6FF_0%,#C4B5FD_50%,#67E8F9_100%)] bg-clip-text text-transparent">
-              So should you.
-            </span>
+            <span className="text-white/60">So should you.</span>
           </motion.h2>
 
           <motion.p

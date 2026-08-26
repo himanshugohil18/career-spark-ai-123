@@ -28,7 +28,6 @@ import {
   signOutEverywhere,
   getAvatarUrl,
 } from "@/lib/account.functions";
-import { ThemePicker } from "@/components/settings/theme-picker";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings · CareerOS" }] }),
@@ -524,8 +523,6 @@ function PreferencesSection({
 
   return (
     <>
-      <ThemePicker />
-
       <section className="surface-card p-6">
         <div className="mb-4 flex items-center gap-2">
           <SettingsIcon className="h-4 w-4 text-primary" />

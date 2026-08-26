@@ -3,11 +3,11 @@ import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_STEPS = [
-  "🧠  Reading resume…",
-  "🔍  Finding skills…",
-  "📊  Matching experience…",
-  "✨  Building Career Brain…",
-  "⚡  Discovering opportunities…",
+  "Reading resume…",
+  "Finding skills…",
+  "Matching experience…",
+  "Building Career Brain…",
+  "Discovering opportunities…",
 ];
 
 /**
@@ -60,20 +60,9 @@ export function AIThinking({
 
 function ThinkingOrb() {
   return (
-    <span className="relative flex h-4 w-4 items-center justify-center">
-      <motion.span
-        aria-hidden
-        animate={{ rotate: 360 }}
-        transition={{ duration: 3.2, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0 rounded-full"
-        style={{
-          background:
-            "conic-gradient(from 0deg, transparent 0deg, #4F8CFF 90deg, #22D3EE 180deg, transparent 260deg)",
-          mask: "radial-gradient(circle, transparent 40%, black 41%)",
-          WebkitMask: "radial-gradient(circle, transparent 40%, black 41%)",
-        }}
-      />
-      <span className="h-1.5 w-1.5 rounded-full bg-[image:var(--gradient-brand-glow)] shadow-[0_0_8px_2px_#4F8CFF66]" />
-    </span>
+    <span
+      aria-hidden
+      className="h-4 w-4 animate-spin rounded-full border-2 border-primary/25 border-t-primary"
+    />
   );
 }

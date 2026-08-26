@@ -61,10 +61,6 @@ export function WorkspaceBoot({ children }: { children: ReactNode }) {
             className="fixed inset-0 z-[100] flex items-center justify-center bg-background"
             aria-hidden
           >
-            <div
-              className="pointer-events-none absolute inset-0 opacity-70"
-              style={{ backgroundImage: "var(--gradient-hero)" }}
-            />
             <div className="relative flex flex-col items-center gap-6">
               <motion.div
                 initial={{ scale: 0.9, opacity: 0 }}
@@ -72,10 +68,6 @@ export function WorkspaceBoot({ children }: { children: ReactNode }) {
                 transition={{ duration: 0.5, ease }}
                 className="relative"
               >
-                <span
-                  className="absolute inset-0 -m-8 rounded-full opacity-60 blur-2xl"
-                  style={{ backgroundImage: "var(--gradient-brand-glow)" }}
-                />
                 <div className="relative flex items-center gap-3">
                   <Logo size={40} />
                   <span className="font-display text-2xl font-semibold tracking-tight">
@@ -105,7 +97,7 @@ export function WorkspaceBoot({ children }: { children: ReactNode }) {
                   initial={{ width: "0%" }}
                   animate={{ width: `${((step + 1) / STEPS.length) * 100}%` }}
                   transition={{ duration: 0.35, ease }}
-                  className="h-full rounded-full bg-[image:var(--gradient-primary)]"
+                  className="h-full rounded-full bg-primary"
                 />
               </div>
             </div>
@@ -119,20 +111,9 @@ export function WorkspaceBoot({ children }: { children: ReactNode }) {
 
 function BootOrb() {
   return (
-    <span className="relative flex h-4 w-4 items-center justify-center">
-      <motion.span
-        aria-hidden
-        animate={{ rotate: 360 }}
-        transition={{ duration: 2.4, repeat: Infinity, ease: "linear" }}
-        className="absolute inset-0 rounded-full"
-        style={{
-          background:
-            "conic-gradient(from 0deg, transparent 0deg, #4F8CFF 90deg, #22D3EE 180deg, transparent 260deg)",
-          mask: "radial-gradient(circle, transparent 42%, black 43%)",
-          WebkitMask: "radial-gradient(circle, transparent 42%, black 43%)",
-        }}
-      />
-      <span className="h-1.5 w-1.5 rounded-full bg-[image:var(--gradient-brand-glow)] shadow-[0_0_10px_2px_#4F8CFF66]" />
-    </span>
+    <span
+      aria-hidden
+      className="h-4 w-4 animate-spin rounded-full border-2 border-primary/25 border-t-primary"
+    />
   );
 }

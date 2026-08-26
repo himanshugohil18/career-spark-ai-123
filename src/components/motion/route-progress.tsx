@@ -31,7 +31,7 @@ export function RouteProgress() {
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="h-full bg-[image:var(--gradient-brand-glow,linear-gradient(90deg,#4F8CFF,#22D3EE))]"
+            className="h-full bg-primary"
             initial={{ width: "8%" }}
             animate={{ width: isLoading ? "82%" : "100%" }}
             transition={{ duration: isLoading ? 1.4 : 0.25, ease: [0.22, 1, 0.36, 1] }}

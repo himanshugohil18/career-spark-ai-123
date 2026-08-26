@@ -11,9 +11,9 @@ const buttonVariants = cva(
       variant: {
         // CareerOS primary — brand gradient with animated glow lift
         primary:
-          "btn-glow bg-[image:var(--gradient-primary)] text-primary-foreground shadow-[0_8px_24px_-8px_#4F8CFF80]",
+          "bg-primary text-primary-foreground shadow-sm hover:bg-primary-hover",
         default:
-          "btn-glow bg-primary text-primary-foreground shadow hover:bg-primary-hover",
+          "bg-primary text-primary-foreground shadow-sm hover:bg-primary-hover",
         destructive:
           "bg-danger text-white shadow-sm transition-all duration-250 hover:-translate-y-[1px] hover:brightness-110 hover:shadow-[0_10px_28px_-8px_#EF444488,0_0_0_1px_#EF444455]",
         success:
