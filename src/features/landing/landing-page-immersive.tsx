@@ -92,7 +92,7 @@ function ImmersiveNav() {
             CareerOS
           </span>
         </Link>
-        <nav className="hidden items-center gap-8 text-[13px] font-medium text-muted-foreground md:flex">
+        <nav className="hidden items-center gap-8 font-mono text-[11px] uppercase tracking-[0.16em] text-muted-foreground md:flex">
           <a href="#system" className="transition-colors hover:text-foreground">System</a>
           <a href="#brain" className="transition-colors hover:text-foreground">Career Brain</a>
           <a href="#opportunities" className="transition-colors hover:text-foreground">Opportunities</a>
@@ -101,9 +101,9 @@ function ImmersiveNav() {
         <div className="flex items-center gap-3">
           <button
             onClick={toggleTheme}
-            className="hidden text-[12px] font-medium text-muted-foreground transition-colors hover:text-foreground sm:block"
+            className="hidden rounded-md border border-border px-3 py-1.5 font-mono text-[10px] uppercase tracking-[0.18em] text-muted-foreground transition-colors hover:border-primary/50 hover:text-foreground sm:block"
           >
-            Switch to Classic
+            Theme
           </button>
           <Link
             to="/auth"
@@ -113,7 +113,7 @@ function ImmersiveNav() {
           </Link>
           <Link
             to="/auth"
-            className="inline-flex h-10 items-center gap-1.5 rounded-full bg-primary px-5 text-[13px] font-semibold text-primary-foreground transition-transform duration-300 hover:scale-[1.04]"
+            className="inline-flex h-10 items-center gap-1.5 rounded-md bg-primary px-5 text-[13px] font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
           >
             Start free <ArrowUpRight className="h-3.5 w-3.5" />
           </Link>
@@ -176,14 +176,14 @@ function Hero() {
           <Reveal delay={0.35} className="flex flex-wrap items-center gap-4">
             <Link
               to="/auth"
-              className="group inline-flex h-14 items-center gap-2 rounded-full bg-primary px-8 text-sm font-semibold text-primary-foreground transition-transform duration-300 hover:scale-[1.05]"
+              className="group inline-flex h-14 items-center gap-2 rounded-md bg-primary px-8 text-sm font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
             >
               Build your career system
               <ArrowRight className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1" />
             </Link>
             <a
               href="#system"
-              className="inline-flex h-14 items-center rounded-full border border-border px-8 text-sm font-medium text-foreground transition-colors hover:border-primary hover:text-primary"
+              className="inline-flex h-14 items-center rounded-md border border-border px-8 text-sm font-semibold text-foreground transition-colors hover:border-primary hover:text-primary"
             >
               See how it works
             </a>
@@ -704,7 +704,7 @@ function FinalCTA() {
         >
           <Link
             to="/auth"
-            className="group inline-flex h-16 items-center gap-3 rounded-full bg-primary px-10 text-base font-semibold text-primary-foreground transition-transform duration-300 hover:scale-[1.05]"
+            className="group inline-flex h-16 items-center gap-3 rounded-md bg-primary px-10 text-base font-semibold text-primary-foreground transition-colors hover:bg-primary-hover"
           >
             Build your career system
             <ArrowRight className="h-5 w-5 transition-transform duration-300 group-hover:translate-x-1.5" />
