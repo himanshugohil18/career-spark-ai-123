@@ -737,6 +737,38 @@ export function semanticTechOverlap(a: string[], b: string[]): number {
 }
 
 /**
+ * DIRECTIONAL coverage in [0..1]: what share of `needles` the `vocabulary`
+ * can evidence. Unlike `semanticTechOverlap` this is NOT normalised by the
+ * vocabulary size, so asking "does this candidate know Docker?" against a
+ * 40-skill resume returns 1, not 1/40. Use this whenever one side is a small
+ * requirement list and the other is a large personal vocabulary.
+ */
+export function techCoverage(needles: string[], vocabulary: string[]): number {
+  const needleClusters = new Set<string>();
+  for (const t of needles) for (const c of clustersForTech(t)) needleClusters.add(c);
+  if (needleClusters.size === 0) return 0;
+  const vocab = new Set<string>();
+  for (const t of vocabulary) for (const c of clustersForTech(t)) vocab.add(c);
+  if (vocab.size === 0) return 0;
+  let inter = 0;
+  for (const c of needleClusters) if (vocab.has(c)) inter++;
+  return inter / needleClusters.size;
+}
+
+/** True when the candidate vocabulary plausibly evidences a single skill. */
+export function skillCovered(skill: string, vocabulary: string[]): boolean {
+  const s = skill.toLowerCase().trim();
+  if (!s) return true;
+  for (const v of vocabulary) {
+    const vv = v.toLowerCase().trim();
+    if (!vv) continue;
+    if (vv === s || (s.length >= 3 && (vv.includes(s) || s.includes(vv)))) return true;
+  }
+  return techCoverage([skill], vocabulary) >= 0.5;
+}
+
+
+/**
  * Derive the candidate's primary role families from the Career Brain.
  * Ranked by strength (preferredRole > currentTitle > verified skills > tech clusters).
  */

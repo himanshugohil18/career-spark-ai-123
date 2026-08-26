@@ -16,7 +16,9 @@ import {
   buildCandidateProfile,
   jobFamilyFitProfile,
   semanticTechOverlap,
+  skillCovered,
 } from "./role-synonyms";
+
 import { computeRelevance, brainTechVocabulary } from "./relevance";
 import { candidateSeniority, seniorityAlignment, seniorityFit } from "@/lib/career-profile";
 import type { NormalizedJob } from "./types";
@@ -214,10 +216,12 @@ export function locationScore(brain: CareerBrainSnapshot, job: NormalizedJob): n
       jobLocation: job.location,
       jobCountry: job.locationCountry,
       remoteStatus: job.remoteStatus,
+      description: job.description,
       preferred: preferredLocations(brain),
     }) * 100,
   );
 }
+
 
 export function salaryScore(brain: CareerBrainSnapshot, job: NormalizedJob): number {
   const raw = brain.identity.preferences.expectedSalary;
@@ -252,12 +256,13 @@ export function computeBaselineScores(brain: CareerBrainSnapshot, job: Normalize
     careerGoal * 0.22 +
     skill * 0.18 +
     seniority * 0.17 +
-    technology * 0.15 +
-    experience * 0.10 +
-    projects * 0.08 +
-    location * 0.05 +
+    technology * 0.13 +
+    experience * 0.09 +
+    location * 0.09 +
+    projects * 0.07 +
     salary * 0.04 +
     education * 0.01;
+
 
   // Hard career-path guardrail. The title-anchored relevance engine decides
   // whether the job is on-track at all; off-track and non-technical jobs can
@@ -309,17 +314,16 @@ export function computeMissingSkills(
   brain: CareerBrainSnapshot,
   job: NormalizedJob,
 ): { skill: string; priority: "high" | "medium" | "low" }[] {
-  const have = new Set(brain.skills.map((s) => norm(s.name)));
-  // Also treat any skill semantically covered by the brain (via TECH_GRAPH)
-  // as satisfied, so we don't tell a user with Kubernetes that they're
-  // missing "K8s".
-  const covered = (needle: string) => {
-    if (have.has(norm(needle))) return true;
-    const overlap = semanticTechOverlap([needle], Array.from(have));
-    return overlap >= 0.5;
-  };
+  const vocab = [
+    ...brain.skills.map((s) => s.name),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...((brain.projects ?? []) as any[]).flatMap((p) => (p?.technologies ?? []) as string[]),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    ...((brain.experiences ?? []) as any[]).flatMap((e) => (e?.technologies ?? []) as string[]),
+  ].filter(Boolean);
   const missing: { skill: string; priority: "high" | "medium" | "low" }[] = [];
-  for (const s of job.requiredSkills) if (!covered(s)) missing.push({ skill: s, priority: "high" });
-  for (const s of job.preferredSkills) if (!covered(s)) missing.push({ skill: s, priority: "medium" });
+  for (const s of job.requiredSkills) if (!skillCovered(s, vocab)) missing.push({ skill: s, priority: "high" });
+  for (const s of job.preferredSkills) if (!skillCovered(s, vocab)) missing.push({ skill: s, priority: "medium" });
   return missing.slice(0, 8);
 }
+

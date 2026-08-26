@@ -162,9 +162,17 @@ export async function persistMatch(
 }
 
 /**
+ * Any match computed BEFORE this timestamp used an older scoring algorithm and
+ * is recomputed on the next refresh, whatever its age. Bump this whenever the
+ * scoring maths changes so cached scores never go stale-but-trusted.
+ */
+const SCORING_EPOCH = Date.parse("2026-08-26T13:00:00Z");
+
+/**
  * Refresh matches for a user against the newest jobs. Skips jobs already
  * matched within `staleAfterDays` for the same brain version.
  */
+
 export async function refreshUserMatches(
   supabase: SupabaseClient,
   brain: CareerBrainSnapshot,
@@ -224,12 +232,18 @@ export async function refreshUserMatches(
       .maybeSingle();
 
     if (existing) {
-      const age = Date.now() - new Date(existing.computed_at as string).getTime();
-      if (existing.brain_version === brainVersion && age < stale * 86_400_000) {
+      const computedAt = new Date(existing.computed_at as string).getTime();
+      const age = Date.now() - computedAt;
+      if (
+        existing.brain_version === brainVersion &&
+        age < stale * 86_400_000 &&
+        computedAt >= SCORING_EPOCH
+      ) {
         results.skipped++;
         continue;
       }
     }
+
 
     const job = rowToNormalized(row);
     const score = await computeMatch(brain, job, { refineWithAi: false });
