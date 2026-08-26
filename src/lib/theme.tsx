@@ -42,7 +42,7 @@ interface ThemeContextValue {
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: "classic",
+  theme: "immersive",
   setTheme: () => {},
   toggleTheme: () => {},
   ready: false,
