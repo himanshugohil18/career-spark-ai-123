@@ -15,7 +15,22 @@ import {
 } from "@/lib/simulator.functions";
 
 export const Route = createFileRoute("/_authenticated/interview/simulator")({
-  head: () => ({ meta: [{ title: "Mock Interview · CareerOS" }] }),
+  head: () => ({
+    meta: [
+      { title: "Mock Interview · CareerOS" },
+      {
+        name: "description",
+        content: "Run an adaptive AI mock interview in CareerOS with scored answers and a final debrief.",
+      },
+      { property: "og:title", content: "Mock Interview · CareerOS" },
+      {
+        property: "og:description",
+        content: "Run an adaptive AI mock interview in CareerOS with scored answers and a final debrief.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: SimulatorPage,
 });
 

@@ -10,7 +10,22 @@ import { AnimatedCounter } from "@/components/ui/animated-counter";
 import { getInterviewHub, toggleQuestionPracticed } from "@/lib/career-intel.functions";
 
 export const Route = createFileRoute("/_authenticated/interview")({
-  head: () => ({ meta: [{ title: "Interview Prep · CareerOS" }] }),
+  head: () => ({
+    meta: [
+      { title: "Interview Prep · CareerOS" },
+      {
+        name: "description",
+        content: "Practice interview questions, track readiness, and review CareerOS interview preparation progress.",
+      },
+      { property: "og:title", content: "Interview Prep · CareerOS" },
+      {
+        property: "og:description",
+        content: "Practice interview questions, track readiness, and review CareerOS interview preparation progress.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: InterviewPage,
 });
 
