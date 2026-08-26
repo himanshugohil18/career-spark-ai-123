@@ -308,8 +308,11 @@ export function seniorityFit(args: {
   // "Level not specified" match — the exact bug this guards against.
   const candidate: Seniority | null =
     args.candidate ?? seniorityFromYears(cYears) ?? "entry";
+  // Provider-supplied experience_level is frequently wrong (feeds label
+  // "Senior Staff Engineer" as entry). An explicit rung in the TITLE is the
+  // more trustworthy signal, so it wins; the feed label is the fallback.
   const job: Seniority | null =
-    seniorityFromJobLevel(args.jobLevel) ?? seniorityFromTitle(args.jobTitle ?? null);
+    seniorityFromTitle(args.jobTitle ?? null) ?? seniorityFromJobLevel(args.jobLevel);
 
   const base: Omit<SeniorityFit, "score" | "tier" | "delta" | "cap" | "label"> = {
     candidate,
