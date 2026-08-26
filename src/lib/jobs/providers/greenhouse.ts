@@ -4,6 +4,7 @@
  */
 
 import { slugify } from "../fingerprint";
+import { companyDisplayName, companyLogoUrl, companyWebsite } from "./company-names";
 import {
   detectCountry,
   detectExperience,
@@ -79,10 +80,10 @@ function mapJob(board: string, j: GhJob): NormalizedJob {
   return {
     title: j.title,
     company: {
-      name: board.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()),
+      name: companyDisplayName(board),
       slug: slugify(board),
       domain: null,
-      logoUrl: null,
+      logoUrl: companyLogoUrl(board),
       website: `https://boards.greenhouse.io/${board}`,
       industry: null,
       size: null,
