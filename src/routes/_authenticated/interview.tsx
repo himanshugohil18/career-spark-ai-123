@@ -55,6 +55,14 @@ function InterviewPage() {
         eyebrow="Interview Prep"
         title="Practice hub"
         description="Interview sessions are generated inside each Application Workspace. This is your central practice history and question bank."
+        meta={
+          <Link
+            to="/interview/simulator"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3.5 py-2 text-xs font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+          >
+            <MessagesSquare className="h-3.5 w-3.5" /> Start AI mock interview
+          </Link>
+        }
       />
 
       {isLoading ? (
