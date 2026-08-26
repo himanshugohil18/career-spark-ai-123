@@ -148,7 +148,9 @@ export async function buildJobSections(
       canonical.set(key, j);
     }
   }
-  const deduped = [...canonical.values()];
+  // Company diversity: a few very large employers would otherwise fill every
+  // section with their own roles. Round-robin keeps ranking but spreads brands.
+  const deduped = diversifyByCompany([...canonical.values()], 2);
 
   const byId = new Map(deduped.map((j) => [j.id, j]));
   // Diversity: no job appears in more than one section.
