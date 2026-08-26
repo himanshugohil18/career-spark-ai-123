@@ -1,4 +1,3 @@
-import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Radar } from "lucide-react";

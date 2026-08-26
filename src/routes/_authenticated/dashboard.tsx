@@ -149,7 +149,7 @@ function Dashboard() {
             </p>
           </div>
           <div className="hidden h-24 w-24 shrink-0 place-items-center rounded-3xl bg-accent text-primary md:grid">
-            <Sparkles className="h-8 w-8 text-primary drop-shadow-[0_0_18px_rgba(79,140,255,0.9)]" />
+            <Sparkles className="h-8 w-8" />
           </div>
         </div>
       </motion.div>
