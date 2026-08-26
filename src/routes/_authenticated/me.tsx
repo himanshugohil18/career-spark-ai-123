@@ -426,25 +426,17 @@ function MatchRing({ score, ready }: { score: number | null; ready: boolean }) {
     <div className="relative grid h-16 w-16 shrink-0 place-items-center">
       <svg viewBox="0 0 64 64" className="h-16 w-16 -rotate-90">
         <circle cx="32" cy="32" r={r} className="fill-none stroke-border" strokeWidth="6" />
-        <motion.circle
+        <circle
           cx="32"
           cy="32"
           r={r}
           fill="none"
           strokeWidth="6"
           strokeLinecap="round"
-          stroke="url(#ringGrad)"
+          className="stroke-primary transition-[stroke-dashoffset] duration-1000 ease-out"
           strokeDasharray={c}
-          initial={{ strokeDashoffset: c }}
-          animate={{ strokeDashoffset: offset }}
-          transition={{ duration: 1.2, ease }}
+          strokeDashoffset={offset}
         />
-        <defs>
-          <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#4F8CFF" />
-            <stop offset="100%" stopColor="#7C5CFF" />
-          </linearGradient>
-        </defs>
       </svg>
       <div className="absolute inset-0 grid place-items-center">
         <span className="font-display text-sm font-semibold tabular-nums">

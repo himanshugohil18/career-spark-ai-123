@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ai/skeleton";
+import { PageHeader, PageShell } from "@/components/product/page-header";
+import { EmptyState } from "@/components/product/empty-state";
 import {
   createOutreachMessage,
   deleteOutreachMessage,
@@ -107,14 +109,12 @@ function OutreachPage() {
   };
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8 p-6">
-      <header className="space-y-2">
-        <h1 className="text-2xl font-semibold tracking-tight">Recruiter outreach</h1>
-        <p className="max-w-2xl text-sm text-muted-foreground">
-          Drafts are grounded in your Career Brain — real roles, real projects, real skills. The
-          assistant is instructed never to invent mutual connections, metrics or history.
-        </p>
-      </header>
+    <PageShell>
+      <PageHeader
+        eyebrow="AI Tools"
+        title="Recruiter outreach"
+        description="Drafts are grounded in your Career Brain — real roles, real projects, real skills. The assistant is instructed never to invent mutual connections, metrics or history."
+      />
 
       <section className="space-y-4 rounded-xl border border-border bg-card/60 p-5">
         <div className="flex flex-wrap gap-2">
@@ -187,10 +187,12 @@ function OutreachPage() {
         {isLoading ? (
           <Skeleton className="h-32 w-full" />
         ) : (data ?? []).length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-8 text-center">
-            <Mail className="mx-auto mb-2 h-7 w-7 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No drafts yet.</p>
-          </div>
+          <EmptyState
+            icon={Mail}
+            title="No drafts yet"
+            body="Pick a message type above and draft your first recruiter note — grounded in your Career Brain."
+            compact
+          />
         ) : (
           <ul className="space-y-3">
             {(data ?? []).map((m) => (
@@ -240,6 +242,6 @@ function OutreachPage() {
           </ul>
         )}
       </section>
-    </div>
+    </PageShell>
   );
 }

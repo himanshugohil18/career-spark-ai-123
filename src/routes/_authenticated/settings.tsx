@@ -3,7 +3,6 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
-  Settings as SettingsIcon,
   LogOut,
   ShieldCheck,
   User as UserIcon,
@@ -12,11 +11,11 @@ import {
   Monitor,
   Camera,
   Loader2,
+  Brain,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { getCareerBrainSnapshot } from "@/lib/career-brain.service";
@@ -28,14 +27,25 @@ import {
   signOutEverywhere,
   getAvatarUrl,
 } from "@/lib/account.functions";
+import { PageHeader, PageShell } from "@/components/product/page-header";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/settings")({
   head: () => ({ meta: [{ title: "Settings · CareerOS" }] }),
   component: SettingsPage,
 });
 
+type SettingsTab = "account" | "security" | "preferences";
+
+const TABS: { key: SettingsTab; label: string; description: string; icon: typeof UserIcon }[] = [
+  { key: "account", label: "Account", description: "Profile, avatar & session", icon: UserIcon },
+  { key: "security", label: "Security", description: "Password, email & sign-ins", icon: ShieldCheck },
+  { key: "preferences", label: "Preferences", description: "Job ranking & Career Brain", icon: Sparkles },
+];
+
 function SettingsPage() {
   const qc = useQueryClient();
+  const [tab, setTab] = useState<SettingsTab>("account");
   const { data: brain } = useQuery({
     queryKey: ["career-brain"],
     queryFn: () => getCareerBrainSnapshot(),
@@ -53,45 +63,81 @@ function SettingsPage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6 p-6 md:p-10">
-      <header>
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">
-          Settings
-        </p>
-        <h1 className="mt-1 font-display text-3xl font-semibold">
-          Account & preferences
-        </h1>
-      </header>
+    <PageShell width="wide">
+      <PageHeader
+        eyebrow="Settings"
+        title="Account & preferences"
+        description="Manage your identity, security, and how CareerOS ranks opportunities for you."
+      />
 
-      <Tabs defaultValue="account" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="account" className="gap-2">
-            <UserIcon className="h-4 w-4" /> Account
-          </TabsTrigger>
-          <TabsTrigger value="security" className="gap-2">
-            <ShieldCheck className="h-4 w-4" /> Security
-          </TabsTrigger>
-          <TabsTrigger value="preferences" className="gap-2">
-            <Sparkles className="h-4 w-4" /> Preferences
-          </TabsTrigger>
-        </TabsList>
+      <div className="grid gap-8 md:grid-cols-[240px_minmax(0,1fr)]">
+        {/* Section nav */}
+        <nav className="flex gap-1 overflow-x-auto md:sticky md:top-24 md:flex-col md:self-start">
+          {TABS.map((t) => (
+            <button
+              key={t.key}
+              onClick={() => setTab(t.key)}
+              className={cn(
+                "flex shrink-0 items-center gap-3 rounded-xl px-3.5 py-3 text-left transition-colors md:w-full",
+                tab === t.key
+                  ? "bg-accent text-accent-foreground"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
+            >
+              <t.icon className={cn("h-4 w-4 shrink-0", tab === t.key && "text-primary")} />
+              <span className="min-w-0">
+                <span className="block text-sm font-medium">{t.label}</span>
+                <span className="hidden truncate text-[11px] text-muted-foreground md:block">{t.description}</span>
+              </span>
+            </button>
+          ))}
+        </nav>
 
-        <TabsContent value="account" className="mt-6 space-y-6">
-          <AccountSection
-            profile={workspace?.profile ?? null}
-            onSignOut={signOut}
-          />
-        </TabsContent>
+        <div className="min-w-0 space-y-6">
+          {tab === "account" && (
+            <AccountSection profile={workspace?.profile ?? null} onSignOut={signOut} />
+          )}
+          {tab === "security" && <SecuritySection />}
+          {tab === "preferences" && <PreferencesSection brain={brain} />}
+        </div>
+      </div>
+    </PageShell>
+  );
+}
 
-        <TabsContent value="security" className="mt-6 space-y-6">
-          <SecuritySection />
-        </TabsContent>
+/* ------------------------ Shared section shell ------------------------ */
 
-        <TabsContent value="preferences" className="mt-6 space-y-6">
-          <PreferencesSection brain={brain} />
-        </TabsContent>
-      </Tabs>
-    </div>
+function SettingsSection({
+  icon: Icon,
+  title,
+  description,
+  children,
+  actions,
+}: {
+  icon?: typeof UserIcon;
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+  actions?: React.ReactNode;
+}) {
+  return (
+    <section className="surface-card p-6 md:p-7">
+      <div className="mb-5 flex items-start justify-between gap-3 border-b border-border pb-4">
+        <div className="flex items-start gap-3">
+          {Icon && (
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-accent text-primary">
+              <Icon className="h-4 w-4" />
+            </span>
+          )}
+          <div>
+            <h2 className="section-title">{title}</h2>
+            {description && <p className="meta-text mt-1 max-w-lg leading-relaxed">{description}</p>}
+          </div>
+        </div>
+        {actions}
+      </div>
+      {children}
+    </section>
   );
 }
 
@@ -187,14 +233,11 @@ function AccountSection({
 
   return (
     <>
-      <section className="surface-card p-6">
-        <div className="mb-5 flex items-center gap-2">
-          <UserIcon className="h-4 w-4 text-primary" />
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Profile
-          </p>
-        </div>
-
+      <SettingsSection
+        icon={UserIcon}
+        title="Profile"
+        description="Your name and contact details, used across applications and outreach."
+      >
         <div className="flex flex-col gap-6 sm:flex-row sm:items-start">
           <div className="flex flex-col items-center gap-3">
             <div className="relative">
@@ -208,7 +251,7 @@ function AccountSection({
               <button
                 type="button"
                 onClick={() => fileRef.current?.click()}
-                className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-background shadow-sm transition hover:bg-accent"
+                className="absolute -bottom-1 -right-1 grid h-8 w-8 place-items-center rounded-full border border-border bg-card text-muted-foreground shadow-soft transition-colors hover:text-primary"
                 aria-label="Upload avatar"
               >
                 {uploadAvatar.isPending ? (
@@ -272,19 +315,17 @@ function AccountSection({
             </Button>
           </div>
         </div>
-      </section>
+      </SettingsSection>
 
-      <section className="surface-card p-6">
-        <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          Session
-        </p>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Sign out of this device.
-        </p>
-        <Button variant="outline" size="sm" onClick={onSignOut} className="mt-3">
+      <SettingsSection
+        icon={LogOut}
+        title="Session"
+        description="Sign out of CareerOS on this device. Your data stays saved."
+      >
+        <Button variant="outline" size="sm" onClick={onSignOut}>
           <LogOut className="h-4 w-4" /> Sign out
         </Button>
-      </section>
+      </SettingsSection>
     </>
   );
 }
@@ -344,13 +385,11 @@ function SecuritySection() {
 
   return (
     <>
-      <section className="surface-card p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <KeyRound className="h-4 w-4 text-primary" />
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Change password
-          </p>
-        </div>
+      <SettingsSection
+        icon={KeyRound}
+        title="Change password"
+        description="Use at least 8 characters. You'll stay signed in on this device."
+      >
         <div className="grid gap-3 sm:max-w-md">
           <div className="grid gap-1.5">
             <Label htmlFor="np">New password</Label>
@@ -380,13 +419,14 @@ function SecuritySection() {
             {changePw.isPending ? "Updating…" : "Update password"}
           </Button>
         </div>
-      </section>
+      </SettingsSection>
 
-      <section className="surface-card p-6">
-        <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          Change email
-        </p>
-        <div className="mt-3 grid gap-3 sm:max-w-md">
+      <SettingsSection
+        icon={ShieldCheck}
+        title="Change email"
+        description="We'll send a confirmation link to the new address before switching."
+      >
+        <div className="grid gap-3 sm:max-w-md">
           <div className="grid gap-1.5">
             <Label htmlFor="ne">New email address</Label>
             <Input
@@ -405,31 +445,22 @@ function SecuritySection() {
           >
             {changeEmail.isPending ? "Sending…" : "Send confirmation"}
           </Button>
-          <p className="text-[11px] text-muted-foreground">
-            You'll receive a confirmation link at the new address.
-          </p>
         </div>
-      </section>
+      </SettingsSection>
 
-      <section className="surface-card p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <Monitor className="h-4 w-4 text-primary" />
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Login activity
-          </p>
-        </div>
-        <p className="text-sm text-muted-foreground">
-          Your last 25 sign-in events. If anything looks unfamiliar, sign out
-          everywhere and change your password.
-        </p>
-        <div className="mt-4 divide-y divide-border rounded-lg border border-border">
+      <SettingsSection
+        icon={Monitor}
+        title="Login activity"
+        description="Your last 25 sign-in events. If anything looks unfamiliar, sign out everywhere and change your password."
+      >
+        <div className="divide-y divide-border rounded-xl border border-border">
           {(events ?? []).length === 0 ? (
             <p className="p-4 text-sm text-muted-foreground">No activity yet.</p>
           ) : (
             (events ?? []).map((ev) => (
               <div
                 key={ev.id}
-                className="flex flex-col gap-1 p-3 text-sm sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-1 p-3.5 text-sm sm:flex-row sm:items-center sm:justify-between"
               >
                 <div>
                   <p className="font-medium capitalize">
@@ -464,7 +495,7 @@ function SecuritySection() {
             {signOutAll.isPending ? "Signing out…" : "Sign out everywhere"}
           </Button>
         </div>
-      </section>
+      </SettingsSection>
     </>
   );
 }
@@ -523,13 +554,11 @@ function PreferencesSection({
 
   return (
     <>
-      <section className="surface-card p-6">
-        <div className="mb-4 flex items-center gap-2">
-          <SettingsIcon className="h-4 w-4 text-primary" />
-          <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-            Ranking preferences
-          </p>
-        </div>
+      <SettingsSection
+        icon={Sparkles}
+        title="Ranking preferences"
+        description="These steer how the matching engine scores and orders jobs in your feed."
+      >
         <div className="grid gap-4 sm:max-w-lg">
           <div className="grid gap-1.5">
             <Label htmlFor="pr">Preferred role</Label>
@@ -567,33 +596,36 @@ function PreferencesSection({
             {save.isPending ? "Saving…" : "Save preferences"}
           </Button>
         </div>
-      </section>
+      </SettingsSection>
 
-      <section className="surface-card p-6">
-        <p className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          Career Brain
-        </p>
-        <div className="mt-2 grid gap-1 text-sm">
-          <p>
-            <span className="text-muted-foreground">Brain version</span> · v
-            {brain?.metadata.brainVersion ?? "—"}
-          </p>
-          <p>
-            <span className="text-muted-foreground">Resume version</span> · v
-            {brain?.metadata.resumeVersion ?? "—"}
-          </p>
-          <p>
-            <span className="text-muted-foreground">Last analyzed</span> ·{" "}
-            {brain?.metadata.lastGeneratedAt
-              ? new Date(brain.metadata.lastGeneratedAt).toLocaleString()
-              : "—"}
-          </p>
-          <p>
-            <span className="text-muted-foreground">AI model</span> ·{" "}
-            {brain?.metadata.aiModel ?? "—"}
-          </p>
-        </div>
-        <div className="mt-4 flex flex-wrap items-center gap-2">
+      <SettingsSection
+        icon={Brain}
+        title="Career Brain"
+        description="The AI model of your career that powers matching, applications and coaching."
+      >
+        <dl className="grid gap-2 text-sm sm:grid-cols-2">
+          <div className="flex items-baseline gap-2">
+            <dt className="text-muted-foreground">Brain version</dt>
+            <dd className="font-semibold">v{brain?.metadata.brainVersion ?? "—"}</dd>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <dt className="text-muted-foreground">Resume version</dt>
+            <dd className="font-semibold">v{brain?.metadata.resumeVersion ?? "—"}</dd>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <dt className="text-muted-foreground">Last analyzed</dt>
+            <dd className="font-semibold">
+              {brain?.metadata.lastGeneratedAt
+                ? new Date(brain.metadata.lastGeneratedAt).toLocaleString()
+                : "—"}
+            </dd>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <dt className="text-muted-foreground">AI model</dt>
+            <dd className="font-semibold">{brain?.metadata.aiModel ?? "—"}</dd>
+          </div>
+        </dl>
+        <div className="mt-5 flex flex-wrap items-center gap-3">
           <Button
             variant="outline"
             size="sm"
@@ -611,12 +643,12 @@ function PreferencesSection({
           </Button>
           <Link
             to="/profile"
-            className="text-sm text-primary underline-offset-2 hover:underline"
+            className="text-sm font-medium text-primary underline-offset-2 hover:underline"
           >
             Manage Career Brain →
           </Link>
         </div>
-      </section>
+      </SettingsSection>
     </>
   );
 }

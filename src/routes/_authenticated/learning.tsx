@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { GraduationCap, ExternalLink, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ai/skeleton";
+import { PageHeader } from "@/components/product/page-header";
 import { getLearningPaths } from "@/lib/career-intel.functions";
 
 export const Route = createFileRoute("/_authenticated/learning")({
@@ -19,22 +20,18 @@ function LearningPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 p-6 md:p-10">
-      <motion.header
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Learning</p>
-        <h1 className="mt-1 font-display text-3xl font-semibold">Personalized skill paths</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Ranked by frequency across your gap analyses and top matches. Every path here unlocks real roles you already partially qualify for.
-        </p>
-        {data?.targetRole && (
-          <p className="mt-2 text-xs text-muted-foreground">
-            Target role · <span className="text-foreground">{data.targetRole}</span>
-          </p>
-        )}
-      </motion.header>
+      <PageHeader
+        eyebrow="Learning"
+        title="Personalized skill paths"
+        description="Ranked by frequency across your gap analyses and top matches. Every path here unlocks real roles you already partially qualify for."
+        meta={
+          data?.targetRole ? (
+            <span className="text-xs text-muted-foreground">
+              Target role · <span className="text-foreground">{data.targetRole}</span>
+            </span>
+          ) : undefined
+        }
+      />
 
       {isLoading ? (
         <div className="space-y-3">

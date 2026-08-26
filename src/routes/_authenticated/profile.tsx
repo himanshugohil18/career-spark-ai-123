@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { motion } from "framer-motion";
 import {
   Award,
   Briefcase,
@@ -30,9 +29,9 @@ import {
   updateProfile,
 } from "@/lib/profile.functions";
 import { setActiveResume } from "@/lib/resume.functions";
+import { PageHeader, PageShell } from "@/components/product/page-header";
 import { cn } from "@/lib/utils";
 
-const ease = [0.22, 1, 0.36, 1] as const;
 
 export const Route = createFileRoute("/_authenticated/profile")({
   head: () => ({ meta: [{ title: "Profile · CareerOS" }] }),
@@ -84,23 +83,12 @@ function ProfilePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-5xl space-y-10 p-6 md:p-10">
-      <motion.div
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease }}
-      >
-        <p className="font-mono text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-          Career Brain
-        </p>
-        <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight md:text-4xl">
-          Your profile
-        </h1>
-        <p className="mt-2 max-w-2xl text-[15px] leading-relaxed text-muted-foreground">
-          Everything CareerOS knows about you. Every module — Discovery,
-          Optimizer, Interview — reads from here.
-        </p>
-      </motion.div>
+    <PageShell width="wide">
+      <PageHeader
+        eyebrow="Career Brain"
+        title="Your profile"
+        description="Everything CareerOS knows about you. Every module — Discovery, Optimizer, Interview — reads from here."
+      />
 
       {/* Resume manager */}
       <section className="space-y-4">
@@ -288,7 +276,7 @@ function ProfilePage() {
         emptyMessage="No achievements yet."
         onDelete={(id) => deleteMutation.mutate({ table: "achievements", id })}
       />
-    </div>
+    </PageShell>
   );
 }
 

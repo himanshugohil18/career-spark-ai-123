@@ -2,13 +2,27 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { Trash2, ExternalLink, Wand2, Search, Pencil, Check, X } from "lucide-react";
+import {
+  Bookmark,
+  Briefcase,
+  Check,
+  ExternalLink,
+  Pencil,
+  Search,
+  Sparkles,
+  Trash2,
+  Wand2,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ai/skeleton";
 import { listSavedJobs, unsaveJob, updateSavedJob } from "@/lib/jobs.functions";
 import { openWorkspace } from "@/lib/workspace.functions";
 import { openExternal } from "@/lib/open-external";
+import { PageHeader, PageShell } from "@/components/product/page-header";
+import { EmptyState } from "@/components/product/empty-state";
+import { cn } from "@/lib/utils";
 
 const TABS = [
   { key: "all", label: "All" },
@@ -75,52 +89,70 @@ function SavedJobs() {
     return out;
   }, [data, q, remoteOnly, sort]);
 
-  return (
-    <div className="mx-auto w-full max-w-5xl space-y-6 p-6 md:p-10">
-      <header>
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Saved</p>
-        <h1 className="mt-1 font-display text-3xl font-semibold">Your job library</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Every job you bookmarked, sortable and searchable. Turn any saved role into an application workspace with one click.
-        </p>
-      </header>
+  const total = (data ?? []).length;
 
-      <div className="flex flex-wrap gap-1.5 border-b border-border">
+  return (
+    <PageShell>
+      <PageHeader
+        eyebrow="Job library"
+        title="Saved jobs"
+        description="Every role you bookmarked — searchable, sortable, and one click away from an AI-prepared application."
+        meta={
+          total > 0 ? (
+            <span className="stage-chip">
+              <Bookmark className="h-3.5 w-3.5 text-primary" />
+              {total} {total === 1 ? "role" : "roles"} in your library
+            </span>
+          ) : undefined
+        }
+        actions={
+          <Button variant="primary" asChild>
+            <Link to="/jobs">
+              <Briefcase className="h-4 w-4" /> Discover jobs
+            </Link>
+          </Button>
+        }
+      />
+
+      {/* Tabs */}
+      <div className="flex flex-wrap gap-1 rounded-xl border border-border bg-muted/50 p-1">
         {TABS.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`px-3 py-2 text-sm ${
+            className={cn(
+              "rounded-lg px-3.5 py-2 text-sm font-medium transition-colors",
               tab === t.key
-                ? "border-b-2 border-primary text-foreground"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
+                ? "bg-card text-foreground shadow-soft"
+                : "text-muted-foreground hover:text-foreground",
+            )}
           >
             {t.label}
           </button>
         ))}
       </div>
 
+      {/* Toolbar */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[220px] flex-1">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search title, company, location, notes…" className="pl-9" />
         </div>
-        <label className="flex items-center gap-2 text-xs text-muted-foreground">
-          <input type="checkbox" checked={remoteOnly} onChange={(e) => setRemoteOnly(e.target.checked)} />
+        <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+          <input type="checkbox" checked={remoteOnly} onChange={(e) => setRemoteOnly(e.target.checked)} className="accent-primary" />
           Remote only
         </label>
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortKey)}
-          className="h-9 rounded-md border border-border bg-elevated px-2 text-sm"
+          className="h-10 rounded-lg border border-border bg-card px-3 text-sm outline-none focus:border-primary"
         >
           <option value="recent">Recently saved</option>
           <option value="title">Title A→Z</option>
           <option value="company">Company A→Z</option>
         </select>
-        <span className="ml-auto font-mono text-[10px] uppercase tracking-widest text-muted-foreground">
-          {filtered.length} of {(data ?? []).length}
+        <span className="meta-text ml-auto">
+          Showing {filtered.length} of {total}
         </span>
       </div>
 
@@ -128,13 +160,31 @@ function SavedJobs() {
         <div className="space-y-3">
           <Skeleton className="h-24 rounded-xl" />
           <Skeleton className="h-24 rounded-xl" />
+          <Skeleton className="h-24 rounded-xl" />
         </div>
       ) : filtered.length === 0 ? (
-        <div className="surface-card p-10 text-center text-sm text-muted-foreground">
-          {(data ?? []).length === 0
-            ? "Nothing here yet. Save jobs from the Jobs page and they'll appear here."
-            : "No saved jobs match your filters."}
-        </div>
+        total === 0 ? (
+          <EmptyState
+            icon={Bookmark}
+            eyebrow="Nothing saved yet"
+            title="Build your job library"
+            body="Save roles from the discovery feed and CareerOS will track them here — ready to turn into AI-prepared applications whenever you are."
+            action={{ label: "Explore matches", to: "/jobs" }}
+            secondaryAction={{ label: "Ask the assistant", to: "/chat" }}
+            tips={[
+              { icon: Sparkles, label: "See high-match roles", to: "/jobs" },
+              { icon: Briefcase, label: "Browse collections", to: "/jobs/collections" },
+            ]}
+          />
+        ) : (
+          <EmptyState
+            icon={Search}
+            title="No saved jobs match your filters"
+            body="Try a different search term, clear the remote-only filter, or switch tabs."
+            action={{ label: "Clear search", onClick: () => { setQ(""); setRemoteOnly(false); } }}
+            compact
+          />
+        )
       ) : (
         <ul className="space-y-3">
           {filtered.map((row: any) => (
@@ -148,7 +198,27 @@ function SavedJobs() {
           ))}
         </ul>
       )}
-    </div>
+
+      {/* Low-content nudge: library exists but is small */}
+      {!isLoading && filtered.length > 0 && total <= 2 && (
+        <div className="surface-highlight flex flex-col items-start justify-between gap-3 p-5 sm:flex-row sm:items-center">
+          <div className="flex items-start gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+              <Sparkles className="h-4 w-4" />
+            </span>
+            <div>
+              <p className="text-sm font-semibold">Your library is just getting started</p>
+              <p className="mt-0.5 text-[13px] text-muted-foreground">
+                CareerOS refreshes matches daily — save a few more roles so your agent always has something ready.
+              </p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/jobs">Find more matches</Link>
+          </Button>
+        </div>
+      )}
+    </PageShell>
   );
 }
 
@@ -204,57 +274,58 @@ function SavedRow({
   if (!job) return null;
 
   return (
-    <li className="surface-card flex flex-col gap-3 p-4">
+    <li className="surface-card p-4 transition-shadow hover:shadow-card md:p-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="min-w-0 flex-1">
-          <Link
-            to="/jobs/$jobId"
-            params={{ jobId: job.id }}
-            className="font-display text-base font-semibold hover:text-primary"
-          >
-            {job.title}
-          </Link>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {job.company?.name ?? "—"} · {job.location ?? "—"}{job.remote_status ? ` · ${job.remote_status}` : ""}
-          </p>
-          {!editing && row.notes && (
-            <p className="mt-1 line-clamp-2 text-xs text-foreground/80">{row.notes}</p>
-          )}
+        <div className="flex min-w-0 flex-1 items-start gap-3.5">
+          <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-lg border border-border bg-muted text-muted-foreground">
+            {job.company?.logo_url ? (
+              <img src={job.company.logo_url} alt={job.company?.name ?? "Company"} className="h-full w-full object-cover" loading="lazy" />
+            ) : (
+              <Briefcase className="h-4.5 w-4.5" />
+            )}
+          </div>
+          <div className="min-w-0">
+            <Link
+              to="/jobs/$jobId"
+              params={{ jobId: job.id }}
+              className="block truncate text-[15px] font-semibold hover:text-primary"
+            >
+              {job.title}
+            </Link>
+            <p className="mt-0.5 truncate text-xs text-muted-foreground">
+              {job.company?.name ?? "—"} · {job.location ?? "—"}{job.remote_status ? ` · ${job.remote_status}` : ""}
+            </p>
+            {!editing && row.notes && (
+              <p className="mt-1.5 line-clamp-2 text-xs italic text-muted-foreground">“{row.notes}”</p>
+            )}
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="primary" size="sm" onClick={() => onPrepare(job.id)} disabled={preparing}>
             <Wand2 className="h-4 w-4" /> Prepare
           </Button>
-          <Link
-            to="/jobs/$jobId"
-            params={{ jobId: job.id }}
-            className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-elevated px-3 text-xs hover:border-primary/40"
-          >
-            Open
-          </Link>
+          <Button variant="outline" size="sm" asChild>
+            <Link to="/jobs/$jobId" params={{ jobId: job.id }}>Open</Link>
+          </Button>
           {job.application_url && (
-            <button
-              type="button"
-              onClick={() => openExternal(job.application_url)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-md border border-border bg-elevated px-3 text-xs hover:border-primary/40"
-            >
+            <Button variant="outline" size="sm" onClick={() => openExternal(job.application_url)}>
               Apply <ExternalLink className="h-3 w-3" />
-            </button>
+            </Button>
           )}
-          <Button variant="ghost" size="sm" onClick={() => setEditing((v) => !v)}>
+          <Button variant="ghost" size="sm" onClick={() => setEditing((v) => !v)} aria-label="Edit notes">
             <Pencil className="h-4 w-4" />
           </Button>
-          <Button variant="ghost" size="sm" onClick={() => onRemove(job.id)}>
+          <Button variant="ghost" size="sm" onClick={() => onRemove(job.id)} aria-label="Remove">
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
       </div>
       {editing && (
-        <div className="grid gap-3 rounded-lg border border-border bg-elevated/40 p-3 md:grid-cols-[160px_1fr_auto]">
+        <div className="mt-3 grid gap-3 rounded-xl border border-border bg-muted/50 p-3 md:grid-cols-[160px_minmax(0,1fr)_auto]">
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value)}
-            className="h-9 rounded-md border border-border bg-background px-2 text-sm"
+            className="h-9 rounded-lg border border-border bg-card px-2 text-sm outline-none focus:border-primary"
           >
             {STATUS_OPTIONS.map((s) => (
               <option key={s.value} value={s.value}>{s.label}</option>
@@ -265,7 +336,7 @@ function SavedRow({
             onChange={(e) => setNotes(e.target.value)}
             placeholder="Notes — why this role, referrals, contacts, follow-up dates…"
             rows={2}
-            className="w-full resize-y rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:border-primary"
+            className="w-full resize-y rounded-lg border border-border bg-card px-3 py-2 text-sm outline-none focus:border-primary"
           />
           <div className="flex items-start gap-2">
             <Button variant="primary" size="sm" onClick={() => save.mutate()} disabled={save.isPending}>

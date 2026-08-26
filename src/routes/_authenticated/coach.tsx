@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { motion } from "framer-motion";
 import { Sparkles, TrendingUp, Wallet, GraduationCap, Compass, Radar, Wrench } from "lucide-react";
 import { Skeleton } from "@/components/ai/skeleton";
+import { PageHeader } from "@/components/product/page-header";
 import { getCoachBriefing } from "@/lib/career-intel.functions";
 
 export const Route = createFileRoute("/_authenticated/coach")({
@@ -29,26 +30,22 @@ function CoachPage() {
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-8 p-6 md:p-10">
-      <motion.header
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">AI Coach</p>
-        <h1 className="mt-1 font-display text-3xl font-semibold">Today's briefing</h1>
-        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-          Personalized, quantitative guidance derived from your Career Brain, live matches, and application readiness — refreshed on every visit.
-        </p>
-        {data?.families?.length ? (
-          <div className="mt-3 flex flex-wrap gap-1.5">
-            {data.families.map((f) => (
-              <span key={f.id} className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest text-primary">
-                {f.label}
-              </span>
-            ))}
-          </div>
-        ) : null}
-      </motion.header>
+      <PageHeader
+        eyebrow="AI Coach"
+        title="Today's briefing"
+        description="Personalized, quantitative guidance derived from your Career Brain, live matches, and application readiness — refreshed on every visit."
+        meta={
+          data?.families?.length ? (
+            <>
+              {data.families.map((f) => (
+                <span key={f.id} className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 font-mono text-[10px] uppercase tracking-widest text-primary">
+                  {f.label}
+                </span>
+              ))}
+            </>
+          ) : undefined
+        }
+      />
 
       {isLoading ? (
         <div className="grid gap-3 md:grid-cols-2">

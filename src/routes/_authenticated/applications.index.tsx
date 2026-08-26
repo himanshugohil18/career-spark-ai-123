@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { Building2, Command, Search, Sparkles } from "lucide-react";
+import { Building2, Search, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ai/skeleton";
 import { MatchRing } from "@/features/jobs/match-ring";
+import { PageHeader, PageShell } from "@/components/product/page-header";
+import { EmptyState } from "@/components/product/empty-state";
 import { listWorkspaces } from "@/lib/workspace.functions";
 
 export const Route = createFileRoute("/_authenticated/applications/")({
@@ -55,18 +56,12 @@ function ApplicationsIndex() {
   }, [data, q, sort]);
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 p-6 md:p-10">
-      <motion.header
-        initial={{ opacity: 0, y: 6 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-      >
-        <p className="font-mono text-[11px] uppercase tracking-widest text-muted-foreground">Application Intelligence</p>
-        <h1 className="mt-1 font-display text-3xl font-semibold">Your applications</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Every role you're preparing for. AI keeps ATS, gaps, and readiness fresh per application.
-        </p>
-      </motion.header>
+    <PageShell width="wide">
+      <PageHeader
+        eyebrow="Application Intelligence"
+        title="Your applications"
+        description="Every role you're preparing for. AI keeps ATS, gaps, and readiness fresh per application."
+      />
 
       <div className="flex flex-wrap items-center gap-3">
         <div className="relative min-w-[220px] flex-1">
@@ -95,16 +90,12 @@ function ApplicationsIndex() {
       )}
 
       {!isLoading && (data?.length ?? 0) === 0 && (
-        <div className="surface-card p-10 text-center">
-          <Sparkles className="mx-auto h-6 w-6 text-primary" />
-          <h3 className="mt-3 font-display text-lg font-semibold">No applications yet</h3>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Open any job and choose <span className="font-semibold text-foreground">Prepare Application</span> to spin up a workspace.
-          </p>
-          <Link to="/jobs" className="mt-4 inline-flex items-center gap-2 rounded-md border border-border bg-elevated px-3 py-1.5 text-sm hover:bg-primary/10">
-            <Command className="h-4 w-4" /> Browse jobs
-          </Link>
-        </div>
+        <EmptyState
+          icon={Sparkles}
+          title="No applications yet"
+          body="Open any job and choose Prepare Application to spin up a workspace."
+          action={{ label: "Browse jobs", to: "/jobs" }}
+        />
       )}
 
       {!isLoading && rows.length > 0 && (
@@ -163,6 +154,6 @@ function ApplicationsIndex() {
           </ul>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }
