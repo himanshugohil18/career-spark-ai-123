@@ -28,6 +28,7 @@ function AdminAnalytics() {
     refetchInterval: 60_000,
   });
   const data = q.data?.series ?? [];
+  const chartRows = data.map((r: any) => ({ ...r, label: String(r.date).slice(5) }));
 
   return (
     <div className="space-y-6">
@@ -55,27 +56,27 @@ function AdminAnalytics() {
                   {
                     title: "Signups, AI usage and applications",
                     type: "line",
-                    labels: data.map((r: any) => r.date.slice(5)),
+                    xKey: "label",
                     series: [
                       { key: "signups", label: "Signups", color: CHART_COLORS.blue },
                       { key: "ai", label: "AI requests", color: CHART_COLORS.green },
                       { key: "applications", label: "Applications", color: CHART_COLORS.amber },
                     ],
-                    rows: data as any,
+                    data: chartRows,
                   },
                   {
                     title: "Revenue per day (₹)",
                     type: "bar",
-                    labels: data.map((r: any) => r.date.slice(5)),
+                    xKey: "label",
                     series: [{ key: "revenue", label: "Revenue", color: CHART_COLORS.blue }],
-                    rows: data as any,
+                    data: chartRows,
                   },
                   {
                     title: "Jobs discovered per day",
                     type: "bar",
-                    labels: data.map((r: any) => r.date.slice(5)),
+                    xKey: "label",
                     series: [{ key: "jobs", label: "Jobs", color: CHART_COLORS.green }],
-                    rows: data as any,
+                    data: chartRows,
                   },
                 ],
                 tables: [
