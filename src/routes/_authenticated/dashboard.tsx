@@ -38,6 +38,7 @@ import { Reveal } from "@/components/motion/reveal";
 import { PageShell, SectionHeading } from "@/components/product/page-header";
 import { EmptyState } from "@/components/product/empty-state";
 import { ProgressRing, scoreTone } from "@/components/product/progress-ring";
+import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -172,6 +173,13 @@ function Dashboard() {
 
   return (
     <PageShell width="wide" className="space-y-10">
+      <ImmersiveCommandHeader
+        displayName={displayName}
+        healthScore={healthScore}
+        priorities={topPriorities}
+        matchCount={activity?.matchCount ?? 0}
+        highMatchCount={activity?.highMatchCount ?? 0}
+      />
       {/* ── Welcome ─────────────────────────────────────────────── */}
       <motion.section
         initial={{ opacity: 0, y: 8 }}
