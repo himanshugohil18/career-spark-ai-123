@@ -1,11 +1,12 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
-import { Building2, Command, Search, Sparkles } from "lucide-react";
+import { Building2, Search, Sparkles } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ai/skeleton";
 import { MatchRing } from "@/features/jobs/match-ring";
+import { PageHeader, PageShell } from "@/components/product/page-header";
+import { EmptyState } from "@/components/product/empty-state";
 import { listWorkspaces } from "@/lib/workspace.functions";
 
 export const Route = createFileRoute("/_authenticated/applications/")({
@@ -153,6 +154,6 @@ function ApplicationsIndex() {
           </ul>
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }
