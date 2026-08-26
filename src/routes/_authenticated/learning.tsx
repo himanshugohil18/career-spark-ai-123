@@ -13,11 +13,21 @@ export const Route = createFileRoute("/_authenticated/learning")({
 });
 
 function LearningPage() {
+  const queryClient = useQueryClient();
   const { data, isLoading } = useQuery({
     queryKey: ["learning-paths"],
     queryFn: () => getLearningPaths(),
     staleTime: 60_000,
   });
+  const { data: completed } = useQuery({
+    queryKey: ["learning-progress"],
+    queryFn: () => getLearningProgress(),
+  });
+  const toggleMut = useMutation({
+    mutationFn: (v: { skill: string; completed: boolean }) => toggleLearningSkill({ data: v }),
+    onSuccess: () => void queryClient.invalidateQueries({ queryKey: ["learning-progress"] }),
+  });
+  const doneSet = new Set((completed ?? []).map((s: string) => s));
 
   return (
     <div className="mx-auto w-full max-w-5xl space-y-6 p-6 md:p-10">
