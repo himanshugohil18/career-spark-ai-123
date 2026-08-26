@@ -2,9 +2,12 @@
  * Location affinity — shared by the matching engine, the feed ranker and the
  * baseline scorer so "jobs near me" behaves consistently everywhere.
  *
- * Returns 0..1. Exact city hit ranks highest, then same metro/state, then same
- * country, then remote, then everything else.
+ * Country/region resolution is delegated to ./geo (single source of truth), so
+ * "Remote - US", "CA", "San Francisco" and "Bengaluru, Karnataka" all classify
+ * correctly no matter which provider column they arrived in.
  */
+
+import { resolveCountryCode, resolveGeo, isIndiaText, type Region } from "./geo";
 
 const CITY_ALIASES: Record<string, string[]> = {
   bengaluru: ["bangalore", "blr", "bengaluru"],
@@ -21,30 +24,13 @@ const CITY_ALIASES: Record<string, string[]> = {
   kolkata: ["calcutta", "kolkata"],
 };
 
-const COUNTRY_HINTS: Record<string, string[]> = {
-  india: [
-    "india", "bharat", "bengaluru", "bangalore", "mumbai", "bombay", "navi mumbai", "thane",
-    "delhi", "new delhi", "ncr", "noida", "gurgaon", "gurugram", "faridabad", "ghaziabad",
-    "pune", "pimpri", "hyderabad", "secunderabad", "chennai", "madras", "kolkata", "calcutta",
-    "ahmedabad", "gandhinagar", "jaipur", "indore", "bhopal", "surat", "vadodara", "rajkot",
-    "kochi", "cochin", "trivandrum", "thiruvananthapuram", "coimbatore", "madurai", "mysore",
-    "mysuru", "chandigarh", "mohali", "lucknow", "kanpur", "nagpur", "nashik", "visakhapatnam",
-    "vijayawada", "bhubaneswar", "guwahati", "dehradun", "raipur", "gujarat", "maharashtra",
-    "karnataka", "tamil nadu", "telangana", "kerala", "rajasthan", "punjab", "haryana",
-    "west bengal", "uttar pradesh", "madhya pradesh", "andhra pradesh", "odisha",
-  ],
-  "united states": ["usa", "u.s.", "united states", "new york", "san francisco", "seattle", "austin", "boston", "chicago"],
-  "united kingdom": ["uk", "united kingdom", "london", "manchester", "england"],
-  germany: ["germany", "berlin", "munich", "hamburg"],
-  canada: ["canada", "toronto", "vancouver", "montreal"],
-};
-
 /** Country names/abbreviations — never treated as a "city" match. */
 const COUNTRY_WORDS = new Set([
   "india", "bharat", "usa", "us", "u.s.", "united states", "america", "uk",
-  "united kingdom", "england", "germany", "canada", "remote", "anywhere", "worldwide",
+  "united kingdom", "england", "britain", "germany", "france", "canada", "ireland",
+  "netherlands", "australia", "singapore", "japan", "remote", "hybrid", "onsite",
+  "anywhere", "worldwide", "global", "emea", "apac", "latam", "europe", "asia",
 ]);
-
 
 function norm(v: string | null | undefined): string {
   return (v ?? "").toLowerCase().replace(/[^a-z\s,]/g, " ").replace(/\s+/g, " ").trim();
@@ -63,15 +49,6 @@ function expand(term: string): string[] {
   return [...out];
 }
 
-function countryOf(text: string): string | null {
-  for (const [country, hints] of Object.entries(COUNTRY_HINTS)) {
-    if (hints.some((h) => text === h || text.includes(` ${h}`) || text.startsWith(`${h} `) || text.includes(`, ${h}`))) {
-      return country;
-    }
-  }
-  return null;
-}
-
 export type LocationAffinityInput = {
   jobLocation?: string | null;
   jobCountry?: string | null;
@@ -81,23 +58,48 @@ export type LocationAffinityInput = {
   preferred: Array<string | null | undefined>;
 };
 
-/** Country a remote posting is restricted to, or null when worldwide. */
-function remoteRestriction(input: LocationAffinityInput): string | null {
-  const blob = norm(
-    `${input.jobLocation ?? ""} ${input.jobCountry ?? ""} ${(input.description ?? "").slice(0, 1200)}`,
-  );
-  if (/\b(worldwide|anywhere|global|globally|any location)\b/.test(blob)) return null;
-  const c = countryOf(norm(`${input.jobLocation ?? ""} ${input.jobCountry ?? ""}`));
-  if (c) return c;
-  const m = blob.match(/\b(?:us|usa|united states|uk|united kingdom|canada|germany|india)\b(?=[^a-z]*only)/);
-  if (m) return countryOf(m[0]) ?? m[0];
+/** Candidate's own country code, resolved from their preferred locations. */
+function candidateCountry(prefs: Array<string | null | undefined>): string | null {
+  for (const p of prefs) {
+    const c = resolveCountryCode(p);
+    if (c) return c;
+  }
   return null;
+}
+
+/**
+ * Country a remote posting is restricted to, or null when worldwide.
+ * Reads the structured columns first, then scans the posting text for
+ * "<country> only" / "must be based in <country>" / "authorized to work in".
+ */
+export function remoteRestriction(input: LocationAffinityInput): string | null {
+  const structured = `${input.jobLocation ?? ""} , ${input.jobCountry ?? ""}`;
+  const structuredGeo = resolveGeo(structured);
+  if (structuredGeo.countryCode) return structuredGeo.countryCode;
+  if (structuredGeo.worldwide) return null;
+
+  const blob = (input.description ?? "").slice(0, 2000).toLowerCase();
+  if (!blob) return null;
+  if (/\b(worldwide|anywhere in the world|fully distributed|any location)\b/.test(blob)) return null;
+  const m = blob.match(
+    /\b(?:only|based in|located in|reside in|residents of|authorized to work in|eligible to work in|work authorization in)\b[^.]{0,60}/,
+  );
+  const window =
+    blob.match(/\b([a-z .]{2,24})\s+(?:only|based|residents|applicants only)\b/)?.[1] ?? m?.[0] ?? "";
+  const code = resolveCountryCode(window);
+  return code;
+}
+
+/** Macro region of a posting. */
+function jobRegion(input: LocationAffinityInput): Region {
+  return resolveGeo(`${input.jobLocation ?? ""} , ${input.jobCountry ?? ""}`).region;
 }
 
 export function locationAffinity(input: LocationAffinityInput): number {
   const prefs = input.preferred.map(norm).filter(Boolean);
   const jobText = norm(`${input.jobLocation ?? ""} ${input.jobCountry ?? ""}`);
   const remote = (input.remoteStatus ?? "").toLowerCase();
+  const prefCountry = candidateCountry(input.preferred);
 
   const wantsRemote = prefs.some((p) => p.includes("remote") || p.includes("anywhere"));
   if (remote === "remote") {
@@ -105,9 +107,12 @@ export function locationAffinity(input: LocationAffinityInput): number {
     // this candidate — an India-based user cannot take a "Remote (US only)"
     // job, so it must never rank like an India-remote role.
     const restrictedTo = remoteRestriction(input);
-    const prefCountry = prefs.map(countryOf).find(Boolean) ?? null;
-    if (restrictedTo && prefCountry && restrictedTo !== prefCountry) return 0.34;
-    if (restrictedTo && prefCountry && restrictedTo === prefCountry) return 1;
+    if (restrictedTo && prefCountry) {
+      if (restrictedTo === prefCountry) return 1;
+      const sameRegion = resolveGeo(restrictedTo).region === resolveGeo(prefCountry).region;
+      return sameRegion ? 0.4 : 0.22;
+    }
+    if (restrictedTo && !prefCountry) return 0.6;
     return wantsRemote ? 1 : 0.86;
   }
   if (!prefs.length) return jobText ? 0.6 : 0.55;
@@ -122,15 +127,19 @@ export function locationAffinity(input: LocationAffinityInput): number {
     }
   }
 
-
-  const jobCountry = countryOf(jobText) ?? (norm(input.jobCountry ?? "") || null);
-  const prefCountry = prefs.map(countryOf).find(Boolean) ?? null;
+  const jobCountry = resolveCountryCode(jobText);
   if (jobCountry && prefCountry && jobCountry === prefCountry) return 0.8;
+  if (jobCountry && prefCountry) {
+    // Different country: same macro region is still far more plausible than
+    // a different continent (relocation/timezone reality).
+    const sameRegion = jobRegion(input) === resolveGeo(prefCountry).region;
+    if (sameRegion) return remote === "hybrid" ? 0.42 : 0.36;
+    return remote === "hybrid" ? 0.2 : 0.12;
+  }
 
   if (remote === "hybrid") return 0.45;
   return 0.2;
 }
-
 
 /** Preferred-location strings pulled off a Career Brain snapshot. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -171,25 +180,23 @@ const NEARBY_CITIES: Record<string, string[]> = {
   chandigarh: ["mohali", "panchkula", "delhi"],
 };
 
-const INDIA_TERMS = COUNTRY_HINTS.india;
-
 /** True when a posting is located in India (or explicitly India-remote). */
 export function isIndiaJob(location?: string | null, country?: string | null): boolean {
-  const text = norm(`${location ?? ""} ${country ?? ""}`);
-  if (!text) return false;
-  return INDIA_TERMS.some(
-    (h) =>
-      h.length > 2 &&
-      (text === h || text.includes(` ${h}`) || text.startsWith(`${h} `) || text.includes(`, ${h}`)),
-  );
+  return isIndiaText(location, country);
 }
 
 /** True when the candidate's own location/preferences point at India. */
 export function candidateIsIndian(preferred: Array<string | null | undefined>): boolean {
-  return preferred.some((p) => isIndiaJob(p, null));
+  return preferred.some((p) => isIndiaText(p));
 }
 
-export type ProximityTier = "same-city" | "nearby-city" | "same-country" | "remote" | "far";
+export type ProximityTier =
+  | "same-city"
+  | "nearby-city"
+  | "same-country"
+  | "same-region"
+  | "remote"
+  | "far";
 
 export type ProximityResult = {
   score: number;
@@ -207,11 +214,11 @@ export function locationProximity(input: LocationAffinityInput): ProximityResult
   const jobText = norm(`${input.jobLocation ?? ""} ${input.jobCountry ?? ""}`);
   const remote = (input.remoteStatus ?? "").toLowerCase();
   const base = locationAffinity(input);
+  const prefCountry = candidateCountry(input.preferred);
 
   const prefTerms = prefs
     .flatMap((p) => tokens(p))
     .filter((t) => t.length >= 3 && !COUNTRY_WORDS.has(t));
-
 
   for (const term of prefTerms.flatMap(expand)) {
     if (term.length >= 3 && jobText.includes(term)) {
@@ -228,14 +235,21 @@ export function locationProximity(input: LocationAffinityInput): ProximityResult
     }
   }
 
-  if (remote === "remote") return { score: base, tier: "remote", label: "Remote" };
+  if (remote === "remote") {
+    const restrictedTo = remoteRestriction(input);
+    if (restrictedTo && prefCountry && restrictedTo !== prefCountry) {
+      return { score: base, tier: "far", label: `Remote (${restrictedTo} only)` };
+    }
+    return { score: base, tier: "remote", label: "Remote" };
+  }
 
-  const jobCountry = countryOf(jobText) ?? (norm(input.jobCountry ?? "") || null);
-  const prefCountry = prefs.map(countryOf).find(Boolean) ?? null;
+  const jobCountry = resolveCountryCode(jobText);
   if (jobCountry && prefCountry && jobCountry === prefCountry) {
     return { score: Math.max(base, 0.8), tier: "same-country", label: "In your country" };
+  }
+  if (jobCountry && prefCountry && jobRegion(input) === resolveGeo(prefCountry).region) {
+    return { score: base, tier: "same-region", label: "Same region" };
   }
 
   return { score: base, tier: "far", label: null };
 }
-
