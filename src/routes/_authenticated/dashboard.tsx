@@ -546,8 +546,9 @@ function ImmersiveCommandHeader({
   matchCount: number;
   highMatchCount: number;
 }) {
+  // Both themes share the same editorial design; tokens handle color.
   const { theme } = useTheme();
-  if (theme !== "immersive") return null;
+  void theme;
 
   const next = priorities[0];
   return (
