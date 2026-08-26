@@ -30,6 +30,7 @@ import {
   updateProfile,
 } from "@/lib/profile.functions";
 import { setActiveResume } from "@/lib/resume.functions";
+import { PageHeader, PageShell } from "@/components/product/page-header";
 import { cn } from "@/lib/utils";
 
 const ease = [0.22, 1, 0.36, 1] as const;
@@ -277,7 +278,7 @@ function ProfilePage() {
         emptyMessage="No achievements yet."
         onDelete={(id) => deleteMutation.mutate({ table: "achievements", id })}
       />
-    </div>
+    </PageShell>
   );
 }
 
