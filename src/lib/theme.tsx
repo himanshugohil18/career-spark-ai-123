@@ -21,15 +21,15 @@ export type ExperienceTheme = "classic" | "immersive";
 export const THEME_STORAGE_KEY = "careeros-experience-theme";
 
 /** Inline script (runs before paint) — keep in sync with the storage key. */
-export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");if(t==="immersive"||t==="classic"){document.documentElement.dataset.theme=t;}else{document.documentElement.dataset.theme="classic";}}catch(e){document.documentElement.dataset.theme="classic";}})();`;
+export const THEME_INIT_SCRIPT = `(function(){try{var t=localStorage.getItem("${THEME_STORAGE_KEY}");if(t==="immersive"||t==="classic"){document.documentElement.dataset.theme=t;}else{document.documentElement.dataset.theme="immersive";}}catch(e){document.documentElement.dataset.theme="immersive";}})();`;
 
 function readStoredTheme(): ExperienceTheme {
-  if (typeof window === "undefined") return "classic";
+  if (typeof window === "undefined") return "immersive";
   try {
     const t = window.localStorage.getItem(THEME_STORAGE_KEY);
-    return t === "immersive" ? "immersive" : "classic";
+    return t === "classic" ? "classic" : "immersive";
   } catch {
-    return "classic";
+    return "immersive";
   }
 }
 
