@@ -46,7 +46,7 @@ export const ycombinatorProvider: JobProvider = {
           const yc: YcHit = {
             objectID: h.objectID,
             title: h.title,
-            company_name: parseCompanyFromHnTitle(h.title) ?? h.author ?? "YC Company",
+            company_name: parseCompanyFromHnTitle(h.title) ?? "YC Startup",
             description: h.story_text ?? h.title,
             application_url: h.url ?? `https://news.ycombinator.com/item?id=${h.objectID}`,
             posted_at: h.created_at,
