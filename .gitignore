@@ -30,3 +30,25 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables & secrets
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+!.env.example
+
+# Keys, certificates, credentials
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+id_rsa*
+service-account*.json
+
+# Build / tooling caches
+tsconfig.tsbuildinfo
+.cache/
+coverage/
