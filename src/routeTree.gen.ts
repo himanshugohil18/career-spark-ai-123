@@ -49,6 +49,7 @@ import { Route as AuthenticatedInvoicePaymentIdRouteImport } from './routes/_aut
 import { Route as AuthenticatedInterviewSimulatorRouteImport } from './routes/_authenticated/interview.simulator'
 import { Route as AuthenticatedApplicationsWorkspaceIdRouteImport } from './routes/_authenticated/applications.$workspaceId'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
+import { Route as AuthenticatedAdminProvidersRouteImport } from './routes/_authenticated/admin.providers'
 import { Route as AuthenticatedAdminJobsRouteImport } from './routes/_authenticated/admin.jobs'
 import { Route as AuthenticatedAdminHealthRouteImport } from './routes/_authenticated/admin.health'
 import { Route as AuthenticatedAdminEmailsRouteImport } from './routes/_authenticated/admin.emails'
@@ -275,6 +276,12 @@ const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
   path: '/users',
   getParentRoute: () => AuthenticatedAdminRoute,
 } as any)
+const AuthenticatedAdminProvidersRoute =
+  AuthenticatedAdminProvidersRouteImport.update({
+    id: '/providers',
+    path: '/providers',
+    getParentRoute: () => AuthenticatedAdminRoute,
+  } as any)
 const AuthenticatedAdminJobsRoute = AuthenticatedAdminJobsRouteImport.update({
   id: '/jobs',
   path: '/jobs',
@@ -407,6 +414,7 @@ export interface FileRoutesByFullPath {
   '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/health': typeof AuthenticatedAdminHealthRoute
   '/admin/jobs': typeof AuthenticatedAdminJobsRoute
+  '/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/applications/$workspaceId': typeof AuthenticatedApplicationsWorkspaceIdRouteWithChildren
   '/interview/simulator': typeof AuthenticatedInterviewSimulatorRoute
@@ -464,6 +472,7 @@ export interface FileRoutesByTo {
   '/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/admin/health': typeof AuthenticatedAdminHealthRoute
   '/admin/jobs': typeof AuthenticatedAdminJobsRoute
+  '/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/applications/$workspaceId': typeof AuthenticatedApplicationsWorkspaceIdRouteWithChildren
   '/interview/simulator': typeof AuthenticatedInterviewSimulatorRoute
@@ -524,6 +533,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/emails': typeof AuthenticatedAdminEmailsRoute
   '/_authenticated/admin/health': typeof AuthenticatedAdminHealthRoute
   '/_authenticated/admin/jobs': typeof AuthenticatedAdminJobsRoute
+  '/_authenticated/admin/providers': typeof AuthenticatedAdminProvidersRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/applications/$workspaceId': typeof AuthenticatedApplicationsWorkspaceIdRouteWithChildren
   '/_authenticated/interview/simulator': typeof AuthenticatedInterviewSimulatorRoute
@@ -584,6 +594,7 @@ export interface FileRouteTypes {
     | '/admin/emails'
     | '/admin/health'
     | '/admin/jobs'
+    | '/admin/providers'
     | '/admin/users'
     | '/applications/$workspaceId'
     | '/interview/simulator'
@@ -641,6 +652,7 @@ export interface FileRouteTypes {
     | '/admin/emails'
     | '/admin/health'
     | '/admin/jobs'
+    | '/admin/providers'
     | '/admin/users'
     | '/applications/$workspaceId'
     | '/interview/simulator'
@@ -700,6 +712,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/emails'
     | '/_authenticated/admin/health'
     | '/_authenticated/admin/jobs'
+    | '/_authenticated/admin/providers'
     | '/_authenticated/admin/users'
     | '/_authenticated/applications/$workspaceId'
     | '/_authenticated/interview/simulator'
@@ -1029,6 +1042,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
       parentRoute: typeof AuthenticatedAdminRoute
     }
+    '/_authenticated/admin/providers': {
+      id: '/_authenticated/admin/providers'
+      path: '/providers'
+      fullPath: '/admin/providers'
+      preLoaderRoute: typeof AuthenticatedAdminProvidersRouteImport
+      parentRoute: typeof AuthenticatedAdminRoute
+    }
     '/_authenticated/admin/jobs': {
       id: '/_authenticated/admin/jobs'
       path: '/jobs'
@@ -1159,6 +1179,7 @@ interface AuthenticatedAdminRouteChildren {
   AuthenticatedAdminEmailsRoute: typeof AuthenticatedAdminEmailsRoute
   AuthenticatedAdminHealthRoute: typeof AuthenticatedAdminHealthRoute
   AuthenticatedAdminJobsRoute: typeof AuthenticatedAdminJobsRoute
+  AuthenticatedAdminProvidersRoute: typeof AuthenticatedAdminProvidersRoute
   AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
   AuthenticatedAdminIndexRoute: typeof AuthenticatedAdminIndexRoute
 }
@@ -1171,6 +1192,7 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
   AuthenticatedAdminEmailsRoute: AuthenticatedAdminEmailsRoute,
   AuthenticatedAdminHealthRoute: AuthenticatedAdminHealthRoute,
   AuthenticatedAdminJobsRoute: AuthenticatedAdminJobsRoute,
+  AuthenticatedAdminProvidersRoute: AuthenticatedAdminProvidersRoute,
   AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
   AuthenticatedAdminIndexRoute: AuthenticatedAdminIndexRoute,
 }
