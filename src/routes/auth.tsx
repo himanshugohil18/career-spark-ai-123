@@ -29,9 +29,11 @@ const searchSchema = z.object({
 });
 
 export const Route = createFileRoute("/auth")({
-  ssr: false,
   validateSearch: searchSchema,
   beforeLoad: async () => {
+    // Client-only: session lives in browser storage; on the server there is
+    // never a session, so skip the check during SSR.
+    if (typeof window === "undefined") return;
     const { data } = await supabase.auth.getSession();
     if (data.session) throw redirect({ to: "/dashboard" });
   },

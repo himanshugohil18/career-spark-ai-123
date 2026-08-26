@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ai/skeleton";
 import { MatchRing } from "@/features/jobs/match-ring";
 import { MatchBreakdown } from "@/features/jobs/match-breakdown";
 import { MissingSkills, type MissingSkill } from "@/features/jobs/missing-skills";
+import { MatchIntelligence } from "@/features/jobs/match-intelligence";
 import { CompanyHeader } from "@/features/jobs/company-header";
 import { getJobDetail, getSimilarJobs, saveJob, trackJobInteraction, unsaveJob } from "@/lib/jobs.functions";
 import { matchJob } from "@/lib/job-matching.functions";
@@ -272,6 +273,8 @@ function JobDetail() {
           </div>
         )}
       </section>
+
+      <MatchIntelligence jobId={jobId} />
 
       <CompanyHeader
         company={

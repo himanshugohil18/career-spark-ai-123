@@ -25,6 +25,7 @@ import { AgentGrid, deriveAgents } from "@/components/ai/agent-status";
 import { Skeleton } from "@/components/ai/skeleton";
 import { ResumeUpload } from "@/features/resume/resume-upload";
 import { DevDebugPanel } from "@/features/debug/dev-debug-panel";
+import { CommandCenter } from "@/features/intelligence/command-center";
 import { DashboardWidgets } from "@/features/jobs/dashboard-widgets";
 import { ApplicationsSummary } from "@/features/applications/applications-summary";
 import { AnimatedCounter } from "@/components/ui/animated-counter";
@@ -276,6 +277,9 @@ function Dashboard() {
         </motion.section>
       ) : (
         <>
+          {/* ── Command Center: readiness, missions, insights ──── */}
+          <CommandCenter />
+
           {/* ── Today's priorities ──────────────────────────────── */}
           {topPriorities.length > 0 && (
             <motion.section
