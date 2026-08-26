@@ -43,6 +43,7 @@ import { Route as AuthenticatedJobsSavedRouteImport } from './routes/_authentica
 import { Route as AuthenticatedJobsCollectionsRouteImport } from './routes/_authenticated/jobs.collections'
 import { Route as AuthenticatedJobsJobIdRouteImport } from './routes/_authenticated/jobs.$jobId'
 import { Route as AuthenticatedInvoicePaymentIdRouteImport } from './routes/_authenticated/invoice.$paymentId'
+import { Route as AuthenticatedInterviewSimulatorRouteImport } from './routes/_authenticated/interview.simulator'
 import { Route as AuthenticatedApplicationsWorkspaceIdRouteImport } from './routes/_authenticated/applications.$workspaceId'
 import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated/admin.users'
 import { Route as AuthenticatedAdminJobsRouteImport } from './routes/_authenticated/admin.jobs'
@@ -238,6 +239,12 @@ const AuthenticatedInvoicePaymentIdRoute =
     path: '/invoice/$paymentId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedInterviewSimulatorRoute =
+  AuthenticatedInterviewSimulatorRouteImport.update({
+    id: '/simulator',
+    path: '/simulator',
+    getParentRoute: () => AuthenticatedInterviewRoute,
+  } as any)
 const AuthenticatedApplicationsWorkspaceIdRoute =
   AuthenticatedApplicationsWorkspaceIdRouteImport.update({
     id: '/applications/$workspaceId',
@@ -364,7 +371,7 @@ export interface FileRoutesByFullPath {
   '/chat': typeof AuthenticatedChatRoute
   '/coach': typeof AuthenticatedCoachRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/interview': typeof AuthenticatedInterviewRoute
+  '/interview': typeof AuthenticatedInterviewRouteWithChildren
   '/learning': typeof AuthenticatedLearningRoute
   '/me': typeof AuthenticatedMeRoute
   '/outreach': typeof AuthenticatedOutreachRoute
@@ -381,6 +388,7 @@ export interface FileRoutesByFullPath {
   '/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/applications/$workspaceId': typeof AuthenticatedApplicationsWorkspaceIdRouteWithChildren
+  '/interview/simulator': typeof AuthenticatedInterviewSimulatorRoute
   '/invoice/$paymentId': typeof AuthenticatedInvoicePaymentIdRoute
   '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/jobs/collections': typeof AuthenticatedJobsCollectionsRouteWithChildren
@@ -417,7 +425,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatRoute
   '/coach': typeof AuthenticatedCoachRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
-  '/interview': typeof AuthenticatedInterviewRoute
+  '/interview': typeof AuthenticatedInterviewRouteWithChildren
   '/learning': typeof AuthenticatedLearningRoute
   '/me': typeof AuthenticatedMeRoute
   '/outreach': typeof AuthenticatedOutreachRoute
@@ -434,6 +442,7 @@ export interface FileRoutesByTo {
   '/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/applications/$workspaceId': typeof AuthenticatedApplicationsWorkspaceIdRouteWithChildren
+  '/interview/simulator': typeof AuthenticatedInterviewSimulatorRoute
   '/invoice/$paymentId': typeof AuthenticatedInvoicePaymentIdRoute
   '/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/jobs/collections': typeof AuthenticatedJobsCollectionsRouteWithChildren
@@ -473,7 +482,7 @@ export interface FileRoutesById {
   '/_authenticated/chat': typeof AuthenticatedChatRoute
   '/_authenticated/coach': typeof AuthenticatedCoachRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
-  '/_authenticated/interview': typeof AuthenticatedInterviewRoute
+  '/_authenticated/interview': typeof AuthenticatedInterviewRouteWithChildren
   '/_authenticated/learning': typeof AuthenticatedLearningRoute
   '/_authenticated/me': typeof AuthenticatedMeRoute
   '/_authenticated/outreach': typeof AuthenticatedOutreachRoute
@@ -490,6 +499,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/jobs': typeof AuthenticatedAdminJobsRoute
   '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/applications/$workspaceId': typeof AuthenticatedApplicationsWorkspaceIdRouteWithChildren
+  '/_authenticated/interview/simulator': typeof AuthenticatedInterviewSimulatorRoute
   '/_authenticated/invoice/$paymentId': typeof AuthenticatedInvoicePaymentIdRoute
   '/_authenticated/jobs/$jobId': typeof AuthenticatedJobsJobIdRoute
   '/_authenticated/jobs/collections': typeof AuthenticatedJobsCollectionsRouteWithChildren
@@ -546,6 +556,7 @@ export interface FileRouteTypes {
     | '/admin/jobs'
     | '/admin/users'
     | '/applications/$workspaceId'
+    | '/interview/simulator'
     | '/invoice/$paymentId'
     | '/jobs/$jobId'
     | '/jobs/collections'
@@ -599,6 +610,7 @@ export interface FileRouteTypes {
     | '/admin/jobs'
     | '/admin/users'
     | '/applications/$workspaceId'
+    | '/interview/simulator'
     | '/invoice/$paymentId'
     | '/jobs/$jobId'
     | '/jobs/collections'
@@ -654,6 +666,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/jobs'
     | '/_authenticated/admin/users'
     | '/_authenticated/applications/$workspaceId'
+    | '/_authenticated/interview/simulator'
     | '/_authenticated/invoice/$paymentId'
     | '/_authenticated/jobs/$jobId'
     | '/_authenticated/jobs/collections'
@@ -936,6 +949,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedInvoicePaymentIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/interview/simulator': {
+      id: '/_authenticated/interview/simulator'
+      path: '/simulator'
+      fullPath: '/interview/simulator'
+      preLoaderRoute: typeof AuthenticatedInterviewSimulatorRouteImport
+      parentRoute: typeof AuthenticatedInterviewRoute
+    }
     '/_authenticated/applications/$workspaceId': {
       id: '/_authenticated/applications/$workspaceId'
       path: '/applications/$workspaceId'
@@ -1099,6 +1119,20 @@ const AuthenticatedAdminRouteChildren: AuthenticatedAdminRouteChildren = {
 const AuthenticatedAdminRouteWithChildren =
   AuthenticatedAdminRoute._addFileChildren(AuthenticatedAdminRouteChildren)
 
+interface AuthenticatedInterviewRouteChildren {
+  AuthenticatedInterviewSimulatorRoute: typeof AuthenticatedInterviewSimulatorRoute
+}
+
+const AuthenticatedInterviewRouteChildren: AuthenticatedInterviewRouteChildren =
+  {
+    AuthenticatedInterviewSimulatorRoute: AuthenticatedInterviewSimulatorRoute,
+  }
+
+const AuthenticatedInterviewRouteWithChildren =
+  AuthenticatedInterviewRoute._addFileChildren(
+    AuthenticatedInterviewRouteChildren,
+  )
+
 interface AuthenticatedApplicationsWorkspaceIdRouteChildren {
   AuthenticatedApplicationsWorkspaceIdAgentRoute: typeof AuthenticatedApplicationsWorkspaceIdAgentRoute
 }
@@ -1137,7 +1171,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedChatRoute: typeof AuthenticatedChatRoute
   AuthenticatedCoachRoute: typeof AuthenticatedCoachRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
-  AuthenticatedInterviewRoute: typeof AuthenticatedInterviewRoute
+  AuthenticatedInterviewRoute: typeof AuthenticatedInterviewRouteWithChildren
   AuthenticatedLearningRoute: typeof AuthenticatedLearningRoute
   AuthenticatedMeRoute: typeof AuthenticatedMeRoute
   AuthenticatedOutreachRoute: typeof AuthenticatedOutreachRoute
@@ -1165,7 +1199,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedChatRoute: AuthenticatedChatRoute,
   AuthenticatedCoachRoute: AuthenticatedCoachRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
-  AuthenticatedInterviewRoute: AuthenticatedInterviewRoute,
+  AuthenticatedInterviewRoute: AuthenticatedInterviewRouteWithChildren,
   AuthenticatedLearningRoute: AuthenticatedLearningRoute,
   AuthenticatedMeRoute: AuthenticatedMeRoute,
   AuthenticatedOutreachRoute: AuthenticatedOutreachRoute,
