@@ -38,7 +38,6 @@ import {
   Home,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { ThemeToggle } from "@/components/settings/theme-toggle";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/landing/logo";
@@ -54,8 +53,6 @@ import {
 } from "@/components/ui/command";
 import { AgentStatusDot, type AgentState } from "@/components/ai/agent-status";
 import { AIStatusBar } from "@/components/ai/ai-status-bar";
-import { AmbientBackdrop } from "@/components/ui/ambient-backdrop";
-import { AuroraField } from "@/components/motion/aurora-field";
 import { globalSearch, type SearchHit } from "@/lib/search.functions";
 import { Briefcase as BriefcaseIcon, FileText as FileTextIcon, Users as UsersIcon, GraduationCap as GraduationCapIcon, MessagesSquare as MessagesSquareIcon, Building2 as Building2Icon } from "lucide-react";
 
@@ -179,9 +176,6 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="relative flex min-h-screen w-full bg-background text-foreground">
-      <AmbientBackdrop />
-      <AuroraField className="-z-10" intensity={0.8} />
-
       {/* Sidebar */}
       <aside
         className={cn(
@@ -260,7 +254,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 initial={{ width: 0 }}
                 animate={{ width: `${healthScore ?? (brainReady ? 20 : 10)}%` }}
                 transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-                className="h-full rounded-full bg-[image:var(--gradient-primary)]"
+                className="h-full rounded-full bg-primary"
               />
             </div>
           </div>
@@ -356,7 +350,6 @@ export function AppShell({ children }: { children: ReactNode }) {
               <Home className="h-4 w-4" />
               <span>Home</span>
             </Link>
-            <ThemeToggle />
             <NotificationCenter />
 
             <Link
@@ -379,9 +372,9 @@ export function AppShell({ children }: { children: ReactNode }) {
         <AnimatePresence mode="wait">
           <motion.main
             key={pathname}
-            initial={{ opacity: 0, y: 10, filter: "blur(5px)" }}
-            animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, y: -6, filter: "blur(4px)" }}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
             className="min-w-0 flex-1"
           >
@@ -537,7 +530,7 @@ function NavItem({
       className={cn(
         "group relative flex h-10 items-center gap-3 rounded-md px-3 text-[13.5px] font-medium transition-all duration-200",
         active
-          ? "bg-[image:linear-gradient(90deg,color-mix(in_oklab,var(--primary)_18%,transparent),transparent)] text-foreground shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_20%,transparent)]"
+          ? "bg-sidebar-accent/60 text-foreground shadow-[inset_0_0_0_1px_color-mix(in_oklab,var(--primary)_35%,transparent)]"
           : "text-muted-foreground hover:bg-elevated/70 hover:text-foreground hover:translate-x-[1px]",
       )}
     >
@@ -545,7 +538,7 @@ function NavItem({
         <motion.span
           layoutId="nav-active"
           transition={{ type: "spring", stiffness: 380, damping: 34 }}
-          className="absolute inset-y-1 left-0 w-[3px] rounded-r-full bg-[image:var(--gradient-primary)] shadow-[0_0_12px_2px_color-mix(in_oklab,var(--primary)_60%,transparent)]"
+          className="absolute inset-y-1 left-0 w-[3px] rounded-r-full bg-primary"
         />
       )}
       <Icon className={cn("h-4 w-4 shrink-0 transition-colors", active && "text-primary")} />
