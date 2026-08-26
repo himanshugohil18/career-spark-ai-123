@@ -33,6 +33,7 @@ import {
   Menu,
   Home,
   Bookmark,
+  Palette,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
@@ -50,6 +51,7 @@ import {
   CommandSeparator,
 } from "@/components/ui/command";
 import { ProgressRing } from "@/components/product/progress-ring";
+import { useTheme } from "@/lib/theme";
 import { AIStatusBar } from "@/components/ai/ai-status-bar";
 import { globalSearch, type SearchHit } from "@/lib/search.functions";
 
@@ -566,5 +568,25 @@ function NavItem({
       <TooltipTrigger asChild>{link}</TooltipTrigger>
       <TooltipContent side="right">{label}</TooltipContent>
     </Tooltip>
+  );
+}
+
+/** Quick experience switch — Classic ↔ Immersive — in the sidebar footer. */
+function ThemeQuickSwitch({ collapsed }: { collapsed: boolean }) {
+  const { theme, toggleTheme } = useTheme();
+  return (
+    <button
+      onClick={toggleTheme}
+      className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg text-sidebar-muted transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+      aria-label={theme === "immersive" ? "Switch to CareerOS Classic" : "Switch to CareerOS Immersive"}
+      title={theme === "immersive" ? "Switch to Classic" : "Switch to Immersive"}
+    >
+      <Palette className="h-4 w-4" />
+      {!collapsed && (
+        <span className="text-[11px] font-medium">
+          {theme === "immersive" ? "Immersive" : "Classic"}
+        </span>
+      )}
+    </button>
   );
 }
