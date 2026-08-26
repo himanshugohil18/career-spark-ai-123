@@ -297,18 +297,31 @@ export function seniorityFit(args: {
   candidateYears: number;
   jobLevel: string | null | undefined;
   jobText?: string | null;
+  /** Job title on its own — used to infer the rung when the feed level is "unknown". */
+  jobTitle?: string | null;
 }): SeniorityFit {
-  const job = seniorityFromJobLevel(args.jobLevel);
   const cYears = Math.max(0, args.candidateYears ?? 0);
   const reqYears = requiredYears(args.jobLevel, args.jobText);
+
+  // Never leave either side "unknown" when we can infer it. A missing
+  // candidate rung used to make every senior posting score as a neutral
+  // "Level not specified" match — the exact bug this guards against.
+  const candidate: Seniority | null =
+    args.candidate ?? seniorityFromYears(cYears) ?? "entry";
+  // Provider-supplied experience_level is frequently wrong (feeds label
+  // "Senior Staff Engineer" as entry). An explicit rung in the TITLE is the
+  // more trustworthy signal, so it wins; the feed label is the fallback.
+  const job: Seniority | null =
+    seniorityFromTitle(args.jobTitle ?? null) ?? seniorityFromJobLevel(args.jobLevel);
+
   const base: Omit<SeniorityFit, "score" | "tier" | "delta" | "cap" | "label"> = {
-    candidate: args.candidate,
+    candidate,
     job,
     requiredYears: reqYears,
     candidateYears: cYears,
   };
 
-  if (!args.candidate || !job) {
+  if (!candidate || !job) {
     // Unknown rung on either side: fall back to the years gap when we have it.
     if (reqYears != null && reqYears - cYears >= 3) {
       const gap = reqYears - cYears;
@@ -324,7 +337,9 @@ export function seniorityFit(args: {
     return { ...base, score: 70, tier: "match", delta: 0, cap: null, label: "Level not specified" };
   }
 
-  const ci = LADDER.indexOf(args.candidate);
+
+
+  const ci = LADDER.indexOf(candidate);
   const ji = LADDER.indexOf(job);
   const delta = ji - ci;
   const yearGap = reqYears != null ? Math.max(0, reqYears - cYears) : Math.max(0, delta * 2);

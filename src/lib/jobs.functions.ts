@@ -749,38 +749,15 @@ export const kickMatchRefresh = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) =>
     z.object({ force: z.boolean().optional() }).optional().parse(d ?? {}),
   )
-  .handler(async ({ data, context }) => {
+  .handler(async ({ context }) => {
     const brain = (await getCareerBrainSnapshot()) as CareerBrainSnapshot;
     if (!brain.ready) {
       return { discovery: null, evaluated: 0, upserted: 0, skipped: 0, seeded: 0, crawled: false, fetched: 0, verified: 0 };
     }
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { buildProfileFromSnapshot } = await import("./jobs/role-synonyms");
-    const candidateProfile = buildProfileFromSnapshot(brain);
-
-    // How fresh is the shared catalog right now? A refresh must re-verify
-    // listings with their providers, not just re-score stored rows.
-    const { data: freshest } = await supabaseAdmin
-      .from("jobs")
-      .select("last_verified_at")
-      .eq("is_active", true)
-      .order("last_verified_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
-    const lastVerifiedMs = freshest?.last_verified_at ? Date.parse(freshest.last_verified_at as string) : 0;
-    const staleCatalog = !lastVerifiedMs || Date.now() - lastVerifiedMs > 6 * 60 * 60 * 1000;
-
-    let discovery: Awaited<ReturnType<typeof import("./jobs/discovery.server").runDiscovery>> | null = null;
-    if (data?.force || staleCatalog) {
-      const { runDiscovery } = await import("./jobs/discovery.server");
-      try {
-        discovery = await runDiscovery(supabaseAdmin, { candidateProfile });
-      } catch (err) {
-        console.error("[jobs] discovery during refresh failed:", err);
-      }
-    }
-
+    // Rescore ONLY. Provider ingestion is a separate, independently triggered
+    // job (`crawlCatalog`) so a slow crawl can never delay the user's
+    // corrected recommendations.
     const match = await refreshUserMatches(context.supabase, brain, { limit: 180 });
     if (match.newMatches.length) {
       const { notifyNewJobMatches } = await import("./email/notify-matches.server");
@@ -788,14 +765,38 @@ export const kickMatchRefresh = createServerFn({ method: "POST" })
     }
 
     return {
-      discovery,
+      discovery: null,
       seeded: 0,
-      crawled: !!discovery,
-      fetched: discovery?.fetched ?? 0,
-      verified: discovery ? discovery.inserted : 0,
+      crawled: false,
+      fetched: 0,
+      verified: 0,
       ...match,
     };
   });
+
+/**
+ * Background catalog top-up. Fired by the Jobs page alongside — never before —
+ * a match refresh, and safe to fail: the feed still rescored.
+ */
+export const crawlCatalog = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async () => {
+    const brain = (await getCareerBrainSnapshot()) as CareerBrainSnapshot;
+    if (!brain.ready) return { crawled: false, fetched: 0, inserted: 0 };
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { buildProfileFromSnapshot } = await import("./jobs/role-synonyms");
+    const { runDiscovery } = await import("./jobs/discovery.server");
+    try {
+      const stats = await runDiscovery(supabaseAdmin, {
+        candidateProfile: buildProfileFromSnapshot(brain),
+      });
+      return { crawled: true, fetched: stats.fetched ?? 0, inserted: stats.inserted ?? 0 };
+    } catch (err) {
+      console.error("[jobs] background catalog crawl failed:", err);
+      return { crawled: false, fetched: 0, inserted: 0 };
+    }
+  });
+
 
 /**
  * Idempotent bootstrap for the Jobs feed. Called by the Jobs page on mount
