@@ -46,7 +46,8 @@ export const Route = createFileRoute("/_authenticated/chat")({
 const ease = [0.22, 1, 0.36, 1] as const;
 
 function CareerChatPage() {
-  const { user } = AuthRoute.useRouteContext();
+  const { session } = useSession();
+  const user = session?.user;
   const queryClient = useQueryClient();
   const [input, setInput] = useState("");
   const endRef = useRef<HTMLDivElement | null>(null);

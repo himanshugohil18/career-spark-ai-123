@@ -60,7 +60,8 @@ type Priority = {
 };
 
 function Dashboard() {
-  const { user } = AuthRoute.useRouteContext();
+  const { session } = useSession();
+  const user = session?.user;
   const queryClient = useQueryClient();
 
   const { data, isLoading } = useQuery({
