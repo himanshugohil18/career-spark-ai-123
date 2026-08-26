@@ -686,7 +686,7 @@ export const getProviderMonitoring = createServerFn({ method: "GET" })
       supabaseAdmin.from("job_sources").select("*").order("tier").order("id"),
       supabaseAdmin
         .from("jobs")
-        .select("provider, is_active, created_at, apply_url, country_code, geo_region")
+        .select("provider, is_active, created_at, application_url, country_code, geo_region")
         .limit(60000),
     ]);
 
@@ -712,7 +712,7 @@ export const getProviderMonitoring = createServerFn({ method: "GET" })
       if (r.is_active) a.active++;
       if (r.created_at >= dayAgo) a.last24h++;
       if (r.created_at >= weekAgo) a.last7d++;
-      if (r.apply_url) a.withApplyUrl++;
+      if (r.application_url) a.withApplyUrl++;
       if (r.country_code === "IN") a.india++;
       agg.set(key, a);
 
