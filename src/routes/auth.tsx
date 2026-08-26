@@ -231,20 +231,9 @@ function FormPanel({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }
 
 type PasswordlessMode = "magic" | "otp";
 
-const CANONICAL_APP_ORIGIN = "https://careerosai.site";
-
 function getAuthRedirectOrigin() {
-  if (typeof window === "undefined") return CANONICAL_APP_ORIGIN;
-
-  const { hostname, origin } = window.location;
-  const isLocalPreview = hostname === "localhost" || hostname === "127.0.0.1";
-  const isEditorPreview = hostname.startsWith("id-preview--");
-
-  if (isLocalPreview || isEditorPreview || hostname.endsWith("careerosai.site")) {
-    return origin;
-  }
-
-  return CANONICAL_APP_ORIGIN;
+  if (typeof window === "undefined") return "https://careerosai.site";
+  return window.location.origin;
 }
 
 function AuthCard({ mode, setMode }: { mode: Mode; setMode: (m: Mode) => void }) {
