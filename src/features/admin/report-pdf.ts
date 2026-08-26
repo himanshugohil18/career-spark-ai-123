@@ -69,7 +69,8 @@ class Report {
 
   /* ---------------- chrome ---------------- */
 
-  private drawHeader(first: boolean) {
+  /** Brand band + logo + wordmark + timestamp. Idempotent per page. */
+  private drawChrome() {
     const d = this.doc;
     d.setFillColor(...BRAND.blue);
     d.rect(0, 0, PAGE.w, 3, "F");
@@ -103,6 +104,11 @@ class Report {
     d.setDrawColor(...BRAND.line);
     d.setLineWidth(0.3);
     d.line(PAGE.m, HEADER_H - 3, PAGE.w - PAGE.m, HEADER_H - 3);
+  }
+
+  private drawHeader(first: boolean) {
+    const d = this.doc;
+    this.drawChrome();
 
     if (first) {
       this.y = HEADER_H + 4;
@@ -337,9 +343,8 @@ class Report {
     const pages = d.getNumberOfPages();
     for (let p = 1; p <= pages; p++) {
       d.setPage(p);
-      // ensure every page (including autotable-created ones) has the brand band
-      d.setFillColor(...BRAND.blue);
-      d.rect(0, 0, PAGE.w, 3, "F");
+      // ensure every page (including autotable-created ones) carries the brand header
+      this.drawChrome();
       d.setDrawColor(...BRAND.line);
       d.setLineWidth(0.3);
       d.line(PAGE.m, PAGE.h - FOOTER_H + 2, PAGE.w - PAGE.m, PAGE.h - FOOTER_H + 2);
