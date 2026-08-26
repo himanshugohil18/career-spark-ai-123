@@ -15,6 +15,7 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PrivacyRouteImport } from './routes/privacy'
 import { Route as GoRouteImport } from './routes/go'
 import { Route as ContactRouteImport } from './routes/contact'
+import { Route as ChangelogRouteImport } from './routes/changelog'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -96,6 +97,11 @@ const GoRoute = GoRouteImport.update({
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ChangelogRoute = ChangelogRouteImport.update({
+  id: '/changelog',
+  path: '/changelog',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -384,6 +390,7 @@ const AuthenticatedApplicationsWorkspaceIdAgentRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/changelog': typeof ChangelogRoute
   '/contact': typeof ContactRoute
   '/go': typeof GoRoute
   '/privacy': typeof PrivacyRoute
@@ -443,6 +450,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/changelog': typeof ChangelogRoute
   '/contact': typeof ContactRoute
   '/go': typeof GoRoute
   '/privacy': typeof PrivacyRoute
@@ -503,6 +511,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/changelog': typeof ChangelogRoute
   '/contact': typeof ContactRoute
   '/go': typeof GoRoute
   '/privacy': typeof PrivacyRoute
@@ -564,6 +573,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/changelog'
     | '/contact'
     | '/go'
     | '/privacy'
@@ -623,6 +633,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/changelog'
     | '/contact'
     | '/go'
     | '/privacy'
@@ -682,6 +693,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/changelog'
     | '/contact'
     | '/go'
     | '/privacy'
@@ -743,6 +755,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ChangelogRoute: typeof ChangelogRoute
   ContactRoute: typeof ContactRoute
   GoRoute: typeof GoRoute
   PrivacyRoute: typeof PrivacyRoute
@@ -802,6 +815,13 @@ declare module '@tanstack/react-router' {
       path: '/contact'
       fullPath: '/contact'
       preLoaderRoute: typeof ContactRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/changelog': {
+      id: '/changelog'
+      path: '/changelog'
+      fullPath: '/changelog'
+      preLoaderRoute: typeof ChangelogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -1314,6 +1334,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ChangelogRoute: ChangelogRoute,
   ContactRoute: ContactRoute,
   GoRoute: GoRoute,
   PrivacyRoute: PrivacyRoute,

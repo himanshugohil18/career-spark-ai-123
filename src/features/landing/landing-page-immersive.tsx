@@ -24,6 +24,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { Logo } from "@/components/landing/logo";
+import { WhatsNew } from "@/components/landing/whats-new";
 import { useTheme } from "@/lib/theme";
 import { cn } from "@/lib/utils";
 import heroBg from "@/assets/hero-bg.mp4.asset.json";
@@ -97,6 +98,7 @@ function ImmersiveNav() {
           <a href="#brain" className="transition-colors hover:text-foreground">Career Brain</a>
           <a href="#opportunities" className="transition-colors hover:text-foreground">Opportunities</a>
           <a href="#agents" className="transition-colors hover:text-foreground">AI Agents</a>
+          <a href="#whats-new" className="transition-colors hover:text-foreground">What's New</a>
         </nav>
         <div className="flex items-center gap-3">
           <button
@@ -791,6 +793,7 @@ function ImmersiveFooter() {
             <a href="#brain" className="transition-colors hover:text-foreground">Career Brain</a>
             <a href="#intelligence" className="transition-colors hover:text-foreground">Intelligence</a>
             <a href="#agents" className="transition-colors hover:text-foreground">AI Agents</a>
+          <a href="#whats-new" className="transition-colors hover:text-foreground">What's New</a>
             <Link to="/auth" className="transition-colors hover:text-foreground">Sign in</Link>
           </nav>
           <nav className="flex flex-col gap-3 text-[13px] text-muted-foreground">
@@ -835,6 +838,7 @@ export function LandingPageImmersive() {
         <Journey />
         <Workforce />
         <FeatureIndex />
+        <WhatsNew />
         <Progress />
         <FinalCTA />
       </main>
