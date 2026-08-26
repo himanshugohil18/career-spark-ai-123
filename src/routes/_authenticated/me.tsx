@@ -145,10 +145,6 @@ function MePage() {
               ) : (
                 initials || <UserRound className="h-6 w-6" />
               )}
-              <span
-                aria-hidden
-                className="absolute -inset-1 -z-10 rounded-2xl bg-[image:var(--gradient-primary)] opacity-40 blur-xl"
-              />
             </div>
             <div className="min-w-0">
               <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">

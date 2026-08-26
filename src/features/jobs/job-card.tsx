@@ -104,12 +104,9 @@ export function JobCard({
       transition={{ type: "spring", stiffness: 300, damping: 26 }}
       className="surface-card card-interactive group relative flex flex-col gap-3 p-5"
     >
-      <motion.span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 rounded-[inherit] opacity-0 blur-xl transition-opacity duration-300 group-hover:opacity-100"
-        style={{ background: "radial-gradient(60% 60% at 50% 0%, color-mix(in oklab, var(--color-primary) 28%, transparent), transparent 70%)" }}
-      />
-      {overall >= 90 && <span className="ribbon">Top Match</span>}
+      {overall >= 90 && (
+          <span className="absolute right-4 top-0 rounded-b-md bg-primary px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-primary-foreground">Top match</span>
+        )}
       <div className="flex items-start gap-4">
         {job.match ? (
           <MatchRing value={overall} size={56} />

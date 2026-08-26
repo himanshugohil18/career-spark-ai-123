@@ -73,8 +73,7 @@ function AuthPage() {
       {/* Ambient global background */}
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 opacity-90"
-        className="bg-accent"
+        className="pointer-events-none absolute inset-0 -z-10 bg-accent"
       />
       <div aria-hidden className="bg-grid grid-fade-mask absolute inset-0 -z-10" />
 

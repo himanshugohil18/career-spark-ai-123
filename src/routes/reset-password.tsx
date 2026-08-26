@@ -72,8 +72,7 @@ function ResetPasswordPage() {
     <div className="relative min-h-dvh bg-background text-foreground">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 opacity-90"
-        style={{ backgroundImage: "var(--gradient-hero)" }}
+        className="pointer-events-none absolute inset-0 -z-10 bg-accent"
       />
       <div aria-hidden className="bg-grid grid-fade-mask absolute inset-0 -z-10" />
       <div className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-6 py-12">
