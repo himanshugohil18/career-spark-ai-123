@@ -582,7 +582,7 @@ function ThemeQuickSwitch({ collapsed }: { collapsed: boolean }) {
   return (
     <button
       onClick={toggleTheme}
-      className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg text-sidebar-muted transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
+      className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-md text-sidebar-muted transition-colors hover:bg-sidebar-accent hover:text-sidebar-foreground"
       aria-label={theme === "immersive" ? "Switch to CareerOS Classic" : "Switch to CareerOS Immersive"}
       title={theme === "immersive" ? "Switch to Classic" : "Switch to Immersive"}
     >

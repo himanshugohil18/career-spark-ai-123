@@ -223,7 +223,7 @@ function Dashboard() {
         {hasResume && (
           <Link
             to="/analytics"
-            className="group flex shrink-0 items-center gap-4 rounded-2xl border border-border bg-card p-4 pr-6 shadow-soft transition-all hover:shadow-card"
+            className="group flex shrink-0 items-center gap-4 rounded-xl border border-border bg-card p-4 pr-6 shadow-soft transition-all hover:shadow-card"
           >
             <ProgressRing value={healthScore} size={76} stroke={7} tone={scoreTone(healthScore)} sublabel="/ 100" />
             <div>
@@ -241,7 +241,7 @@ function Dashboard() {
 
       {/* ── Activation path (no approved resume yet) ─────────────── */}
       {isLoading ? (
-        <Skeleton className="h-56 rounded-2xl" />
+        <Skeleton className="h-56 rounded-xl" />
       ) : !hasResume ? (
         <motion.section
           initial={{ opacity: 0, y: 10 }}
@@ -300,7 +300,7 @@ function Dashboard() {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: 0.06 + i * 0.06, ease }}
                     className={cn(
-                      "group flex flex-col rounded-2xl border p-5 transition-shadow hover:shadow-card",
+                      "group flex flex-col rounded-xl border p-5 transition-shadow hover:shadow-card",
                       i === 0 ? "surface-highlight" : "surface-card",
                     )}
                   >
