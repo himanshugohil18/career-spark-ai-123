@@ -2,8 +2,9 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mic, Play, Send, CheckCircle2, Circle, ChevronRight, RotateCcw, Loader2, Lightbulb, GraduationCap, TrendingUp, XCircle } from "lucide-react";
+import { Mic, Play, Send, CheckCircle2, Circle, ChevronRight, RotateCcw, Loader2, Lightbulb, GraduationCap, TrendingUp, XCircle, Download } from "lucide-react";
 import { toast } from "sonner";
+import { downloadInterviewReportPdf } from "@/features/interview/report-pdf";
 import { Skeleton } from "@/components/ai/skeleton";
 import { PageHeader } from "@/components/product/page-header";
 import { Button } from "@/components/ui/button";
@@ -336,6 +337,23 @@ function ActiveSession({ sessionId, onExit }: { sessionId: string; onExit: () =>
             <div>
               <h2 className="section-title">Interview debrief</h2>
               <p className="text-xs text-muted-foreground">Overall score out of 10</p>
+            </div>
+            <div className="ml-auto">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  try {
+                    downloadInterviewReportPdf(session as any, turns as any);
+                    toast.success("Interview report downloaded.");
+                  } catch (e: any) {
+                    toast.error(e?.message ?? "Could not build the PDF report.");
+                  }
+                }}
+              >
+                <Download className="h-3.5 w-3.5" /> Download PDF report
+              </Button>
             </div>
           </div>
           <p className="mt-4 text-sm leading-relaxed text-foreground">{session.feedback_summary}</p>
