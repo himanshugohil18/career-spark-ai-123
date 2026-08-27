@@ -116,11 +116,11 @@ flowchart LR
 The layered view below traces a single journey through the whole system: raw job sources and the user's resume enter on the left, are normalized and scored by the intelligence layer, persist under RLS in Postgres, and surface in each product surface of the UI.
 
 ```mermaid
-%%{init: {"flowchart": {"htmlLabels": true, "nodeSpacing": 45, "rankSpacing": 70, "curve": "basis"}, "themeVariables": {"fontSize": "18px"}}}%%
-flowchart TB
+%%{init: {"flowchart": {"htmlLabels": true, "nodeSpacing": 50, "rankSpacing": 80, "curve": "linear"}, "themeVariables": {"fontSize": "22px", "fontFamily": "Helvetica, Arial, sans-serif"}}}%%
+flowchart LR
 
     subgraph SRC["DATA SOURCES"]
-        direction LR
+        direction TB
         S1["JOB APIs<br/>Remotive · Arbeitnow · Jobicy"]
         S2["COMPANY ATS FEEDS<br/>Greenhouse · Lever · Ashby<br/>Workable · SmartRecruiters"]
         S3["JOB PORTALS<br/>RemoteOK · WeWorkRemotely<br/>Himalayas · YC · Wellfound"]
@@ -128,7 +128,7 @@ flowchart TB
     end
 
     subgraph ING["INGESTION PIPELINE"]
-        direction LR
+        direction TB
         I1["Provider Registry<br/>35+ sources · health checks · backoff"]
         I2["Discovery Orchestrator<br/>scheduled + on-demand crawl"]
         I3["Normalizer<br/>geo resolve · seniority tag · schema map"]
@@ -137,7 +137,7 @@ flowchart TB
     end
 
     subgraph AI["INTELLIGENCE & AI SERVICES"]
-        direction LR
+        direction TB
         A1["Career Brain<br/>skills · experience · projects"]
         A2["Match Scoring Engine<br/>skills · seniority · location · recency"]
         A3["Skill Gap Analyzer"]
@@ -147,7 +147,7 @@ flowchart TB
     end
 
     subgraph PLT["PLATFORM & DATA"]
-        direction LR
+        direction TB
         P1["Server Functions<br/>createServerFn · edge runtime"]
         P2["Auth Middleware<br/>bearer JWT · requireSupabaseAuth"]
         P3[("Supabase Postgres<br/>RLS + grants")]
@@ -155,7 +155,7 @@ flowchart TB
     end
 
     subgraph UI["USER EXPERIENCE FLOW"]
-        direction LR
+        direction TB
         U1["1 · Upload Resume"]
         U2["2 · Set Preferences"]
         U3["3 · Ranked Job Feed<br/>explainable match"]
@@ -166,7 +166,7 @@ flowchart TB
     end
 
     subgraph EXT["INTEGRATIONS"]
-        direction LR
+        direction TB
         X1["Resend<br/>email digests"]
         X2["Razorpay<br/>billing · webhooks"]
         X3["Automation Worker<br/>assisted auto-apply"]
@@ -188,7 +188,8 @@ flowchart TB
     A3 --> A6
     A6 == outputs ==> P3
 
-    UI --> P1
+    U1 --> U2 --> U3 --> U4 --> U5 --> U6 --> U7
+    U1 --> P1
     P1 --> P2 --> P3
     P4 --> P1
     P1 <--> A5
@@ -202,6 +203,21 @@ flowchart TB
     P1 --> X1
     P1 --> X2
     P1 --> X3
+
+    classDef srcStyle fill:#1E293B,stroke:#475569,color:#F8FAFC,stroke-width:2px
+    classDef ingStyle fill:#0C4A6E,stroke:#0284C7,color:#F0F9FF,stroke-width:2px
+    classDef aiStyle fill:#4C1D95,stroke:#8B5CF6,color:#F5F3FF,stroke-width:2px
+    classDef pltStyle fill:#14532D,stroke:#22C55E,color:#F0FDF4,stroke-width:2px
+    classDef uiStyle fill:#7C2D12,stroke:#F97316,color:#FFF7ED,stroke-width:2px
+    classDef extStyle fill:#334155,stroke:#94A3B8,color:#F1F5F9,stroke-width:2px
+
+    class S1,S2,S3,S4 srcStyle
+    class I1,I2,I3,I4,I5 ingStyle
+    class A1,A2,A3,A4,A5,A6 aiStyle
+    class P1,P2,P3,P4 pltStyle
+    class U1,U2,U3,U4,U5,U6,U7 uiStyle
+    class X1,X2,X3,X4 extStyle
+
 ```
 
 **Layer responsibilities**
