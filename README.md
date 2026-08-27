@@ -116,94 +116,92 @@ flowchart LR
 The layered view below traces a single journey through the whole system: raw job sources and the user's resume enter on the left, are normalized and scored by the intelligence layer, persist under RLS in Postgres, and surface in each product surface of the UI.
 
 ```mermaid
+%%{init: {"flowchart": {"htmlLabels": true, "nodeSpacing": 45, "rankSpacing": 70, "curve": "basis"}, "themeVariables": {"fontSize": "18px"}}}%%
 flowchart TB
-    subgraph L1["1 - Data Sources"]
-        A1["Official Job APIs<br/>Remotive - Arbeitnow - Jobicy"]
-        A2["Company ATS Feeds<br/>Greenhouse - Lever - Ashby<br/>Workable - SmartRecruiters"]
-        A3["Portals and Boards<br/>RemoteOK - WeWorkRemotely<br/>Himalayas - YC - Wellfound"]
-        A4["User Documents<br/>Resume PDF or DOCX"]
+
+    subgraph SRC["DATA SOURCES"]
+        direction LR
+        S1["JOB APIs<br/>Remotive · Arbeitnow · Jobicy"]
+        S2["COMPANY ATS FEEDS<br/>Greenhouse · Lever · Ashby<br/>Workable · SmartRecruiters"]
+        S3["JOB PORTALS<br/>RemoteOK · WeWorkRemotely<br/>Himalayas · YC · Wellfound"]
+        S4["USER RESUME<br/>PDF / DOCX Upload"]
     end
 
-    subgraph L2["2 - Ingestion and Normalization"]
-        B1["Provider Registry<br/>35 plus providers - health and backoff"]
-        B2["Discovery Orchestrator<br/>scheduled and on-demand"]
-        B3["Normalize - Geo resolve - Seniority tag"]
-        B4["Fingerprint and Dedupe"]
-        B5["Resume Parser<br/>pdfjs-dist - mammoth"]
+    subgraph ING["INGESTION PIPELINE"]
+        direction LR
+        I1["Provider Registry<br/>35+ sources · health checks · backoff"]
+        I2["Discovery Orchestrator<br/>scheduled + on-demand crawl"]
+        I3["Normalizer<br/>geo resolve · seniority tag · schema map"]
+        I4["Fingerprint & Dedupe"]
+        I5["Resume Parser<br/>pdfjs-dist · mammoth"]
     end
 
-    subgraph L3["3 - Intelligence and AI Services"]
-        C1["Career Brain<br/>skills - experience - projects"]
-        C2["Match Scoring Engine<br/>skills - seniority - location - recency"]
-        C3["Skill Gap Analyzer"]
-        C4["Readiness Score and Next Best Action"]
-        C5["Lovable AI Gateway<br/>Gemini Flash JSON mode"]
-        C6["Roadmap - Projects - Interview Simulator - Copilot - Outreach"]
+    subgraph AI["INTELLIGENCE & AI SERVICES"]
+        direction LR
+        A1["Career Brain<br/>skills · experience · projects"]
+        A2["Match Scoring Engine<br/>skills · seniority · location · recency"]
+        A3["Skill Gap Analyzer"]
+        A4["Readiness Score<br/>Next Best Action"]
+        A5["Lovable AI Gateway<br/>Gemini Flash · JSON mode"]
+        A6["Generators<br/>Roadmap · Projects · Interview · Copilot · Outreach"]
     end
 
-    subgraph L4["4 - Platform and Data"]
-        D1["Server Functions<br/>createServerFn on edge runtime"]
-        D2["requireSupabaseAuth<br/>bearer JWT middleware"]
-        D3[("Supabase Postgres<br/>RLS plus grants")]
-        D4["Supabase Auth<br/>email and Google OAuth"]
-        D5["Public webhooks<br/>/api/public/hooks/*"]
+    subgraph PLT["PLATFORM & DATA"]
+        direction LR
+        P1["Server Functions<br/>createServerFn · edge runtime"]
+        P2["Auth Middleware<br/>bearer JWT · requireSupabaseAuth"]
+        P3[("Supabase Postgres<br/>RLS + grants")]
+        P4["Supabase Auth<br/>Email · Google OAuth"]
     end
 
-    subgraph L5["5 - Experience Layer - UI Flow"]
-        E1["Upload Resume"]
-        E2["Set Job Preferences"]
-        E3["Job Feed - ranked with explainable match"]
-        E4["Job Detail - gaps and company context"]
-        E5["Resume Studio - tailor and export ATS PDF"]
-        E6["Interview Simulator - scored report"]
-        E7["Application Tracker Kanban"]
-        E8["Dashboard - Analytics - Roadmap - Copilot"]
+    subgraph UI["USER EXPERIENCE FLOW"]
+        direction LR
+        U1["1 · Upload Resume"]
+        U2["2 · Set Preferences"]
+        U3["3 · Ranked Job Feed<br/>explainable match"]
+        U4["4 · Job Detail<br/>gaps · company context"]
+        U5["5 · Resume Studio<br/>ATS PDF export"]
+        U6["6 · Interview Simulator<br/>scored report"]
+        U7["7 · Tracker Kanban<br/>8 · Dashboard · Copilot"]
     end
 
-    subgraph L6["6 - Integrations"]
-        F1["Resend - email digests"]
-        F2["Razorpay - billing and webhooks"]
-        F3["Automation Worker - assisted auto apply"]
-        F4["Scheduler - cron bearer secret"]
+    subgraph EXT["INTEGRATIONS"]
+        direction LR
+        X1["Resend<br/>email digests"]
+        X2["Razorpay<br/>billing · webhooks"]
+        X3["Automation Worker<br/>assisted auto-apply"]
+        X4["Cron Scheduler<br/>daily refresh · webhooks"]
     end
 
-    A1 --> B1
-    A2 --> B1
-    A3 --> B1
-    B1 --> B2 --> B3 --> B4 --> D3
-    A4 --> B5 --> C1 --> D3
+    S1 --> I1
+    S2 --> I1
+    S3 --> I1
+    I1 --> I2 --> I3 --> I4
+    I4 == fresh jobs ==> P3
+    S4 --> I5 --> A1
+    A1 == profile ==> P3
 
-    D3 --> C2 --> D3
-    C1 --> C2
-    C2 --> C3 --> C4
-    C5 --> C6 --> D3
-    C1 --> C6
-    C3 --> C6
+    P3 --> A2 --> A3 --> A4
+    A1 --> A2
+    A5 --> A6
+    A1 --> A6
+    A3 --> A6
+    A6 == outputs ==> P3
 
-    E1 --> D1
-    E2 --> D1
-    E3 --> D1
-    E4 --> D1
-    E5 --> D1
-    E6 --> D1
-    E7 --> D1
-    E8 --> D1
-    D1 --> D2 --> D3
-    D4 --> D1
-    D1 --> C5
+    UI --> P1
+    P1 --> P2 --> P3
+    P4 --> P1
+    P1 <--> A5
 
-    C2 --> E3
-    C3 --> E4
-    C4 --> E8
-    C6 --> E6
+    A2 == ranked feed ==> U3
+    A3 ==> U4
+    A4 ==> U7
+    A6 ==> U6
 
-    F4 --> D5 --> B2
-    D5 --> C2
-    F2 --> D5
-    F3 --> D5
-    D1 --> F1
-    D1 --> F2
-    D1 --> F3
+    X4 == triggers ==> I2
+    P1 --> X1
+    P1 --> X2
+    P1 --> X3
 ```
 
 **Layer responsibilities**
