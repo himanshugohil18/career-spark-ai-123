@@ -499,10 +499,12 @@
   --primary-foreground: oklch(0.17 0.02 50);
   --primary-hover: oklch(0.73 0.19 45);
   --primary-pressed: oklch(0.6 0.19 40);
-  --secondary: oklch(0.23 0.01 60);
+  --secondary: oklch(0.3636 0.0379 238.96); /* #2B4150 */
   --secondary-foreground: oklch(0.95 0.012 90);
-  --accent: oklch(0.27 0.035 45); /* warm ember tint surface */
-  --accent-foreground: oklch(0.78 0.15 50);
+  --secondary-hover: oklch(0.4657 0.0674 237.89); /* #325F7B */
+  --secondary-pressed: oklch(0.3075 0.0333 240.57); /* #20323F */
+  --accent: oklch(0.4061 0.0854 241.42); /* #124E73 */
+  --accent-foreground: oklch(0.95 0.012 90);
   --ring: oklch(0.68 0.2 42);
 
   /* Status — tuned for dark surfaces */
