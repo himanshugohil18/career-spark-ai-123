@@ -4,34 +4,37 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CareerOS design system — single light, enterprise SaaS theme.
+ * CareerOS design system — light enterprise SaaS theme harmonized with
+ * the presentation palette: cream surfaces, dark slate-blue secondary.
  * Solid colors only. No gradients, no glows, no floating decoration.
- * One brand blue, neutral slate surfaces, navy sidebar.
+ * Primary brand blue kept; secondary, accent and background aligned to PPT.
  */
 :root {
-  /* Surfaces & text */
-  --background: oklch(0.985 0.003 250); /* #F8FAFC */
+  /* Surfaces & text — cream background harmonized with PPT palette */
+  --background: oklch(0.95 0.0156 86.43); /* #F3EEE3 */
   --foreground: oklch(0.21 0.03 264); /* #0F172A */
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.21 0.03 264);
   --elevated: oklch(1 0 0);
-  --muted: oklch(0.968 0.004 247); /* #F1F5F9 */
+  --muted: oklch(0.9198 0.0157 86.43); /* #E9E4D9 */
   --muted-foreground: oklch(0.45 0.025 257); /* #475569 */
   --subtle: oklch(0.55 0.02 257); /* #64748B */
 
-  /* Borders */
-  --border: oklch(0.922 0.006 247); /* #E2E8F0 */
-  --input: oklch(0.922 0.006 247);
+  /* Borders — warm neutral to match cream surfaces */
+  --border: oklch(0.9076 0.0157 86.43); /* #E5E0D5 */
+  --input: oklch(0.9076 0.0157 86.43); /* #E5E0D5 */
 
-  /* Brand — one solid blue */
+  /* Brand — primary blue kept; secondary/accent harmonized to PPT */
   --primary: oklch(0.5 0.2 266); /* #2F5CFF */
   --primary-foreground: oklch(0.985 0.005 255);
   --primary-hover: oklch(0.44 0.17 266); /* #1E45DB */
   --primary-pressed: oklch(0.39 0.15 266);
-  --secondary: oklch(0.968 0.004 247);
-  --secondary-foreground: oklch(0.21 0.03 264);
-  --accent: oklch(0.955 0.018 255); /* light brand tint */
-  --accent-foreground: oklch(0.4 0.15 266);
+  --secondary: oklch(0.3636 0.0379 238.96); /* #2B4150 */
+  --secondary-foreground: oklch(0.985 0.005 255);
+  --secondary-hover: oklch(0.4657 0.0674 237.89); /* #325F7B */
+  --secondary-pressed: oklch(0.3075 0.0333 240.57); /* #20323F */
+  --accent: oklch(0.4061 0.0854 241.42); /* #124E73 */
+  --accent-foreground: oklch(0.985 0.005 255);
   --ring: oklch(0.5 0.2 266);
 
   /* Status */
@@ -93,6 +96,8 @@
   --color-primary-pressed: var(--primary-pressed);
   --color-secondary: var(--secondary);
   --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary-hover: var(--secondary-hover);
+  --color-secondary-pressed: var(--secondary-pressed);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
   --color-subtle: var(--subtle);
@@ -494,10 +499,12 @@
   --primary-foreground: oklch(0.17 0.02 50);
   --primary-hover: oklch(0.73 0.19 45);
   --primary-pressed: oklch(0.6 0.19 40);
-  --secondary: oklch(0.23 0.01 60);
+  --secondary: oklch(0.3636 0.0379 238.96); /* #2B4150 */
   --secondary-foreground: oklch(0.95 0.012 90);
-  --accent: oklch(0.27 0.035 45); /* warm ember tint surface */
-  --accent-foreground: oklch(0.78 0.15 50);
+  --secondary-hover: oklch(0.4657 0.0674 237.89); /* #325F7B */
+  --secondary-pressed: oklch(0.3075 0.0333 240.57); /* #20323F */
+  --accent: oklch(0.4061 0.0854 241.42); /* #124E73 */
+  --accent-foreground: oklch(0.95 0.012 90);
   --ring: oklch(0.68 0.2 42);
 
   /* Status — tuned for dark surfaces */
@@ -569,13 +576,13 @@
   /* Editorial display face — same style as Immersive */
   --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
 
-  /* Keep the original classic palette; only reaffirm brand blue accents */
+  /* Reaffirm brand blue primary and PPT-harmonized secondary/accent */
   --primary: oklch(0.5 0.2 266); /* #2F5CFF */
   --primary-hover: oklch(0.44 0.17 266);
   --primary-pressed: oklch(0.39 0.15 266);
   --ring: oklch(0.5 0.2 266);
-  --accent: oklch(0.955 0.018 255);
-  --accent-foreground: oklch(0.4 0.15 266);
+  --accent: oklch(0.4061 0.0854 241.42); /* #124E73 */
+  --accent-foreground: oklch(0.985 0.005 255);
 
   /* Solid tints for editorial bands on light surfaces */
   --surface-tint-blue: oklch(0.965 0.014 255);
@@ -583,7 +590,7 @@
 
   --gradient-primary: linear-gradient(135deg, #2f5cff, #2f5cff);
   --gradient-brand-glow: linear-gradient(135deg, #2f5cff, #2f5cff);
-  --gradient-hero: linear-gradient(180deg, #f8fafc, #f8fafc);
+  --gradient-hero: linear-gradient(180deg, #f3eee3, #f3eee3);
 }
 
 [data-theme="classic"] body {
