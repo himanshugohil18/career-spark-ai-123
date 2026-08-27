@@ -576,13 +576,13 @@
   /* Editorial display face — same style as Immersive */
   --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
 
-  /* Keep the original classic palette; only reaffirm brand blue accents */
+  /* Reaffirm brand blue primary and PPT-harmonized secondary/accent */
   --primary: oklch(0.5 0.2 266); /* #2F5CFF */
   --primary-hover: oklch(0.44 0.17 266);
   --primary-pressed: oklch(0.39 0.15 266);
   --ring: oklch(0.5 0.2 266);
-  --accent: oklch(0.955 0.018 255);
-  --accent-foreground: oklch(0.4 0.15 266);
+  --accent: oklch(0.4061 0.0854 241.42); /* #124E73 */
+  --accent-foreground: oklch(0.985 0.005 255);
 
   /* Solid tints for editorial bands on light surfaces */
   --surface-tint-blue: oklch(0.965 0.014 255);
@@ -590,7 +590,7 @@
 
   --gradient-primary: linear-gradient(135deg, #2f5cff, #2f5cff);
   --gradient-brand-glow: linear-gradient(135deg, #2f5cff, #2f5cff);
-  --gradient-hero: linear-gradient(180deg, #f8fafc, #f8fafc);
+  --gradient-hero: linear-gradient(180deg, #f3eee3, #f3eee3);
 }
 
 [data-theme="classic"] body {
