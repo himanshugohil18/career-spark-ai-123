@@ -4,9 +4,10 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
- * CareerOS design system — single light, enterprise SaaS theme.
+ * CareerOS design system — light enterprise SaaS theme harmonized with
+ * the presentation palette: cream surfaces, dark slate-blue secondary.
  * Solid colors only. No gradients, no glows, no floating decoration.
- * One brand blue, neutral slate surfaces, navy sidebar.
+ * Primary brand blue kept; secondary, accent and background aligned to PPT.
  */
 :root {
   /* Surfaces & text */
