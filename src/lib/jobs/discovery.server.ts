@@ -130,6 +130,13 @@ export async function runDiscovery(
      * and feed time (relevance engine), not at ingest.
      */
     strictProfileFilter?: boolean;
+    /**
+     * Explicit crawl breadth override (admin / scheduled deep crawls).
+     * When set, these search queries and locations are sent to query-first
+     * providers instead of deriving them from a candidate profile.
+     */
+     queries?: string[];
+     locations?: string[];
   } = {},
 ): Promise<DiscoveryStats> {
   const profile = opts.candidateProfile ?? null;
@@ -176,9 +183,12 @@ export async function runDiscovery(
   // Early-career candidates get India's fresher/trainee vocabulary added to
   // their role queries, otherwise query-first providers only ever return the
   // senior postings that dominate plain title search.
-  const fetchQueries = profile
-    ? expandRoleQueries(profile.roleQueries, profile.seniority, profile.yearsOfExperience)
-    : undefined;
+  const fetchQueries = opts.queries?.length
+    ? opts.queries
+    : profile
+      ? expandRoleQueries(profile.roleQueries, profile.seniority, profile.yearsOfExperience)
+      : undefined;
+  const fetchLocations = opts.locations?.length ? opts.locations : profile?.locations;
 
   const collected: NormalizedJob[] = [];
   const queryStats = new Map(stats.perQuery.map((q) => [q.query.toLowerCase(), q] as const));
@@ -216,7 +226,7 @@ export async function runDiscovery(
     try {
       const jobs = await provider.fetch(src.config ?? {}, {
         queries: fetchQueries,
-        locations: profile?.locations,
+        locations: fetchLocations,
         limit: 260,
       });
       perProv.fetched = jobs.length;

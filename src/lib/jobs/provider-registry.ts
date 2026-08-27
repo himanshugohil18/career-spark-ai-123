@@ -75,10 +75,11 @@ const META: ProviderMeta[] = [
   {
     id: "workable",
     name: "Workable",
-    tier: 1,
-    sourceType: "company_ats",
+    tier: 2,
+    sourceType: "unofficial_endpoint",
     uiLabel: "Workable",
-    integrationNote: "Official Workable API. Inactive until per-account API tokens are provisioned.",
+    integrationNote:
+      "Public keyless Workable job search (jobs.workable.com/api/v1/jobs), crawled India-first across metros then global markets. Returns the employer's canonical Workable application URL.",
   },
   {
     id: "ycombinator",
