@@ -171,6 +171,11 @@ export const listJobs = createServerFn({ method: "POST" })
       else if (h.kind === "clicked") historyBias.set(jobId, cur + 4);
     }
 
+    // Candidate seniority — the feed must not be dominated by roles far
+    // above the user's experience level.
+    const myLevel = candidateSeniority(brain);
+    const myYears = (brain as any)?.identity?.yearsOfExperience ?? 0;
+
     let items = (rows ?? []).map((row: any) => {
       const proximity = locationProximity({
         jobLocation: row.location,
