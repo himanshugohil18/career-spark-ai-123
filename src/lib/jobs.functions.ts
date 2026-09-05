@@ -7,7 +7,9 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { STALE_AFTER_DAYS } from "./jobs/freshness";
+import { STALE_AFTER_DAYS, MAX_FEED_AGE_DAYS } from "./jobs/freshness";
+import { toInr } from "./money";
+import { candidateSeniority, seniorityFit } from "./career-profile";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getCareerBrainSnapshot, type CareerBrainSnapshot } from "./career-brain.service";
 import { parseNaturalLanguage } from "./jobs/nl-search.server";
@@ -97,11 +99,13 @@ export const listJobs = createServerFn({ method: "POST" })
     if (data.provider?.length) jobsQuery = jobsQuery.in("provider", data.provider);
     if (data.companyId) jobsQuery = jobsQuery.eq("company_id", data.companyId);
     if (data.technology?.length) jobsQuery = jobsQuery.overlaps("required_skills", data.technology);
-    if (data.salaryMin) jobsQuery = jobsQuery.gte("salary_max", data.salaryMin);
-    if (data.postedWithinDays) {
-      const since = new Date(Date.now() - data.postedWithinDays * 86_400_000).toISOString();
-      jobsQuery = jobsQuery.gte("posted_at", since);
-    }
+    // `salaryMin` arrives in INR; postings are stored in their source
+    // currency, so the comparison happens in-memory after conversion.
+    // Recency is a hard rule: the feed only ever shows postings published
+    // (or re-verified) inside the freshness window — never months-old ads.
+    const maxAgeDays = Math.min(data.postedWithinDays ?? MAX_FEED_AGE_DAYS, MAX_FEED_AGE_DAYS);
+    const since = new Date(Date.now() - maxAgeDays * 86_400_000).toISOString();
+    jobsQuery = jobsQuery.or(`posted_at.gte.${since},posted_at.is.null`);
 
     switch (data.sort ?? "match") {
       case "newest":
@@ -166,6 +170,11 @@ export const listJobs = createServerFn({ method: "POST" })
       else if (h.kind === "saved" || h.kind === "applied") historyBias.set(jobId, cur + 12);
       else if (h.kind === "clicked") historyBias.set(jobId, cur + 4);
     }
+
+    // Candidate seniority — the feed must not be dominated by roles far
+    // above the user's experience level.
+    const myLevel = candidateSeniority(brain);
+    const myYears = (brain as any)?.identity?.yearsOfExperience ?? 0;
 
     let items = (rows ?? []).map((row: any) => {
       const proximity = locationProximity({
@@ -260,8 +269,48 @@ export const listJobs = createServerFn({ method: "POST" })
           proximity.score * 18 +
           (proximity.tier === "same-city" ? 14 : proximity.tier === "nearby-city" ? 9 : 0) +
           (indiaFirst && india ? 12 : 0),
+        ...(() => {
+          const sf = seniorityFit({
+            candidate: myLevel,
+            candidateYears: myYears,
+            jobLevel: row.experience_level ?? null,
+            jobText: `${row.title ?? ""} ${(row.description ?? "").slice(0, 2000)}`,
+            jobTitle: row.title ?? null,
+          });
+          return {
+            seniorityTier: sf.tier,
+            seniorityLabel: sf.label,
+            stretch: sf.tier === "stretch",
+            // Roles well above the candidate's level are demoted hard; a
+            // single-rung stretch stays visible but never leads the feed.
+            seniorityBoost:
+              sf.tier === "match" ? 6 : sf.tier === "stretch" ? -6 : sf.tier === "under" ? -4 : sf.tier === "over" ? -35 : -60,
+          };
+        })(),
       };
     });
+
+    // Salary floor (entered in ₹) applied after currency normalization.
+    if (data.salaryMin) {
+      const floor = data.salaryMin;
+      items = items.filter((it: any) => {
+        const top = toInr(it.salary_max ?? it.salary_min, it.salary_currency);
+        return top === null || top >= floor;
+      });
+    }
+
+    // Hard seniority ceiling: never show roles far above the user's level,
+    // and drop merely "over"-levelled ones whenever enough fitting roles exist.
+    {
+      const fitting = items.filter((it: any) => it.seniorityTier !== "far-over" && it.seniorityTier !== "over");
+      items = fitting.length >= 12 ? fitting : items.filter((it: any) => it.seniorityTier !== "far-over");
+    }
+
+    // Freshness: drop unverified / expired listings whenever fresher ones exist.
+    {
+      const current = items.filter((it: any) => it.freshnessTier !== "stale" && it.freshnessTier !== "expired");
+      if (current.length >= 12) items = current;
+    }
 
 
     if (rawQuery) {
@@ -318,6 +367,7 @@ export const listJobs = createServerFn({ method: "POST" })
         (it.interactionBias ?? 0) +
         (it.locationBoost ?? 0) +
         (it.freshnessBoost ?? 0) +
+        (it.seniorityBoost ?? 0) +
         (it.trustBoost ?? 0);
       items.sort((a, b) => {
         if (rawQuery) {

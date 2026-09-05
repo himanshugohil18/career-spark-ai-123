@@ -13,6 +13,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { diversifyByCompany } from "./diversity";
+import { MAX_FEED_AGE_DAYS } from "./freshness";
 import { jobDedupeKey } from "./relevance";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { CareerBrainSnapshot } from "@/lib/career-brain.service";
@@ -517,6 +518,9 @@ export async function buildJobSections(
     .from("jobs")
     .select(JOB_SELECT)
     .eq("is_active", true)
+    .or(
+      `posted_at.gte.${new Date(Date.now() - MAX_FEED_AGE_DAYS * 86_400_000).toISOString()},posted_at.is.null`,
+    )
     .order("first_seen_at", { ascending: false })
     .limit(90);
   const recentItems = take(

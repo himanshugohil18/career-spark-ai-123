@@ -4,6 +4,7 @@
  * top locations, experience-level pay, and visa-sponsorship signals.
  */
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { toInr } from "@/lib/money";
 
 type Ctx = { supabase: SupabaseClient<any>; userId: string };
 
@@ -33,7 +34,13 @@ export async function getSalaryAnalytics(c: Ctx) {
 
   const { data: allJobs } = await query;
 
-  const jobs = (allJobs ?? []) as any[];
+  // Normalize every posting to INR so all analytics are rupee-denominated.
+  const jobs = ((allJobs ?? []) as any[]).map((j) => ({
+    ...j,
+    salary_min: toInr(j.salary_min, j.salary_currency),
+    salary_max: toInr(j.salary_max, j.salary_currency),
+    salary_currency: "INR",
+  }));
   const roleJobs = role
     ? jobs.filter((j) => {
         const t = `${j.title}`.toLowerCase();

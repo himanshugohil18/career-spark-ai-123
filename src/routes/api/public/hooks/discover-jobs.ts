@@ -6,13 +6,13 @@
 
 import { createFileRoute } from "@tanstack/react-router";
 import { runDiscovery } from "@/lib/jobs/discovery.server";
-import { isAuthorizedCronRequest } from "@/lib/cron-auth.server";
+import { isAuthorizedCronRequestAsync } from "@/lib/cron-auth.server";
 
 export const Route = createFileRoute("/api/public/hooks/discover-jobs")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        if (!isAuthorizedCronRequest(request)) {
+        if (!(await isAuthorizedCronRequestAsync(request))) {
           return new Response(JSON.stringify({ error: "Unauthorized" }), {
             status: 401,
             headers: { "Content-Type": "application/json" },

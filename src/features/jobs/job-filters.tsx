@@ -111,11 +111,11 @@ export function JobFiltersPanel({
         </ChipGroup>
       </Section>
 
-      <Section title="Minimum salary (USD)">
+      <Section title="Minimum salary (₹ per year)">
         <input
           type="number"
           value={value.salaryMin ?? ""}
-          placeholder="e.g. 120000"
+          placeholder="e.g. 600000"
           onChange={(e) => onChange({ ...value, salaryMin: Number(e.target.value) || undefined })}
           className="w-full rounded-md border border-border bg-elevated px-2.5 py-1.5 text-sm outline-none focus:border-primary"
         />
