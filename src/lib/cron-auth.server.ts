@@ -14,6 +14,37 @@ function safeEqual(a: string, b: string): boolean {
   return diff === 0;
 }
 
+function presentedSecrets(request: Request): string[] {
+  const auth = request.headers.get("authorization") ?? "";
+  const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : "";
+  return [bearer, request.headers.get("x-cron-secret") ?? "", request.headers.get("apikey") ?? ""].filter(
+    (c) => c.length > 0,
+  );
+}
+
+/**
+ * Scheduler-aware check. The database scheduler holds its own randomly
+ * generated secret in `automation_config` (server-only table), so nightly
+ * jobs can authenticate without any secret ever leaving the backend.
+ */
+export async function isAuthorizedCronRequestAsync(request: Request): Promise<boolean> {
+  if (isAuthorizedCronRequest(request)) return true;
+  const candidates = presentedSecrets(request);
+  if (!candidates.length) return false;
+  try {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data } = await supabaseAdmin
+      .from("automation_config")
+      .select("value")
+      .eq("key", "cron_secret")
+      .maybeSingle();
+    const stored = (data as { value?: string } | null)?.value ?? "";
+    return stored.length > 0 && candidates.some((c) => safeEqual(c, stored));
+  } catch {
+    return false;
+  }
+}
+
 export function isAuthorizedCronRequest(request: Request): boolean {
   // Either the worker secret (manual/worker calls) or the scheduler secret
   // (pg_cron jobs) authorizes a cron endpoint.
