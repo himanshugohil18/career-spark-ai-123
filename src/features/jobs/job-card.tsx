@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { openExternal, isValidExternalUrl } from "@/lib/open-external";
 import { jobFreshness, FRESHNESS_STYLES } from "@/lib/jobs/freshness";
 import { providerMeta, providerSourceLabel } from "@/lib/jobs/provider-registry";
+import { formatSalaryInr } from "@/lib/money";
 
 
 export type JobCardData = {
@@ -58,12 +59,7 @@ export type JobCardData = {
 };
 
 function formatSalary(job: JobCardData): string | null {
-  if (!job.salary_max && !job.salary_min) return null;
-  const currency = job.salary_currency ?? "USD";
-  const fmt = (n: number) => (n >= 1000 ? `${Math.round(n / 1000)}k` : String(n));
-  if (job.salary_min && job.salary_max) return `${currency} ${fmt(job.salary_min)}–${fmt(job.salary_max)}`;
-  const only = job.salary_max ?? job.salary_min ?? 0;
-  return `${currency} ${fmt(only)}`;
+  return formatSalaryInr(job);
 }
 
 export function JobCard({

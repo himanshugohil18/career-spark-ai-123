@@ -97,11 +97,13 @@ export const listJobs = createServerFn({ method: "POST" })
     if (data.provider?.length) jobsQuery = jobsQuery.in("provider", data.provider);
     if (data.companyId) jobsQuery = jobsQuery.eq("company_id", data.companyId);
     if (data.technology?.length) jobsQuery = jobsQuery.overlaps("required_skills", data.technology);
-    if (data.salaryMin) jobsQuery = jobsQuery.gte("salary_max", data.salaryMin);
-    if (data.postedWithinDays) {
-      const since = new Date(Date.now() - data.postedWithinDays * 86_400_000).toISOString();
-      jobsQuery = jobsQuery.gte("posted_at", since);
-    }
+    // `salaryMin` arrives in INR; postings are stored in their source
+    // currency, so the comparison happens in-memory after conversion.
+    // Recency is a hard rule: the feed only ever shows postings published
+    // (or re-verified) inside the freshness window — never months-old ads.
+    const maxAgeDays = Math.min(data.postedWithinDays ?? MAX_FEED_AGE_DAYS, MAX_FEED_AGE_DAYS);
+    const since = new Date(Date.now() - maxAgeDays * 86_400_000).toISOString();
+    jobsQuery = jobsQuery.or(`posted_at.gte.${since},posted_at.is.null`);
 
     switch (data.sort ?? "match") {
       case "newest":

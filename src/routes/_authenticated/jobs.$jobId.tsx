@@ -18,6 +18,7 @@ import { ApplyWithAiButton } from "@/features/auto-apply/apply-with-ai-button";
 import { openExternal, isValidExternalUrl } from "@/lib/open-external";
 import { jobFreshness, FRESHNESS_STYLES } from "@/lib/jobs/freshness";
 import { providerSourceLabel } from "@/lib/jobs/provider-registry";
+import { formatSalaryInr } from "@/lib/money";
 
 export const Route = createFileRoute("/_authenticated/jobs/$jobId")({
   head: () => ({ meta: [{ title: "Job · CareerOS" }] }),
@@ -155,10 +156,8 @@ function JobDetail() {
             )}
             {j.employment_type !== "unknown" && <span>{String(j.employment_type).replace("_", " ")}</span>}
             {j.experience_level !== "unknown" && <span>{j.experience_level}</span>}
-            {j.salary_max && (
-              <span className="text-foreground/80">
-                {j.salary_currency ?? "USD"} {Math.round((j.salary_min ?? j.salary_max) / 1000)}k–{Math.round(j.salary_max / 1000)}k
-              </span>
+            {formatSalaryInr(j) && (
+              <span className="text-foreground/80">{formatSalaryInr(j)}</span>
             )}
           </div>
         </div>
@@ -301,11 +300,7 @@ function JobDetail() {
           <Fact label="Experience level" value={j.experience_level !== "unknown" ? String(j.experience_level) : "—"} />
           <Fact
             label="Salary"
-            value={
-              j.salary_min || j.salary_max
-                ? `${j.salary_currency ?? "USD"} ${Math.round((j.salary_min ?? j.salary_max!) / 1000)}k${j.salary_max && j.salary_min ? `–${Math.round(j.salary_max / 1000)}k` : ""}`
-                : "Not disclosed"
-            }
+            value={formatSalaryInr(j) ?? "Not disclosed"}
           />
           <Fact label="Posted" value={j.posted_at ? new Date(j.posted_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"} />
           <Fact label="Source" value={providerSourceLabel(j.provider)} />

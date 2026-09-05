@@ -5,19 +5,15 @@ import { Banknote, MapPin, Plane, Laptop } from "lucide-react";
 import { Skeleton } from "@/components/ai/skeleton";
 import { PageHeader } from "@/components/product/page-header";
 import { getSalaryInsights } from "@/lib/salary.functions";
+import { formatInr } from "@/lib/money";
 
 export const Route = createFileRoute("/_authenticated/salary")({
   head: () => ({ meta: [{ title: "Salary & Market · CareerOS" }] }),
   component: SalaryPage,
 });
 
-function fmt(n: number | null, currency: string) {
-  if (n === null || n === undefined) return "—";
-  return new Intl.NumberFormat("en", {
-    style: "currency",
-    currency: currency || "USD",
-    maximumFractionDigits: 0,
-  }).format(n);
+function fmt(n: number | null, _currency?: string) {
+  return formatInr(n) ?? "—";
 }
 
 function SalaryPage() {
