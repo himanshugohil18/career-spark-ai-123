@@ -33,7 +33,7 @@ export async function isAuthorizedCronRequestAsync(request: Request): Promise<bo
   if (!candidates.length) return false;
   try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data } = await supabaseAdmin
+    const { data } = await (supabaseAdmin as any)
       .from("automation_config")
       .select("value")
       .eq("key", "cron_secret")
