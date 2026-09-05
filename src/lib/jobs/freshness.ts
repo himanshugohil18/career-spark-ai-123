@@ -15,6 +15,12 @@
 
 export const STALE_AFTER_DAYS = 21;
 export const AGING_AFTER_DAYS = 7;
+/**
+ * Hard recency ceiling for anything shown in the feed or recommendations.
+ * Postings published more than this many days ago are never surfaced, so
+ * users never see months-old or year-old advertisements.
+ */
+export const MAX_FEED_AGE_DAYS = 30;
 
 export type FreshnessTier = "fresh" | "recent" | "aging" | "stale" | "expired";
 
