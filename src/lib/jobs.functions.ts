@@ -367,6 +367,7 @@ export const listJobs = createServerFn({ method: "POST" })
         (it.interactionBias ?? 0) +
         (it.locationBoost ?? 0) +
         (it.freshnessBoost ?? 0) +
+        (it.seniorityBoost ?? 0) +
         (it.trustBoost ?? 0);
       items.sort((a, b) => {
         if (rawQuery) {
