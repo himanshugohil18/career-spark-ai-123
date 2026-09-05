@@ -7,7 +7,9 @@
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { STALE_AFTER_DAYS } from "./jobs/freshness";
+import { STALE_AFTER_DAYS, MAX_FEED_AGE_DAYS } from "./jobs/freshness";
+import { toInr } from "./money";
+import { candidateSeniority, seniorityFit } from "./career-profile";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { getCareerBrainSnapshot, type CareerBrainSnapshot } from "./career-brain.service";
 import { parseNaturalLanguage } from "./jobs/nl-search.server";
